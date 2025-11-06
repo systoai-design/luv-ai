@@ -12,7 +12,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, ShieldCheck, Wallet as WalletIcon } from "lucide-react";
 import Header from "@/components/Header";
-import ProtectedRoute from "@/components/ProtectedRoute";
 
 const Profile = () => {
   const { user } = useAuth();
@@ -116,12 +115,11 @@ const Profile = () => {
   }
 
   return (
-    <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-hero">
-        <Header />
-        <div className="container mx-auto px-4 pt-24 pb-12">
-          <Card className="max-w-2xl mx-auto bg-card/95 backdrop-blur-sm border-primary/30">
-            <CardHeader>
+    <div className="min-h-screen bg-gradient-hero">
+      <Header />
+      <div className="container mx-auto px-4 pt-24 pb-12">
+        <Card className="max-w-2xl mx-auto bg-card/95 backdrop-blur-sm border-primary/30">
+          <CardHeader>
               <CardTitle className="text-3xl font-bold flex items-center gap-2">
                 Your Profile
                 {profile.verified_badge_id && (
@@ -211,12 +209,11 @@ const Profile = () => {
                     Cancel
                   </Button>
                 </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
-    </ProtectedRoute>
+    </div>
   );
 };
 

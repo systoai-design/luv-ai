@@ -1,4 +1,5 @@
 import { Heart, Twitter, Github, MessageCircle } from "lucide-react";
+import logo from "@/assets/logo.svg";
 
 const Footer = () => {
   return (
@@ -6,11 +7,8 @@ const Footer = () => {
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Heart className="h-6 w-6 text-primary fill-primary" />
-              <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                LUVAI
-              </span>
+            <div className="flex items-center">
+              <img src={logo} alt="LUVAI" className="h-10 w-auto" />
             </div>
             <p className="text-sm text-muted-foreground">
               The future of connection powered by blockchain, AI, and human interaction.

@@ -33,7 +33,7 @@ interface Companion {
   description: string;
   tagline: string;
   avatar_url: string;
-  price_per_message: number;
+  access_price: number;
   currency: string;
   average_rating: number;
   total_chats: number;
@@ -200,7 +200,7 @@ const MarketplaceSection = () => {
                         <span>{companion.total_chats?.toLocaleString() || 0} chats</span>
                       </div>
                       <div className="font-semibold text-primary">
-                        {companion.price_per_message} {companion.currency}/msg
+                        {companion.access_price} {companion.currency} one-time
                       </div>
                     </div>
 

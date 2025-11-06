@@ -9,6 +9,9 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Profile from "./pages/Profile";
 import Chat from "./pages/Chat";
+import CreatorDashboard from "./pages/CreatorDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
+import Purchases from "./pages/Purchases";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +34,21 @@ const App = () => (
               <Route path="/chat/:companionId" element={
                 <ProtectedRoute>
                   <Chat />
+                </ProtectedRoute>
+              } />
+              <Route path="/creator" element={
+                <ProtectedRoute>
+                  <CreatorDashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin" element={
+                <ProtectedRoute>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/purchases" element={
+                <ProtectedRoute>
+                  <Purchases />
                 </ProtectedRoute>
               } />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

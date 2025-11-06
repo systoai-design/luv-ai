@@ -2,13 +2,15 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChat } from '@/hooks/useChat';
+import { useCompanionAccess } from '@/hooks/useCompanionAccess';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { ArrowLeft, Send, Loader2 } from 'lucide-react';
+import { ArrowLeft, Send, Loader2, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { PurchaseAccessDialog } from '@/components/PurchaseAccessDialog';
 
 const Chat = () => {
   const { companionId } = useParams<{ companionId: string }>();
@@ -18,9 +20,11 @@ const Chat = () => {
   const [chatId, setChatId] = useState<string | null>(null);
   const [companion, setCompanion] = useState<any>(null);
   const [input, setInput] = useState('');
+  const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { messages, isLoading, sendMessage, loadMessages } = useChat(chatId || '', companionId || '');
+  const { hasAccess, isLoading: isCheckingAccess, accessPrice, grantAccess } = useCompanionAccess(companionId);
 
   useEffect(() => {
     if (!user || !companionId) {
@@ -98,10 +102,10 @@ const Chat = () => {
   }, [user, companionId, navigate, toast]);
 
   useEffect(() => {
-    if (chatId) {
+    if (chatId && hasAccess) {
       loadMessages();
     }
-  }, [chatId, loadMessages]);
+  }, [chatId, hasAccess, loadMessages]);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -121,11 +125,55 @@ const Chat = () => {
     }
   };
 
-  if (!companion || !chatId) {
+  if (!companion || !chatId || isCheckingAccess) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
+    );
+  }
+
+  if (!hasAccess) {
+    return (
+      <>
+        <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+          <div className="max-w-md w-full text-center space-y-6">
+            <Avatar className="h-32 w-32 mx-auto">
+              <AvatarImage src={companion.avatar_url} alt={companion.name} />
+              <AvatarFallback>{companion.name[0]}</AvatarFallback>
+            </Avatar>
+            <div>
+              <h1 className="text-3xl font-bold mb-2">{companion.name}</h1>
+              <p className="text-muted-foreground">{companion.tagline}</p>
+            </div>
+            <div className="bg-muted rounded-lg p-6 space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Purchase one-time access to chat with {companion.name}
+              </p>
+              <div className="text-4xl font-bold">{accessPrice} SOL</div>
+              <Button onClick={() => setShowPurchaseDialog(true)} size="lg" className="w-full">
+                Purchase Access
+              </Button>
+            </div>
+            <Button variant="ghost" onClick={() => navigate('/')}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Marketplace
+            </Button>
+          </div>
+        </div>
+        <PurchaseAccessDialog
+          open={showPurchaseDialog}
+          onOpenChange={setShowPurchaseDialog}
+          companion={{
+            id: companionId!,
+            name: companion.name,
+            avatar_url: companion.avatar_url,
+            access_price: accessPrice,
+          }}
+          onSuccess={() => window.location.reload()}
+          onGrantAccess={grantAccess}
+        />
+      </>
     );
   }
 
@@ -141,9 +189,13 @@ const Chat = () => {
             <AvatarImage src={companion.avatar_url} alt={companion.name} />
             <AvatarFallback>{companion.name[0]}</AvatarFallback>
           </Avatar>
-          <div>
+          <div className="flex-1">
             <h1 className="font-semibold text-foreground">{companion.name}</h1>
-            <p className="text-sm text-muted-foreground">AI Companion</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm text-muted-foreground">AI Companion</p>
+              <CheckCircle className="h-3 w-3 text-primary" />
+              <span className="text-xs text-primary">Lifetime Access</span>
+            </div>
           </div>
         </div>
       </div>
@@ -204,9 +256,6 @@ const Chat = () => {
               <Send className="h-4 w-4" />
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            {companion.price_per_message} SOL per message
-          </p>
         </div>
       </div>
     </div>

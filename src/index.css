@@ -61,3 +61,53 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Phantom Wallet Button Styling */
+.wallet-adapter-button {
+  background: var(--gradient-accent) !important;
+  border: 1px solid hsl(var(--primary) / 0.3) !important;
+  border-radius: 0.5rem !important;
+  font-weight: 500 !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: var(--shadow-glow) !important;
+}
+
+.wallet-adapter-button:not([disabled]):hover {
+  opacity: 0.9 !important;
+  transform: translateY(-1px);
+}
+
+.wallet-adapter-button-trigger {
+  background: var(--gradient-accent) !important;
+  border-color: hsl(var(--accent) / 0.5) !important;
+}
+
+.wallet-adapter-modal-wrapper {
+  background: hsl(var(--background) / 0.95) !important;
+  backdrop-filter: blur(12px);
+}
+
+.wallet-adapter-modal {
+  background: hsl(var(--card)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 1rem !important;
+}
+
+.wallet-adapter-modal-title {
+  color: hsl(var(--foreground)) !important;
+}
+
+.wallet-adapter-modal-list {
+  background: hsl(var(--card)) !important;
+}
+
+.wallet-adapter-modal-list-item {
+  background: hsl(var(--muted)) !important;
+  border-radius: 0.5rem !important;
+  transition: all 0.2s !important;
+}
+
+.wallet-adapter-modal-list-item:hover {
+  background: hsl(var(--accent) / 0.1) !important;
+  border-color: hsl(var(--primary) / 0.5) !important;
+}

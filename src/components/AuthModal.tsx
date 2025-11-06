@@ -156,14 +156,28 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               {wallets.length === 0 ? (
                 <div className="text-center space-y-4">
                   <p className="text-muted-foreground">
-                    No wallet detected. Please install Phantom wallet extension.
+                    No wallet detected. Please install a Solana wallet extension.
                   </p>
-                  <Button
-                    onClick={() => window.open('https://phantom.app/', '_blank')}
-                    className="bg-gradient-primary"
-                  >
-                    Install Phantom Wallet
-                  </Button>
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      onClick={() => window.open('https://phantom.app/', '_blank')}
+                      className="bg-gradient-primary"
+                    >
+                      Install Phantom
+                    </Button>
+                    <Button
+                      onClick={() => window.open('https://solflare.com/', '_blank')}
+                      variant="outline"
+                    >
+                      Install Solflare
+                    </Button>
+                    <Button
+                      onClick={() => window.open('https://backpack.app/', '_blank')}
+                      variant="outline"
+                    >
+                      Install Backpack
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <>
@@ -172,7 +186,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                   </div>
                   {!connected && (
                     <p className="text-sm text-muted-foreground text-center">
-                      Click "Select Wallet" above to connect your Phantom wallet
+                      Click "Select Wallet" to choose from Phantom, Solflare, or Backpack
                     </p>
                   )}
                 </>
@@ -185,7 +199,25 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                   rel="noopener noreferrer"
                   className="text-primary hover:underline"
                 >
-                  Download Phantom
+                  Get Phantom
+                </a>
+                {" · "}
+                <a
+                  href="https://solflare.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  Get Solflare
+                </a>
+                {" · "}
+                <a
+                  href="https://backpack.app/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  Get Backpack
                 </a>
               </p>
             </div>

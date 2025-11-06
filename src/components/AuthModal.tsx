@@ -30,7 +30,7 @@ interface AuthModalProps {
 }
 
 export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
-  const { connected, publicKey } = useWallet();
+  const { connected, publicKey, connect, wallet, wallets } = useWallet();
   const {
     authState,
     checkUsernameAvailable,
@@ -45,6 +45,17 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+
+  // Log wallet state for debugging
+  useEffect(() => {
+    console.log('Wallet state:', { 
+      connected, 
+      publicKey: publicKey?.toBase58(),
+      wallet: wallet?.adapter?.name,
+      availableWallets: wallets.map(w => w.adapter.name)
+    });
+  }, [connected, publicKey, wallet, wallets]);
 
   // Reset state when modal closes
   useEffect(() => {
@@ -109,6 +120,25 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
     }
   };
 
+  const handleConnectWallet = async () => {
+    try {
+      setIsConnecting(true);
+      console.log('Attempting to connect wallet...');
+      
+      if (!wallet) {
+        console.error('No wallet adapter found');
+        return;
+      }
+      
+      await connect();
+      console.log('Wallet connected successfully');
+    } catch (error) {
+      console.error('Failed to connect wallet:', error);
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -123,9 +153,30 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col items-center gap-6 py-6">
-              <div className="wallet-adapter-button-container">
-                <WalletMultiButton />
-              </div>
+              {wallets.length === 0 ? (
+                <div className="text-center space-y-4">
+                  <p className="text-muted-foreground">
+                    No wallet detected. Please install Phantom wallet extension.
+                  </p>
+                  <Button
+                    onClick={() => window.open('https://phantom.app/', '_blank')}
+                    className="bg-gradient-primary"
+                  >
+                    Install Phantom Wallet
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <div className="wallet-adapter-button-container">
+                    <WalletMultiButton />
+                  </div>
+                  {!connected && (
+                    <p className="text-sm text-muted-foreground text-center">
+                      Click "Select Wallet" above to connect your Phantom wallet
+                    </p>
+                  )}
+                </>
+              )}
               <p className="text-sm text-muted-foreground text-center">
                 Don't have a wallet?{" "}
                 <a

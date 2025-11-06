@@ -7,6 +7,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useNavigate } from "react-router-dom";
 import { AuthModal } from "@/components/AuthModal";
+import { DisconnectDialog } from "@/components/DisconnectDialog";
 import { useWalletAuth } from "@/hooks/useWalletAuth";
 import { useState } from "react";
 import {
@@ -24,6 +25,7 @@ const Header = () => {
   const navigate = useNavigate();
   const { handleDisconnect } = useWalletAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-lg">
@@ -75,7 +77,10 @@ const Header = () => {
                     <User className="mr-2 h-4 w-4" />
                     Profile
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleDisconnect} className="text-destructive">
+                  <DropdownMenuItem 
+                    onClick={() => setDisconnectDialogOpen(true)} 
+                    className="text-destructive"
+                  >
                     <LogOut className="mr-2 h-4 w-4" />
                     Disconnect Wallet
                   </DropdownMenuItem>
@@ -94,6 +99,15 @@ const Header = () => {
         </div>
       </div>
       <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
+      <DisconnectDialog
+        open={disconnectDialogOpen}
+        onOpenChange={setDisconnectDialogOpen}
+        onConfirm={() => {
+          setDisconnectDialogOpen(false);
+          handleDisconnect();
+        }}
+        walletAddress={publicKey?.toBase58()}
+      />
     </header>
   );
 };

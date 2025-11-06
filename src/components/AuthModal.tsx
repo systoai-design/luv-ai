@@ -46,6 +46,8 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [registrationStep, setRegistrationStep] = useState<string>("");
+  const [showTimeout, setShowTimeout] = useState(false);
 
   // Log wallet state for debugging
   useEffect(() => {
@@ -110,10 +112,27 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
     if (!walletAddress || !usernameAvailable || !username || !displayName) {
       return;
     }
+    
+    if (!connected) {
+      setUsernameError("Wallet disconnected. Please reconnect.");
+      return;
+    }
 
     setIsSubmitting(true);
+    setRegistrationStep("Creating account...");
+    setShowTimeout(false);
+    
+    // Show timeout message after 5 seconds
+    const timeoutId = setTimeout(() => {
+      setShowTimeout(true);
+    }, 5000);
+
     const result = await registerWithWallet(walletAddress, username, displayName);
+
+    clearTimeout(timeoutId);
     setIsSubmitting(false);
+    setRegistrationStep("");
+    setShowTimeout(false);
 
     if (result.success) {
       onOpenChange(false);
@@ -329,6 +348,18 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                 </p>
               </div>
 
+              {!connected && (
+                <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">
+                  ⚠️ Wallet disconnected. Please reconnect to complete registration.
+                </div>
+              )}
+
+              {showTimeout && isSubmitting && (
+                <div className="bg-warning/10 text-warning text-sm p-3 rounded-md">
+                  This is taking longer than usual. Please wait...
+                </div>
+              )}
+
               <Button
                 onClick={handleRegister}
                 disabled={
@@ -336,14 +367,15 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                   !username ||
                   !displayName ||
                   isSubmitting ||
-                  isCheckingUsername
+                  isCheckingUsername ||
+                  !connected
                 }
                 className="w-full bg-gradient-primary hover:opacity-90"
               >
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating Profile...
+                    {registrationStep || "Creating Account..."}
                   </>
                 ) : (
                   "Complete Registration"

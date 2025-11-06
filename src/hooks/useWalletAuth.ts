@@ -63,14 +63,28 @@ export const useWalletAuth = () => {
     displayName: string
   ) => {
     try {
+      console.log('Step 1: Starting registration...', { walletAddress, username, displayName });
+      
+      // Validate wallet is still connected
+      if (!publicKey || !connected) {
+        throw new Error("Wallet disconnected. Please reconnect and try again.");
+      }
+
       setAuthState({ isChecking: true, isNewUser: false, error: null });
 
       // Create deterministic email from wallet address
       const email = `${walletAddress}@wallet.luvai.app`;
       const password = `wallet_${walletAddress}_${Date.now()}`;
 
-      // Sign up with Supabase
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+      console.log('Step 2: Creating auth account...', { email });
+
+      // Add timeout protection
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Registration timeout. Please try again.")), 10000)
+      );
+
+      // Sign up with Supabase - trigger will handle profile creation
+      const signUpPromise = supabase.auth.signUp({
         email,
         password,
         options: {
@@ -83,26 +97,28 @@ export const useWalletAuth = () => {
         },
       });
 
-      if (signUpError) throw signUpError;
+      const { data: authData, error: signUpError } = await Promise.race([
+        signUpPromise,
+        timeoutPromise
+      ]) as any;
 
-      // Update profile with wallet address and username
-      if (authData.user) {
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .update({
-            wallet_address: walletAddress,
-            username,
-            display_name: displayName,
-          })
-          .eq("user_id", authData.user.id);
-
-        if (profileError) throw profileError;
+      if (signUpError) {
+        console.error('Step 2 Failed:', signUpError);
+        throw signUpError;
       }
 
+      console.log('Step 3: Auth account created', { userId: authData.user?.id });
+
+      // Wait a bit for the trigger to complete
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      console.log('Step 4: Registration complete!');
+      
       toast.success("Welcome to LUVAI! 💜");
       setAuthState({ isChecking: false, isNewUser: false, error: null });
       return { success: true };
     } catch (error: any) {
+      console.error('Registration error:', error);
       const errorMessage = error.message || "Registration failed";
       setAuthState({ isChecking: false, isNewUser: false, error: errorMessage });
       toast.error(errorMessage);

@@ -52,7 +52,8 @@ export const PurchaseAccessDialog = ({
     setIsProcessing(true);
 
     try {
-      const connection = new Connection('https://api.mainnet-beta.solana.com');
+      // Use devnet for testing (matches WalletContext configuration)
+      const connection = new Connection('https://api.devnet.solana.com');
       const lamports = companion.access_price * 1000000000; // Convert SOL to lamports
 
       const transaction = new Transaction().add(

@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Wallet, Heart, Sparkles, LogOut, User } from "lucide-react";
+import logo from "@/assets/logo.svg";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
@@ -37,14 +38,8 @@ const Header = () => {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-lg">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <a href="/" className="flex items-center gap-2">
-          <div className="relative">
-            <Heart className="h-8 w-8 text-primary fill-primary animate-glow" />
-            <Sparkles className="h-4 w-4 text-secondary absolute -top-1 -right-1" />
-          </div>
-          <span className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            LUVAI
-          </span>
+        <a href="/" className="flex items-center">
+          <img src={logo} alt="LUVAI" className="h-12 w-auto" />
         </a>
         
         <nav className="hidden md:flex items-center gap-6">

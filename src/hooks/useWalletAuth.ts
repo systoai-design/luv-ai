@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -37,16 +37,13 @@ export const useWalletAuth = () => {
   };
 
   // Check username availability
-  const checkUsernameAvailable = async (username: string): Promise<boolean> => {
+  const checkUsernameAvailable = useCallback(async (username: string): Promise<boolean> => {
     try {
-      // Use raw query to avoid type inference issues with new column
-      const query = (supabase as any)
+      const { data, error } = await supabase
         .from("profiles")
         .select("user_id")
         .eq("username", username)
         .maybeSingle();
-      
-      const { data, error } = await query;
 
       if (error && error.code !== "PGRST116") throw error;
       return !data;
@@ -54,7 +51,7 @@ export const useWalletAuth = () => {
       console.error("Error checking username:", error);
       return false;
     }
-  };
+  }, []);
 
   // Register new user with wallet
   const registerWithWallet = async (

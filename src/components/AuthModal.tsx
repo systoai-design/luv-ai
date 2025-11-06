@@ -106,7 +106,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [username, checkUsernameAvailable]);
+  }, [username]);
 
   const handleRegister = async () => {
     if (!walletAddress || !usernameAvailable || !username || !displayName) {
@@ -363,7 +363,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               <Button
                 onClick={handleRegister}
                 disabled={
-                  !usernameAvailable ||
+                  usernameAvailable !== true ||
                   !username ||
                   !displayName ||
                   isSubmitting ||

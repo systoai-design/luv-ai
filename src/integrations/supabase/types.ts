@@ -106,6 +106,38 @@ export type Database = {
           },
         ]
       }
+      chat_messages: {
+        Row: {
+          chat_id: string
+          content: string
+          created_at: string
+          id: string
+          sender_type: string
+        }
+        Insert: {
+          chat_id: string
+          content: string
+          created_at?: string
+          id?: string
+          sender_type: string
+        }
+        Update: {
+          chat_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          sender_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "user_chats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companion_reviews: {
         Row: {
           companion_id: string | null
@@ -189,6 +221,44 @@ export type Database = {
           wallet_address?: string | null
         }
         Relationships: []
+      }
+      user_chats: {
+        Row: {
+          companion_id: string
+          created_at: string
+          id: string
+          last_message_at: string | null
+          total_messages: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          companion_id: string
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          total_messages?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          companion_id?: string
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          total_messages?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_chats_companion_id_fkey"
+            columns: ["companion_id"]
+            isOneToOne: false
+            referencedRelation: "ai_companions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

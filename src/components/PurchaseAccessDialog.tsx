@@ -26,7 +26,7 @@ interface PurchaseAccessDialogProps {
   onGrantAccess: (signature: string, amount: number) => Promise<boolean>;
 }
 
-const PLATFORM_WALLET = 'YourPlatformWalletAddressHere'; // Replace with actual platform wallet
+const PLATFORM_WALLET = 'DzrB51hp4RoR8ctsbKeuyJHe4KXr24cGewyTucBZezrF';
 
 export const PurchaseAccessDialog = ({
   open,

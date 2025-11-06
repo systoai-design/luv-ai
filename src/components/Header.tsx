@@ -9,7 +9,8 @@ import { useNavigate } from "react-router-dom";
 import { AuthModal } from "@/components/AuthModal";
 import { DisconnectDialog } from "@/components/DisconnectDialog";
 import { useWalletAuth } from "@/hooks/useWalletAuth";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +27,29 @@ const Header = () => {
   const { handleDisconnect } = useWalletAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
+  const [displayName, setDisplayName] = useState<string>("");
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('display_name, username')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (data) {
+          setDisplayName(data.display_name || data.username || 'User');
+        }
+      } catch (error) {
+        console.error('Error loading profile:', error);
+      }
+    };
+
+    loadProfile();
+  }, [user]);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-lg">
@@ -64,7 +88,7 @@ const Header = () => {
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>
                     <div className="flex flex-col">
-                      <span className="text-sm font-medium">{user.email}</span>
+                      <span className="text-sm font-medium">{displayName || 'User'}</span>
                       {connected && publicKey && (
                         <span className="text-xs text-muted-foreground font-mono">
                           {publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)}

@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       ai_companions: {
         Row: {
+          access_price: number
           avatar_url: string | null
           average_rating: number | null
           companion_type: string
@@ -34,7 +35,6 @@ export type Database = {
           lust: number | null
           name: string
           playfulness: number | null
-          price_per_message: number
           romance: number | null
           system_prompt: string
           tagline: string | null
@@ -43,6 +43,7 @@ export type Database = {
           voice_tone: string | null
         }
         Insert: {
+          access_price?: number
           avatar_url?: string | null
           average_rating?: number | null
           companion_type: string
@@ -61,7 +62,6 @@ export type Database = {
           lust?: number | null
           name: string
           playfulness?: number | null
-          price_per_message?: number
           romance?: number | null
           system_prompt: string
           tagline?: string | null
@@ -70,6 +70,7 @@ export type Database = {
           voice_tone?: string | null
         }
         Update: {
+          access_price?: number
           avatar_url?: string | null
           average_rating?: number | null
           companion_type?: string
@@ -88,7 +89,6 @@ export type Database = {
           lust?: number | null
           name?: string
           playfulness?: number | null
-          price_per_message?: number
           romance?: number | null
           system_prompt?: string
           tagline?: string | null
@@ -138,6 +138,44 @@ export type Database = {
           },
         ]
       }
+      companion_access: {
+        Row: {
+          access_price: number
+          companion_id: string
+          created_at: string
+          id: string
+          purchased_at: string
+          transaction_signature: string | null
+          user_id: string
+        }
+        Insert: {
+          access_price?: number
+          companion_id: string
+          created_at?: string
+          id?: string
+          purchased_at?: string
+          transaction_signature?: string | null
+          user_id: string
+        }
+        Update: {
+          access_price?: number
+          companion_id?: string
+          created_at?: string
+          id?: string
+          purchased_at?: string
+          transaction_signature?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "companion_access_companion_id_fkey"
+            columns: ["companion_id"]
+            isOneToOne: false
+            referencedRelation: "ai_companions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companion_reviews: {
         Row: {
           companion_id: string | null
@@ -180,43 +218,99 @@ export type Database = {
           },
         ]
       }
+      creator_earnings: {
+        Row: {
+          amount: number
+          companion_id: string
+          created_at: string
+          creator_id: string
+          id: string
+          paid_at: string | null
+          status: string | null
+        }
+        Insert: {
+          amount: number
+          companion_id: string
+          created_at?: string
+          creator_id: string
+          id?: string
+          paid_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          amount?: number
+          companion_id?: string
+          created_at?: string
+          creator_id?: string
+          id?: string
+          paid_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_earnings_companion_id_fkey"
+            columns: ["companion_id"]
+            isOneToOne: false
+            referencedRelation: "ai_companions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           bio: string | null
+          can_create_companion: boolean | null
           created_at: string
           display_name: string | null
           id: string
           interests: string[] | null
+          is_verified: boolean | null
+          social_links: Json | null
           updated_at: string
           user_id: string
           username: string | null
+          verification_documents: Json | null
+          verification_status: string | null
+          verification_type: string | null
           verified_badge_id: string | null
           wallet_address: string | null
         }
         Insert: {
           avatar_url?: string | null
           bio?: string | null
+          can_create_companion?: boolean | null
           created_at?: string
           display_name?: string | null
           id?: string
           interests?: string[] | null
+          is_verified?: boolean | null
+          social_links?: Json | null
           updated_at?: string
           user_id: string
           username?: string | null
+          verification_documents?: Json | null
+          verification_status?: string | null
+          verification_type?: string | null
           verified_badge_id?: string | null
           wallet_address?: string | null
         }
         Update: {
           avatar_url?: string | null
           bio?: string | null
+          can_create_companion?: boolean | null
           created_at?: string
           display_name?: string | null
           id?: string
           interests?: string[] | null
+          is_verified?: boolean | null
+          social_links?: Json | null
           updated_at?: string
           user_id?: string
           username?: string | null
+          verification_documents?: Json | null
+          verification_status?: string | null
+          verification_type?: string | null
           verified_badge_id?: string | null
           wallet_address?: string | null
         }
@@ -260,18 +354,50 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       increment_chat_message_count: {
         Args: { chat_id_param: string }
         Returns: undefined
       }
+      user_has_companion_access: {
+        Args: { _companion_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "user" | "creator" | "moderator" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -398,6 +524,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["user", "creator", "moderator", "admin"],
+    },
   },
 } as const

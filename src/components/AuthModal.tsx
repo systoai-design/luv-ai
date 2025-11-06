@@ -30,7 +30,7 @@ interface AuthModalProps {
 }
 
 export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
-  const { connected, publicKey, connect, wallet, wallets } = useWallet();
+  const { connected, publicKey, connect, wallet, wallets, select } = useWallet();
   const {
     authState,
     checkUsernameAvailable,
@@ -120,14 +120,16 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
     }
   };
 
-  const handleConnectWallet = async () => {
+  const handleConnectWallet = async (walletName?: string) => {
     try {
       setIsConnecting(true);
-      console.log('Attempting to connect wallet...');
+      console.log('Attempting to connect wallet:', walletName || 'current');
       
-      if (!wallet) {
-        console.error('No wallet adapter found');
-        return;
+      if (walletName) {
+        // Select specific wallet by name (using as any to bypass type restrictions)
+        (select as any)(walletName);
+        // Wait a bit for the adapter to be ready
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
       
       await connect();
@@ -141,7 +143,11 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent 
+        className="sm:max-w-md"
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         {step === "connect" && (
           <>
             <DialogHeader>
@@ -181,14 +187,51 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                 </div>
               ) : (
                 <>
-                  <div className="wallet-adapter-button-container">
-                    <WalletMultiButton />
+                  <div className="w-full space-y-4">
+                    <div className="text-center">
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Connect with one of these wallets:
+                      </p>
+                    </div>
+                    
+                    {/* Direct connect buttons for detected wallets */}
+                    <div className="flex flex-col gap-2">
+                      {wallets.map((w) => (
+                        <Button
+                          key={w.adapter.name}
+                          onClick={() => handleConnectWallet(w.adapter.name)}
+                          disabled={isConnecting || connected}
+                          className="w-full bg-gradient-primary hover:opacity-90"
+                          size="lg"
+                        >
+                          {isConnecting ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Connecting...
+                            </>
+                          ) : (
+                            <>Connect {w.adapter.name}</>
+                          )}
+                        </Button>
+                      ))}
+                    </div>
+
+                    {/* Fallback: Original WalletMultiButton */}
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-2 text-muted-foreground">
+                          Or use wallet modal
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="wallet-adapter-button-container flex justify-center">
+                      <WalletMultiButton />
+                    </div>
                   </div>
-                  {!connected && (
-                    <p className="text-sm text-muted-foreground text-center">
-                      Click "Select Wallet" to choose from Phantom, Solflare, or Backpack
-                    </p>
-                  )}
                 </>
               )}
               <p className="text-sm text-muted-foreground text-center">

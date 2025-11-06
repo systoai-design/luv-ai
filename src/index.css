@@ -62,6 +62,12 @@ All colors MUST be HSL.
   }
 }
 
+/* Wallet adapter modal z-index override */
+.wallet-adapter-modal-wrapper,
+.wallet-adapter-modal-overlay {
+  z-index: 99999 !important;
+}
+
 /* Phantom Wallet Button Styling */
 .wallet-adapter-button {
   background: var(--gradient-accent) !important;

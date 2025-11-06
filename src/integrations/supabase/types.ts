@@ -14,6 +14,140 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_companions: {
+        Row: {
+          avatar_url: string | null
+          average_rating: number | null
+          companion_type: string
+          created_at: string | null
+          creator_id: string | null
+          currency: string | null
+          description: string | null
+          dominance: number | null
+          empathy: number | null
+          humor: number | null
+          id: string
+          intelligence: number | null
+          interests: string[] | null
+          is_active: boolean | null
+          loyalty: number | null
+          lust: number | null
+          name: string
+          playfulness: number | null
+          price_per_message: number
+          romance: number | null
+          system_prompt: string
+          tagline: string | null
+          total_chats: number | null
+          updated_at: string | null
+          voice_tone: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          average_rating?: number | null
+          companion_type: string
+          created_at?: string | null
+          creator_id?: string | null
+          currency?: string | null
+          description?: string | null
+          dominance?: number | null
+          empathy?: number | null
+          humor?: number | null
+          id?: string
+          intelligence?: number | null
+          interests?: string[] | null
+          is_active?: boolean | null
+          loyalty?: number | null
+          lust?: number | null
+          name: string
+          playfulness?: number | null
+          price_per_message?: number
+          romance?: number | null
+          system_prompt: string
+          tagline?: string | null
+          total_chats?: number | null
+          updated_at?: string | null
+          voice_tone?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          average_rating?: number | null
+          companion_type?: string
+          created_at?: string | null
+          creator_id?: string | null
+          currency?: string | null
+          description?: string | null
+          dominance?: number | null
+          empathy?: number | null
+          humor?: number | null
+          id?: string
+          intelligence?: number | null
+          interests?: string[] | null
+          is_active?: boolean | null
+          loyalty?: number | null
+          lust?: number | null
+          name?: string
+          playfulness?: number | null
+          price_per_message?: number
+          romance?: number | null
+          system_prompt?: string
+          tagline?: string | null
+          total_chats?: number | null
+          updated_at?: string | null
+          voice_tone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_companions_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      companion_reviews: {
+        Row: {
+          companion_id: string | null
+          created_at: string | null
+          id: string
+          rating: number | null
+          review_text: string | null
+          user_id: string | null
+        }
+        Insert: {
+          companion_id?: string | null
+          created_at?: string | null
+          id?: string
+          rating?: number | null
+          review_text?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          companion_id?: string | null
+          created_at?: string | null
+          id?: string
+          rating?: number | null
+          review_text?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "companion_reviews_companion_id_fkey"
+            columns: ["companion_id"]
+            isOneToOne: false
+            referencedRelation: "ai_companions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companion_reviews_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -24,6 +158,7 @@ export type Database = {
           interests: string[] | null
           updated_at: string
           user_id: string
+          username: string | null
           verified_badge_id: string | null
           wallet_address: string | null
         }
@@ -36,6 +171,7 @@ export type Database = {
           interests?: string[] | null
           updated_at?: string
           user_id: string
+          username?: string | null
           verified_badge_id?: string | null
           wallet_address?: string | null
         }
@@ -48,6 +184,7 @@ export type Database = {
           interests?: string[] | null
           updated_at?: string
           user_id?: string
+          username?: string | null
           verified_badge_id?: string | null
           wallet_address?: string | null
         }
@@ -58,7 +195,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_chat_message_count: {
+        Args: { chat_id_param: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

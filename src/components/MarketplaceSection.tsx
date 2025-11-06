@@ -5,6 +5,9 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Bot, MessageCircle, Sparkles, Heart, Zap, Brain, Smile, Star } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 // Import companion avatars
@@ -45,6 +48,22 @@ interface Companion {
 }
 
 const MarketplaceSection = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  
+  const handleStartChat = (companionId: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please connect your wallet to start chatting",
+        variant: "destructive",
+      });
+      return;
+    }
+    navigate(`/chat/${companionId}`);
+  };
+  
   const { data: companions, isLoading } = useQuery({
     queryKey: ["companions"],
     queryFn: async () => {
@@ -185,7 +204,10 @@ const MarketplaceSection = () => {
                       </div>
                     </div>
 
-                    <Button className="w-full bg-gradient-primary hover:opacity-90 transition-opacity">
+                    <Button 
+                      className="w-full bg-gradient-primary hover:opacity-90 transition-opacity"
+                      onClick={() => handleStartChat(companion.id)}
+                    >
                       Start Chat
                     </Button>
                   </CardContent>

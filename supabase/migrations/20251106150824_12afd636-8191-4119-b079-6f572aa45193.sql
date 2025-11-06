@@ -1,0 +1,10 @@
+-- Create function to increment chat message count
+CREATE OR REPLACE FUNCTION increment_chat_message_count(chat_id_param UUID)
+RETURNS void AS $$
+BEGIN
+  UPDATE user_chats 
+  SET total_messages = total_messages + 1,
+      last_message_at = now()
+  WHERE id = chat_id_param;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

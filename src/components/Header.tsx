@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Wallet, Heart, Sparkles, LogOut, User } from "lucide-react";
+import { Wallet, Heart, Sparkles, LogOut, User, ShoppingBag, LayoutDashboard, Shield } from "lucide-react";
 import logo from "@/assets/logo.svg";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWallet } from "@solana/wallet-adapter-react";
@@ -28,21 +28,34 @@ const Header = () => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
   const [displayName, setDisplayName] = useState<string>("");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [canCreateCompanion, setCanCreateCompanion] = useState(false);
 
   useEffect(() => {
     const loadProfile = async () => {
       if (!user) return;
       
       try {
-        const { data, error } = await supabase
+        const { data: profile } = await supabase
           .from('profiles')
-          .select('display_name, username')
+          .select('display_name, username, can_create_companion')
           .eq('user_id', user.id)
           .maybeSingle();
 
-        if (data) {
-          setDisplayName(data.display_name || data.username || 'User');
+        if (profile) {
+          setDisplayName(profile.display_name || profile.username || 'User');
+          setCanCreateCompanion(profile.can_create_companion || false);
         }
+
+        // Check if user is admin
+        const { data: roles } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('role', 'admin')
+          .maybeSingle();
+
+        setIsAdmin(!!roles);
       } catch (error) {
         console.error('Error loading profile:', error);
       }
@@ -101,6 +114,23 @@ const Header = () => {
                     <User className="mr-2 h-4 w-4" />
                     Profile
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/purchases")}>
+                    <ShoppingBag className="mr-2 h-4 w-4" />
+                    My Purchases
+                  </DropdownMenuItem>
+                  {canCreateCompanion && (
+                    <DropdownMenuItem onClick={() => navigate("/creator")}>
+                      <LayoutDashboard className="mr-2 h-4 w-4" />
+                      Creator Dashboard
+                    </DropdownMenuItem>
+                  )}
+                  {isAdmin && (
+                    <DropdownMenuItem onClick={() => navigate("/admin")}>
+                      <Shield className="mr-2 h-4 w-4" />
+                      Admin Dashboard
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem 
                     onClick={() => setDisconnectDialogOpen(true)} 
                     className="text-destructive"

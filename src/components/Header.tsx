@@ -5,9 +5,10 @@ import logo from "@/assets/logo.svg";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { AuthModal } from "@/components/AuthModal";
+import { useWalletAuth } from "@/hooks/useWalletAuth";
+import { useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,21 +20,10 @@ import {
 
 const Header = () => {
   const { user } = useAuth();
-  const { publicKey, connected, disconnect } = useWallet();
+  const { publicKey, connected } = useWallet();
   const navigate = useNavigate();
-
-  const handleSignOut = async () => {
-    try {
-      await supabase.auth.signOut();
-      if (connected) {
-        await disconnect();
-      }
-      toast.success("Signed out successfully");
-      navigate("/auth");
-    } catch (error) {
-      toast.error("Error signing out");
-    }
-  };
+  const { handleDisconnect } = useWalletAuth();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-lg">
@@ -85,16 +75,16 @@ const Header = () => {
                     <User className="mr-2 h-4 w-4" />
                     Profile
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+                  <DropdownMenuItem onClick={handleDisconnect} className="text-destructive">
                     <LogOut className="mr-2 h-4 w-4" />
-                    Sign Out
+                    Disconnect Wallet
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </>
           ) : (
             <Button
-              onClick={() => navigate("/auth")}
+              onClick={() => setAuthModalOpen(true)}
               className="bg-gradient-primary hover:opacity-90 transition-opacity shadow-glow"
             >
               <Wallet className="h-4 w-4 mr-2" />
@@ -103,6 +93,7 @@ const Header = () => {
           )}
         </div>
       </div>
+      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
     </header>
   );
 };

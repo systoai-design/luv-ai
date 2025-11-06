@@ -21,6 +21,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState({
+    username: "",
     display_name: "",
     bio: "",
     wallet_address: "",
@@ -45,12 +46,13 @@ const Profile = () => {
         .from("profiles")
         .select("*")
         .eq("user_id", user!.id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
       if (data) {
         setProfile({
+          username: (data as any).username || "",
           display_name: data.display_name || "",
           bio: data.bio || "",
           wallet_address: data.wallet_address || "",
@@ -132,6 +134,18 @@ const Profile = () => {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSave} className="space-y-6">
+                {profile.username && (
+                  <div className="space-y-2">
+                    <Label>Username</Label>
+                    <div className="p-3 rounded-lg bg-muted font-medium text-sm">
+                      @{profile.username}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Your username cannot be changed
+                    </p>
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <Label htmlFor="display_name">Display Name</Label>
                   <Input

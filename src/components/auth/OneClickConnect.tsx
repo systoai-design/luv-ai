@@ -16,7 +16,7 @@ const OneClickConnect = ({ className }: OneClickConnectProps) => {
 
   useEffect(() => {
     if (connected && publicKey && !user && !isAuthenticating) {
-      const walletAddress = publicKey.toBase58();
+      const walletAddress = publicKey.toBase58().toLowerCase();
       
       // Prevent duplicate authentication attempts for the same wallet
       if (attemptedWalletRef.current === walletAddress) {

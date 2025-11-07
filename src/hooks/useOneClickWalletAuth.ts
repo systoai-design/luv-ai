@@ -17,8 +17,11 @@ export const useOneClickWalletAuth = () => {
     setIsAuthenticating(true);
     
     try {
-      const email = emailFor(walletAddress);
-      const password = createWalletPassword(walletAddress);
+      // Normalize to lowercase for consistency
+      const normalizedAddress = walletAddress.toLowerCase();
+      
+      const email = emailFor(normalizedAddress);
+      const password = createWalletPassword(normalizedAddress);
 
       // Try to sign in first
       const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -47,9 +50,9 @@ export const useOneClickWalletAuth = () => {
           password,
           options: {
             data: {
-              wallet_address: walletAddress,
-              username: `user_${walletAddress.slice(0, 6)}`,
-              display_name: `anon-${walletAddress.slice(0, 4)}`,
+              wallet_address: normalizedAddress,
+              username: `user_${normalizedAddress.slice(0, 6)}`,
+              display_name: `anon-${normalizedAddress.slice(0, 4)}`,
             },
             emailRedirectTo: `${window.location.origin}/`,
           },

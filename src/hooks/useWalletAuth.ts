@@ -141,7 +141,7 @@ export const useWalletAuth = () => {
         return { isNewUser: true };
       }
 
-      // Sign in with the same deterministic credentials used during registration
+      // Profile exists, try to sign in
       const email = `${walletAddress}@wallet.luvai.app`;
       const password = createWalletPassword(walletAddress);
 
@@ -150,7 +150,17 @@ export const useWalletAuth = () => {
         password,
       });
 
-      if (error) throw error;
+      // If login fails but profile exists, it's an orphaned profile (password mismatch)
+      if (error) {
+        console.warn('[auth] Profile exists but login failed - orphaned account detected');
+        setAuthState({ isChecking: false, isNewUser: false, error: null });
+        return { 
+          success: false, 
+          isNewUser: false,
+          needsPasswordReset: true,
+          profile 
+        };
+      }
 
       toast.success("Welcome back! 💜");
       setAuthState({ isChecking: false, isNewUser: false, error: null });
@@ -158,7 +168,6 @@ export const useWalletAuth = () => {
     } catch (error: any) {
       const errorMessage = error.message || "Sign in failed";
       setAuthState({ isChecking: false, isNewUser: false, error: errorMessage });
-      toast.error(errorMessage);
       return { success: false, error: errorMessage };
     }
   };

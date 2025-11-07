@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useWalletAuth } from "@/hooks/useWalletAuth";
 import { clearWalletStorage } from "@/lib/walletReset";
+import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Wallet, AlertCircle, ExternalLink } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
@@ -199,6 +200,44 @@ export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthMod
         toast.success("Welcome back! 💜");
         onOpenChange(false);
         onSuccess?.();
+      } else if ((result as any).needsPasswordReset) {
+        // Orphaned profile - exists in DB but auth credentials are wrong
+        console.info('[wallet] Orphaned profile detected, signing in directly with profile data');
+        const profile = (result as any).profile;
+        
+        // Create new auth entry for this wallet
+        try {
+          const email = `${address}@wallet.luvai.app`;
+          const password = `wallet_luvai_${address}`;
+          
+          // Try to reset/recreate the auth account
+          const { error: deleteError } = await supabase.auth.admin.deleteUser(profile.user_id).catch(() => ({ error: null }));
+          
+          // Sign up fresh
+          const { data: authData, error: signUpError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                wallet_address: address,
+                existing_profile_id: profile.id
+              }
+            }
+          });
+          
+          if (!signUpError && authData.user) {
+            console.info('[wallet] Auth recreated for existing profile');
+            toast.success(`Welcome back, ${profile.username}! 💜`);
+            onOpenChange(false);
+            onSuccess?.();
+          } else {
+            throw signUpError || new Error("Failed to recreate auth");
+          }
+        } catch (resetError) {
+          console.error('[wallet] Failed to reset auth:', resetError);
+          toast.error("Account recovery failed. Please contact support.");
+          setStep("connect");
+        }
       } else {
         console.info('[wallet] Sign-in failed, falling back to registration', result?.error);
         toast.error(result?.error || "Sign-in failed. Please complete quick registration.");

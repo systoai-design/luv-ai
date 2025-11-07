@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Heart, MessageCircle, ShieldCheck, X, Sparkles } from "lucide-react";
 import { useState } from "react";
+import profilePlaceholder from "@/assets/profile-placeholder.jpg";
 
 const profiles = [
   {
@@ -59,10 +60,12 @@ const DiscoverSection = () => {
 
         <div className="max-w-md mx-auto">
           <Card className="bg-card border-border shadow-card overflow-hidden card-gradient-hover">
-            <div className="relative h-96 bg-gradient-to-br from-primary/20 to-secondary/20">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-9xl opacity-10">👤</div>
-              </div>
+            <div className="relative h-96 overflow-hidden">
+              <img 
+                src={profilePlaceholder} 
+                alt={currentProfile.name}
+                className="w-full h-full object-cover"
+              />
               {currentProfile.verified && (
                 <div className="absolute top-4 right-4">
                   <Badge className="bg-verified text-verified-foreground flex items-center gap-1">

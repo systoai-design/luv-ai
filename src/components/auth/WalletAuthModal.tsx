@@ -166,6 +166,24 @@ export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthMod
         throw new Error("Connection state did not update");
       }
 
+      // Request a message signature to confirm ownership (if supported)
+      try {
+        const adapterAny = wallet.adapter as any;
+        if (adapterAny && typeof adapterAny.signMessage === 'function') {
+          console.info('[wallet] Requesting message signature...');
+          const encoder = new TextEncoder();
+          const nonce = Math.random().toString(36).slice(2);
+          const msg = `LUVAI Sign-In\nAddress: ${publicKey!.toBase58()}\nNonce: ${nonce}\nDomain: ${window.location.host}\nTime: ${new Date().toISOString()}`;
+          await withTimeout(adapterAny.signMessage(encoder.encode(msg)), 20000);
+          console.info('[wallet] Message signed');
+        } else {
+          console.info('[wallet] Wallet does not support signMessage; skipping');
+        }
+      } catch (sigErr) {
+        console.warn('[wallet] Message signing skipped/failed:', sigErr);
+        // Do not block login flow on signature problems
+      }
+
       // Proceed to account check
       console.info('[wallet] Connection successful, checking account...');
       setStep("checking");

@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, Check, X, AlertCircle, Wifi, WifiOff } from "lucide-react";
+import { Loader2, Check, X, WifiOff } from "lucide-react";
 
 // Simple validation function
 const validateUsername = (username: string): string | null => {
@@ -33,7 +33,7 @@ interface AuthModalProps {
 }
 
 export const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
-  const { connected, publicKey, connect, wallet, wallets, select } = useWallet();
+  const { connected, publicKey } = useWallet();
   const {
     authState,
     checkUsernameAvailable,
@@ -48,20 +48,9 @@ export const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => 
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [loadingState, setLoadingState] = useState<'idle' | 'connecting' | 'verifying' | 'creating' | 'success'>('idle');
+  const [loadingState, setLoadingState] = useState<'idle' | 'creating' | 'success'>('idle');
   const [connectionError, setConnectionError] = useState<string | null>(null);
-  const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
 
-  // Log wallet state for debugging
-  useEffect(() => {
-    console.log('Wallet state:', { 
-      connected, 
-      publicKey: publicKey?.toBase58(),
-      wallet: wallet?.adapter?.name,
-      availableWallets: wallets.map(w => w.adapter.name)
-    });
-  }, [connected, publicKey, wallet, wallets]);
 
   // Reset state when modal closes
   useEffect(() => {
@@ -73,14 +62,8 @@ export const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => 
       setUsernameAvailable(null);
       setLoadingState('idle');
       setConnectionError(null);
-      setIsConnecting(false);
-      
-      // Force wallet selector reset by clearing selection
-      if (select) {
-        (select as any)(null);
-      }
     }
-  }, [open, select]);
+  }, [open]);
 
   // Move to registration if new user and wallet connected
   useEffect(() => {
@@ -133,19 +116,10 @@ export const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => 
     setIsSubmitting(true);
     setLoadingState('creating');
     setConnectionError(null);
-    setShowTimeoutWarning(false);
-    
-    // Show timeout warning after 10 seconds
-    const timeoutId = setTimeout(() => {
-      setShowTimeoutWarning(true);
-    }, 10000);
 
     const result = await registerWithWallet(walletAddress, username, displayName);
 
-    clearTimeout(timeoutId);
     setIsSubmitting(false);
-    setLoadingState('idle');
-    setShowTimeoutWarning(false);
 
     if (result.success) {
       setLoadingState('success');
@@ -160,44 +134,12 @@ export const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => 
 
   const handleRetryConnection = () => {
     setConnectionError(null);
-    setShowTimeoutWarning(false);
-    if (step === 'register') {
-      handleRegister();
-    }
-  };
-
-  const handleConnectWallet = async (walletName?: string) => {
-    try {
-      setIsConnecting(true);
-      setLoadingState('connecting');
-      setConnectionError(null);
-      console.log('Attempting to connect wallet:', walletName || 'current');
-      
-      if (walletName) {
-        // Select specific wallet by name (using as any to bypass type restrictions)
-        (select as any)(walletName);
-        // Wait a bit for the adapter to be ready
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-      
-      setLoadingState('verifying');
-      await connect();
-      console.log('Wallet connected successfully');
-      setLoadingState('success');
-    } catch (error: any) {
-      console.error('Failed to connect wallet:', error);
-      setConnectionError(error?.message || 'Failed to connect wallet');
-      setLoadingState('idle');
-    } finally {
-      setIsConnecting(false);
-    }
+    handleRegister();
   };
 
   // Loading state messages
   const loadingMessages = {
     idle: '',
-    connecting: 'Connecting to wallet...',
-    verifying: 'Verifying wallet signature...',
     creating: 'Creating your profile...',
     success: 'Success! Redirecting...'
   };
@@ -205,8 +147,6 @@ export const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => 
   // Progress value based on loading state
   const getProgressValue = () => {
     switch (loadingState) {
-      case 'connecting': return 25;
-      case 'verifying': return 50;
       case 'creating': return 75;
       case 'success': return 100;
       default: return 0;
@@ -233,85 +173,23 @@ export const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => 
                 Welcome to LUVAI
               </DialogTitle>
               <DialogDescription>
-                Connect your Phantom wallet to get started
+                Connect your Solana wallet to get started
               </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col items-center gap-6 py-6">
-              {wallets.length === 0 ? (
-                <div className="text-center space-y-4">
-                  <p className="text-muted-foreground">
-                    No wallet detected. Please install a Solana wallet extension.
+              <div className="w-full space-y-4">
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Click the button below to connect your wallet
                   </p>
-                  <div className="flex flex-col gap-2">
-                    <Button
-                      onClick={() => window.open('https://phantom.app/', '_blank')}
-                      className="bg-gradient-primary"
-                    >
-                      Install Phantom
-                    </Button>
-                    <Button
-                      onClick={() => window.open('https://solflare.com/', '_blank')}
-                      variant="outline"
-                    >
-                      Install Solflare
-                    </Button>
-                    <Button
-                      onClick={() => window.open('https://backpack.app/', '_blank')}
-                      variant="outline"
-                    >
-                      Install Backpack
-                    </Button>
-                  </div>
                 </div>
-              ) : (
-                <>
-                  <div className="w-full space-y-4">
-                    <div className="text-center">
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Connect with one of these wallets:
-                      </p>
-                    </div>
-                    
-                    {/* Direct connect buttons for detected wallets */}
-                    <div className="flex flex-col gap-2">
-                      {wallets.map((w) => (
-                        <Button
-                          key={w.adapter.name}
-                          onClick={() => handleConnectWallet(w.adapter.name)}
-                          disabled={isConnecting || connected}
-                          className="w-full bg-gradient-primary hover:opacity-90"
-                          size="lg"
-                        >
-                          {isConnecting ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Connecting...
-                            </>
-                          ) : (
-                            <>Connect {w.adapter.name}</>
-                          )}
-                        </Button>
-                      ))}
-                    </div>
-
-                    {/* Fallback: Original WalletMultiButton */}
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
-                      </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-background px-2 text-muted-foreground">
-                          Or use wallet modal
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="wallet-adapter-button-container flex justify-center">
-                      <WalletMultiButton />
-                    </div>
-                  </div>
-                </>
-              )}
+                
+                {/* Use native WalletMultiButton - it handles everything correctly */}
+                <div className="wallet-adapter-button-container flex justify-center">
+                  <WalletMultiButton className="!bg-gradient-primary !text-white hover:!opacity-90" />
+                </div>
+              </div>
+              
               <p className="text-sm text-muted-foreground text-center">
                 Don't have a wallet?{" "}
                 <a
@@ -419,37 +297,18 @@ export const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => 
 
               {connectionError && (
                 <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Connection Failed</AlertTitle>
-                  <AlertDescription className="space-y-3">
+                  <WifiOff className="h-4 w-4" />
+                  <AlertTitle>Registration Failed</AlertTitle>
+                  <AlertDescription className="space-y-2">
                     <p>{connectionError}</p>
-                    <div className="text-sm">
-                      <p className="font-semibold mb-1">Troubleshooting:</p>
-                      <ul className="list-disc list-inside space-y-1 text-xs">
-                        <li>Ensure your wallet is installed and unlocked</li>
-                        <li>Check your internet connection</li>
-                        <li>Try refreshing the page</li>
-                        <li>Make sure you have approved the connection</li>
-                      </ul>
-                    </div>
                     <Button 
                       variant="outline" 
                       size="sm" 
                       onClick={handleRetryConnection}
-                      className="w-full mt-2"
+                      className="w-full"
                     >
                       Try Again
                     </Button>
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {showTimeoutWarning && isSubmitting && !connectionError && (
-                <Alert>
-                  <Wifi className="h-4 w-4" />
-                  <AlertTitle>Taking Longer Than Usual</AlertTitle>
-                  <AlertDescription>
-                    The connection is still in progress. Please wait a moment...
                   </AlertDescription>
                 </Alert>
               )}

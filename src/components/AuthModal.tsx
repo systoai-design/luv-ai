@@ -181,7 +181,10 @@ export const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => 
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">
-              <WalletConnectPanel onConnected={() => {}} />
+              <WalletConnectPanel onConnected={() => {
+                console.info('[auth] Wallet connected, advancing to registration');
+                setStep("register");
+              }} />
             </div>
           </>
         )}

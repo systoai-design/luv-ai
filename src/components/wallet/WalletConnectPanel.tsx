@@ -31,9 +31,23 @@ const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> => {
 };
 
 export const WalletConnectPanel = ({ onConnected }: WalletConnectPanelProps) => {
-  const { select, connect, disconnect, wallets, wallet, connected } = useWallet();
+  const { select, connect, disconnect, wallets, wallet, connected, publicKey } = useWallet();
   const [connecting, setConnecting] = useState(false);
   const [selectedWallet, setSelectedWallet] = useState<string | null>(null);
+  const [connectionVerified, setConnectionVerified] = useState(false);
+
+  // Helper to wait for connection state to update
+  const waitForConnection = async (maxMs = 5000): Promise<boolean> => {
+    const startTime = Date.now();
+    while (Date.now() - startTime < maxMs) {
+      if (connected && publicKey) {
+        console.info('[wallet] Connection verified! publicKey:', publicKey.toBase58());
+        return true;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    return false;
+  };
 
   const showError = (error: any) => {
     console.error('[wallet] Connection error:', error);
@@ -80,10 +94,19 @@ export const WalletConnectPanel = ({ onConnected }: WalletConnectPanelProps) => 
       console.info('[wallet] Wallet selected:', wallet?.adapter?.name);
 
       // Step 5: Attempt connection with timeout
-      console.info('[wallet] Attempting to connect');
+      console.info('[wallet] Attempting to connect, readyState:', wallet?.adapter?.readyState);
       await withTimeout(connect(), 10000);
 
-      console.info('[wallet] Connection successful!');
+      // Step 6: Wait for connected state to actually update
+      console.info('[wallet] Connect call resolved, waiting for state update...');
+      const isConnected = await waitForConnection(5000);
+      
+      if (!isConnected) {
+        throw new Error('Connection state did not update. Please check your wallet and try again.');
+      }
+
+      console.info('[wallet] Connection verified!');
+      setConnectionVerified(true);
       toast.success("Wallet connected successfully! 🎉");
       onConnected();
       
@@ -97,7 +120,14 @@ export const WalletConnectPanel = ({ onConnected }: WalletConnectPanelProps) => 
           console.info('[wallet] Trying fallback: direct adapter connection');
           await withTimeout(targetWallet.adapter.connect(), 10000);
           
-          console.info('[wallet] Fallback connection successful!');
+          // Wait for connection state to update
+          const isConnected = await waitForConnection(5000);
+          if (!isConnected) {
+            throw new Error('Fallback connection state did not update.');
+          }
+          
+          console.info('[wallet] Fallback connection verified!');
+          setConnectionVerified(true);
           toast.success("Wallet connected successfully! 🎉");
           onConnected();
           return;
@@ -111,6 +141,14 @@ export const WalletConnectPanel = ({ onConnected }: WalletConnectPanelProps) => 
     } finally {
       setConnecting(false);
       setSelectedWallet(null);
+    }
+  };
+
+  const handleManualContinue = () => {
+    if (connected && publicKey) {
+      console.info('[wallet] Manual continue clicked');
+      toast.success("Proceeding to registration");
+      onConnected();
     }
   };
 
@@ -131,10 +169,19 @@ export const WalletConnectPanel = ({ onConnected }: WalletConnectPanelProps) => 
   );
   const detectedWallets = wallets.filter(wallet => wallet.readyState === 'Installed');
 
-  if (connected) {
+  if (connected && publicKey) {
     return (
-      <div className="text-center py-4">
+      <div className="text-center py-4 space-y-3">
         <p className="text-foreground">✅ Wallet connected successfully!</p>
+        <p className="text-sm text-muted-foreground">{publicKey.toBase58().slice(0, 8)}...{publicKey.toBase58().slice(-8)}</p>
+        {!connectionVerified && (
+          <Button 
+            onClick={handleManualContinue}
+            className="w-full"
+          >
+            Continue to Registration
+          </Button>
+        )}
       </div>
     );
   }

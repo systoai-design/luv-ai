@@ -46,7 +46,7 @@ serve(async (req) => {
     // Get companion details
     const { data: companion, error: companionError } = await supabase
       .from('ai_companions')
-      .select('access_price, creator_id')
+      .select('access_price, creator_id, name')
       .eq('id', companionId)
       .single();
 
@@ -104,6 +104,46 @@ serve(async (req) => {
       if (earningsError) {
         console.error('Error creating earnings record:', earningsError);
       }
+    }
+
+    // Send purchase confirmation email
+    try {
+      // Create admin client to access user data
+      const supabaseAdmin = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+        {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+          },
+        }
+      );
+
+      const { data: userData } = await supabaseAdmin.auth.admin.getUserById(user.id);
+      const userEmail = userData?.user?.email;
+      
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('user_id', user.id)
+        .single();
+
+      if (userEmail) {
+        await supabase.functions.invoke('send-purchase-email', {
+          body: {
+            userEmail,
+            userName: profileData?.display_name || 'User',
+            companionName: companion.name,
+            amount,
+            transactionSignature
+          }
+        });
+        console.log('Purchase confirmation email sent to:', userEmail);
+      }
+    } catch (emailError) {
+      console.error('Error sending purchase email:', emailError);
+      // Don't fail the purchase if email fails
     }
 
     console.log('Payment verified successfully');

@@ -93,8 +93,8 @@ const LeftSidebar = () => {
 
   return (
     <aside 
-      className={`hidden lg:flex flex-col border-r border-border/50 bg-card/30 fixed left-0 top-16 bottom-0 overflow-y-auto transition-all duration-300 z-40 ${
-        displayWidth ? 'w-64' : 'w-16'
+      className={`hidden lg:flex flex-col border-r border-border/50 bg-card fixed left-0 top-16 bottom-0 overflow-y-auto transition-all duration-300 ${
+        displayWidth ? 'w-64 shadow-xl z-50' : 'w-16 z-40'
       } ${displayWidth ? 'p-4' : 'p-2'}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

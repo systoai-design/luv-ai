@@ -139,7 +139,7 @@ const Profile = () => {
   return (
     <>
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <div className="space-y-0">
+        <div className="space-y-6">
           <ProfileHeader
             userId={user!.id}
             displayName={profile.display_name}
@@ -165,45 +165,40 @@ const Profile = () => {
             }}
           />
 
-          {/* Two-column layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-            {/* Left sidebar - Intro */}
-            <div className="lg:col-span-1">
-              <ProfileIntro
-                bio={profile.bio}
-                email={user?.email}
-                walletAddress={profile.wallet_address}
-              />
-            </div>
-
-            {/* Right column - Posts */}
-            <div className="lg:col-span-2">
-              <ProfileTabs
-                postsContent={
-                  <div className="space-y-6">
-                    <PostComposer
-                      userId={user!.id}
-                      avatarUrl={profile.avatar_url}
-                      displayName={profile.display_name}
-                      onPostCreated={() => {
-                        loadProfile();
-                      }}
-                    />
-                    <PostFeed userId={user!.id} currentUserId={user!.id} />
-                  </div>
-                }
-                aboutContent={
-                  <ProfileAbout
-                    profile={profile}
-                    userEmail={user?.email}
-                    isOwnProfile={true}
-                    onSave={handleSave}
-                    saving={saving}
+          <ProfileTabs
+            postsContent={
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-1">
+                  <ProfileIntro
+                    bio={profile.bio}
+                    email={user?.email}
+                    walletAddress={profile.wallet_address}
+                    interests={profile.interests}
                   />
-                }
+                </div>
+                <div className="lg:col-span-2 space-y-6">
+                  <PostComposer
+                    userId={user!.id}
+                    avatarUrl={profile.avatar_url}
+                    displayName={profile.display_name}
+                    onPostCreated={() => {
+                      loadProfile();
+                    }}
+                  />
+                  <PostFeed userId={user!.id} currentUserId={user!.id} />
+                </div>
+              </div>
+            }
+            aboutContent={
+              <ProfileAbout
+                profile={profile}
+                userEmail={user?.email}
+                isOwnProfile={true}
+                onSave={handleSave}
+                saving={saving}
               />
-            </div>
-          </div>
+            }
+          />
         </div>
       </div>
 

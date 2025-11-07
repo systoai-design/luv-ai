@@ -3,11 +3,12 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 interface ProfileTabsProps {
   postsContent: React.ReactNode;
   aboutContent: React.ReactNode;
+  analyticsContent?: React.ReactNode;
   activeTab?: string;
-  onTabChange?: (tab: "posts" | "about") => void;
+  onTabChange?: (tab: "posts" | "about" | "analytics") => void;
 }
 
-export const ProfileTabs = ({ postsContent, aboutContent, activeTab, onTabChange }: ProfileTabsProps) => {
+export const ProfileTabs = ({ postsContent, aboutContent, analyticsContent, activeTab, onTabChange }: ProfileTabsProps) => {
   return (
     <Tabs value={activeTab} onValueChange={onTabChange as any} defaultValue="posts" className="w-full">
       <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent">
@@ -23,6 +24,14 @@ export const ProfileTabs = ({ postsContent, aboutContent, activeTab, onTabChange
         >
           About
         </TabsTrigger>
+        {analyticsContent && (
+          <TabsTrigger 
+            value="analytics"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+          >
+            Analytics
+          </TabsTrigger>
+        )}
       </TabsList>
       
       <TabsContent value="posts" className="mt-6">
@@ -32,6 +41,12 @@ export const ProfileTabs = ({ postsContent, aboutContent, activeTab, onTabChange
       <TabsContent value="about" className="mt-6">
         {aboutContent}
       </TabsContent>
+      
+      {analyticsContent && (
+        <TabsContent value="analytics" className="mt-6">
+          {analyticsContent}
+        </TabsContent>
+      )}
     </Tabs>
   );
 };

@@ -530,6 +530,51 @@ export type Database = {
         }
         Relationships: []
       }
+      super_like_notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          recipient_id: string
+          sender_id: string
+          viewed: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          recipient_id: string
+          sender_id: string
+          viewed?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          recipient_id?: string
+          sender_id?: string
+          viewed?: boolean | null
+        }
+        Relationships: []
+      }
+      super_like_usage: {
+        Row: {
+          count: number
+          id: string
+          usage_date: string
+          user_id: string
+        }
+        Insert: {
+          count?: number
+          id?: string
+          usage_date?: string
+          user_id: string
+        }
+        Update: {
+          count?: number
+          id?: string
+          usage_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       swipes: {
         Row: {
           action: string
@@ -550,6 +595,27 @@ export type Database = {
           created_at?: string | null
           id?: string
           target_user_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      undo_usage: {
+        Row: {
+          count: number
+          id: string
+          usage_date: string
+          user_id: string
+        }
+        Insert: {
+          count?: number
+          id?: string
+          usage_date?: string
+          user_id: string
+        }
+        Update: {
+          count?: number
+          id?: string
+          usage_date?: string
           user_id?: string
         }
         Relationships: []
@@ -708,6 +774,8 @@ export type Database = {
         Args: { check_user_id: string }
         Returns: undefined
       }
+      check_super_like_limit: { Args: { p_user_id: string }; Returns: Json }
+      check_undo_limit: { Args: { p_user_id: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

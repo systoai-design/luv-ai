@@ -14,6 +14,7 @@ import { Loader2 } from "lucide-react";
 import { useUserBadges } from "@/hooks/useUserBadges";
 import { useChatRequest } from "@/hooks/useChatRequest";
 import { ChatRequestButton } from "@/components/chat/ChatRequestButton";
+import { MutualConnections } from "@/components/profile/MutualConnections";
 
 const PublicProfile = () => {
   const { username } = useParams();
@@ -123,6 +124,14 @@ const PublicProfile = () => {
               setFollowersModalOpen(true);
             }}
           />
+
+          {user && (
+            <MutualConnections 
+              currentUserId={user.id}
+              viewedUserId={profile.user_id}
+              viewedUserInterests={profile.interests}
+            />
+          )}
 
           <ProfileTabs
             postsContent={

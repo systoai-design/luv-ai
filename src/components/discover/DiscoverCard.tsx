@@ -2,11 +2,12 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { X, Heart, Star, Check } from 'lucide-react';
+import { X, Heart, Star, Check, Sparkles } from 'lucide-react';
 import { useSwipe } from '@/hooks/useSwipe';
 import { useCardSwipe } from '@/hooks/useCardSwipe';
 import { triggerHaptic } from '@/lib/haptics';
 import { toast } from 'sonner';
+import { useSuperLikes } from '@/hooks/useSuperLikes';
 
 interface DiscoverCardProps {
   profile: {
@@ -20,21 +21,22 @@ interface DiscoverCardProps {
     matchPercentage?: number;
     sharedInterests?: string[];
   };
-  onSwipe: (matchData: any) => void;
+  onSwipe: (swipeData: { match: any; swipeId: string }, action: 'like' | 'pass' | 'super_like') => void;
 }
 
 const DiscoverCard = ({ profile, onSwipe }: DiscoverCardProps) => {
   const { swipe, isLoading } = useSwipe();
+  const { remaining: superLikesRemaining } = useSuperLikes();
 
   const handleSwipeAction = async (action: 'like' | 'pass' | 'super_like') => {
-    const matchData = await swipe(profile.user_id, action);
+    const result = await swipe(profile.user_id, action);
     
-    if (matchData) {
-      triggerHaptic('heavy'); // Celebration haptic on match
+    if (result?.match) {
+      triggerHaptic('heavy');
       toast.success("It's a match! 🎉");
     }
     
-    onSwipe(matchData);
+    onSwipe(result || { match: null, swipeId: '' }, action);
   };
 
   const {
@@ -182,18 +184,24 @@ const DiscoverCard = ({ profile, onSwipe }: DiscoverCardProps) => {
             <Heart className="h-10 w-10 fill-current" />
           </Button>
 
-          <Button
-            size="lg"
-            variant="outline"
-            className="rounded-full w-16 h-16 p-0 border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black"
-            onClick={() => {
-              triggerHaptic('success');
-              handleSwipeAction('super_like');
-            }}
-            disabled={isLoading}
-          >
-            <Star className="h-8 w-8" />
-          </Button>
+          <div className="relative">
+            <Button
+              size="lg"
+              variant="outline"
+              className="rounded-full w-16 h-16 p-0 border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black disabled:opacity-50 relative overflow-hidden group"
+              onClick={() => {
+                triggerHaptic('success');
+                handleSwipeAction('super_like');
+              }}
+              disabled={isLoading || superLikesRemaining === 0}
+            >
+              <div className="absolute inset-0 bg-yellow-500/20 animate-pulse group-hover:bg-yellow-500/40" />
+              <Sparkles className="h-8 w-8 relative z-10" />
+            </Button>
+            <div className="absolute -top-2 -right-2 bg-yellow-500 text-black text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+              {superLikesRemaining}
+            </div>
+          </div>
         </div>
       </div>
     </Card>

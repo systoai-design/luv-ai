@@ -15,6 +15,9 @@ import { PostComposer } from "@/components/posts/PostComposer";
 import { PostFeed } from "@/components/posts/PostFeed";
 import { FollowersModal } from "@/components/profile/FollowersModal";
 import { useUserBadges } from "@/hooks/useUserBadges";
+import { SwipeAnalytics } from "@/components/profile/SwipeAnalytics";
+import { MatchInsights } from "@/components/profile/MatchInsights";
+import { InterestPopularity } from "@/components/profile/InterestPopularity";
 
 const Profile = () => {
   const { user } = useAuth();
@@ -24,7 +27,7 @@ const Profile = () => {
   const [postsCount, setPostsCount] = useState(0);
   const [followersModalOpen, setFollowersModalOpen] = useState(false);
   const [followersModalTab, setFollowersModalTab] = useState<"followers" | "following">("followers");
-  const [activeTab, setActiveTab] = useState<"posts" | "about">("posts");
+  const [activeTab, setActiveTab] = useState<"posts" | "about" | "analytics">("posts");
   const [profile, setProfile] = useState({
     username: "",
     display_name: "",
@@ -228,6 +231,13 @@ const Profile = () => {
                 onSave={handleSave}
                 saving={saving}
               />
+            }
+            analyticsContent={
+              <div className="space-y-6">
+                <SwipeAnalytics userId={user!.id} />
+                <MatchInsights userId={user!.id} />
+                <InterestPopularity userId={user!.id} />
+              </div>
             }
           />
         </div>

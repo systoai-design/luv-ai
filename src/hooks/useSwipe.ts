@@ -20,14 +20,37 @@ export const useSwipe = () => {
         return null;
       }
 
+      // For super likes, check limit first
+      if (action === 'super_like') {
+        const { data: limitCheck } = await supabase.rpc('check_super_like_limit', {
+          p_user_id: user.id,
+        });
+
+        if (limitCheck && !(limitCheck as any).allowed) {
+          toast.error("You've used all 5 Super Likes today! Resets tomorrow.");
+          setIsLoading(false);
+          return null;
+        }
+
+        // Send notification to recipient
+        await supabase
+          .from('super_like_notifications')
+          .insert({
+            sender_id: user.id,
+            recipient_id: targetUserId,
+          });
+      }
+
       // Record the swipe
-      const { error: swipeError } = await supabase
+      const { data: swipeData, error: swipeError } = await supabase
         .from('swipes')
         .insert({
           user_id: user.id,
           target_user_id: targetUserId,
           action,
-        });
+        })
+        .select()
+        .single();
 
       if (swipeError) {
         console.error('Swipe error:', swipeError);
@@ -49,11 +72,11 @@ export const useSwipe = () => {
         }
 
         setIsLoading(false);
-        return match;
+        return { match, swipeId: swipeData?.id };
       }
 
       setIsLoading(false);
-      return null;
+      return { match: null, swipeId: swipeData?.id };
     } catch (error: any) {
       console.error('Error swiping:', error);
       toast.error(`Failed to record swipe: ${error?.message || 'Unknown error'}`);

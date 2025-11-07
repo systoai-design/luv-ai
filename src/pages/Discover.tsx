@@ -5,9 +5,10 @@ import { useNavigate } from 'react-router-dom';
 import DiscoverCard from '@/components/discover/DiscoverCard';
 import MatchModal from '@/components/discover/MatchModal';
 import { calculateMatchScore } from '@/lib/interests';
-import { Loader2, Heart } from 'lucide-react';
+import { Loader2, Heart, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { useUndoSwipe } from '@/hooks/useUndoSwipe';
 
 interface DiscoverProfile {
   id: string;
@@ -30,13 +31,24 @@ const Discover = () => {
   const [matchedProfile, setMatchedProfile] = useState<DiscoverProfile | null>(null);
   const [userInterests, setUserInterests] = useState<string[]>([]);
   const [needsInterests, setNeedsInterests] = useState(false);
+  const [lastSwipe, setLastSwipe] = useState<{
+    targetUserId: string;
+    action: 'like' | 'pass' | 'super_like';
+    swipeId: string;
+    timestamp: number;
+    profileIndex: number;
+    matchCreated: boolean;
+    matchId?: string;
+  } | null>(null);
+  const [showUndo, setShowUndo] = useState(false);
+  const { remaining: undoRemaining, checkLimit: checkUndoLimit, refreshRemaining: refreshUndo } = useUndoSwipe();
 
   useEffect(() => {
     if (!user) return;
     loadProfiles();
 
     // Subscribe to realtime match notifications
-    const channel = supabase
+    const matchChannel = supabase
       .channel('match-notifications')
       .on(
         'postgres_changes',
@@ -68,8 +80,37 @@ const Discover = () => {
       )
       .subscribe();
 
+    // Subscribe to super like notifications
+    const superLikeChannel = supabase
+      .channel('super-like-notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'super_like_notifications',
+          filter: `recipient_id=eq.${user.id}`,
+        },
+        async (payload) => {
+          const notification = payload.new as any;
+          
+          // Fetch sender's profile
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('display_name, avatar_url')
+            .eq('user_id', notification.sender_id)
+            .single();
+          
+          if (profile) {
+            toast.success(`💫 ${profile.display_name || 'Someone'} sent you a Super Like!`);
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(matchChannel);
+      supabase.removeChannel(superLikeChannel);
     };
   }, [user]);
 
@@ -142,20 +183,73 @@ const Discover = () => {
     }
   };
 
-  const handleSwipe = (matchData: any) => {
-    if (matchData) {
-      // Found a match!
-      const matchedUser = profiles[currentIndex];
-      setMatchedProfile(matchedUser);
+  const handleSwipe = (swipeData: { match: any; swipeId: string }, action: 'like' | 'pass' | 'super_like') => {
+    const currentProfile = profiles[currentIndex];
+    
+    // Store swipe for undo
+    setLastSwipe({
+      targetUserId: currentProfile.user_id,
+      action,
+      swipeId: swipeData.swipeId,
+      timestamp: Date.now(),
+      profileIndex: currentIndex,
+      matchCreated: !!swipeData.match,
+      matchId: swipeData.match?.id,
+    });
+    
+    setShowUndo(true);
+    
+    // Auto-hide undo after 10 seconds
+    setTimeout(() => setShowUndo(false), 10000);
+    
+    if (swipeData.match) {
+      setMatchedProfile(currentProfile);
     }
     
     // Move to next profile
     if (currentIndex < profiles.length - 1) {
       setCurrentIndex(currentIndex + 1);
     } else {
-      // Reload more profiles
       setCurrentIndex(0);
       loadProfiles();
+    }
+  };
+
+  const handleUndo = async () => {
+    if (!lastSwipe || !user) return;
+
+    const { allowed, remaining } = await checkUndoLimit();
+    
+    if (!allowed) {
+      toast.error("You've used all 3 undos today! Resets tomorrow.");
+      return;
+    }
+
+    try {
+      // Delete the swipe record
+      await supabase
+        .from('swipes')
+        .delete()
+        .eq('id', lastSwipe.swipeId);
+
+      // If a match was created, delete it
+      if (lastSwipe.matchCreated && lastSwipe.matchId) {
+        await supabase
+          .from('matches')
+          .delete()
+          .eq('id', lastSwipe.matchId);
+      }
+
+      // Restore the profile
+      setCurrentIndex(lastSwipe.profileIndex);
+      setShowUndo(false);
+      setLastSwipe(null);
+      
+      await refreshUndo();
+      toast.success(`Swipe undone! ${remaining} undo${remaining !== 1 ? 's' : ''} left today`);
+    } catch (error) {
+      console.error('Error undoing swipe:', error);
+      toast.error('Failed to undo swipe');
     }
   };
 
@@ -246,6 +340,20 @@ const Discover = () => {
           </div>
         )}
       </div>
+
+      {showUndo && lastSwipe && Date.now() - lastSwipe.timestamp < 10000 && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
+          <Button
+            size="lg"
+            variant="secondary"
+            className="gap-2 shadow-lg"
+            onClick={handleUndo}
+          >
+            <RotateCcw className="h-5 w-5" />
+            Undo ({undoRemaining} left)
+          </Button>
+        </div>
+      )}
 
       {matchedProfile && (
         <MatchModal

@@ -3,7 +3,7 @@ import { ArrowRight, Shield, Zap, Lock, Rocket } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { AuthModal } from "@/components/AuthModal";
+import { WalletAuthModal } from "@/components/auth/WalletAuthModal";
 import { useState } from "react";
 import ParticleBackground from "@/components/landing/ParticleBackground";
 
@@ -105,7 +105,7 @@ const Hero = () => {
         </div>
       </div>
 
-      <AuthModal 
+      <WalletAuthModal 
         open={authModalOpen} 
         onOpenChange={setAuthModalOpen}
         onSuccess={() => navigate("/home")}

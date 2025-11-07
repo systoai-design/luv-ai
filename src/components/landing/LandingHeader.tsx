@@ -3,7 +3,7 @@ import { Rocket } from "lucide-react";
 import logo from "@/assets/logo.svg";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { AuthModal } from "@/components/AuthModal";
+import { WalletAuthModal } from "@/components/auth/WalletAuthModal";
 import { useState } from "react";
 import { smoothScrollTo } from "@/lib/smoothScroll";
 import { useActiveSection } from "@/hooks/useActiveSection";
@@ -71,8 +71,8 @@ const LandingHeader = () => {
         </Button>
       </div>
       
-      <AuthModal 
-        open={authModalOpen} 
+      <WalletAuthModal
+        open={authModalOpen}
         onOpenChange={setAuthModalOpen}
         onSuccess={() => navigate("/home")}
       />

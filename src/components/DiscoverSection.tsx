@@ -4,6 +4,9 @@ import { Badge } from "@/components/ui/badge";
 import { Heart, MessageCircle, ShieldCheck, X, Sparkles } from "lucide-react";
 import { useState } from "react";
 import profilePlaceholder from "@/assets/profile-placeholder.jpg";
+import alexAvatar from "@/assets/profiles/alex-avatar.jpg";
+import mayaAvatar from "@/assets/profiles/maya-avatar.jpg";
+import { useCardSwipe } from "@/hooks/useCardSwipe";
 
 const profiles = [
   {
@@ -14,6 +17,7 @@ const profiles = [
     verified: true,
     distance: "2 miles away",
     interests: ["Art", "Travel", "Photography"],
+    image: profilePlaceholder,
   },
   {
     id: 2,
@@ -23,6 +27,7 @@ const profiles = [
     verified: true,
     distance: "5 miles away",
     interests: ["Tech", "Fitness", "Startups"],
+    image: alexAvatar,
   },
   {
     id: 3,
@@ -32,6 +37,7 @@ const profiles = [
     verified: false,
     distance: "3 miles away",
     interests: ["Music", "Yoga", "Cooking"],
+    image: mayaAvatar,
   },
 ];
 
@@ -42,6 +48,20 @@ const DiscoverSection = () => {
   const handleNext = () => {
     setCurrentIndex((prev) => (prev + 1) % profiles.length);
   };
+
+  const {
+    position,
+    rotation,
+    opacity,
+    isDragging,
+    isAnimating,
+    handleStart,
+    animateSwipe,
+    cardRef,
+  } = useCardSwipe({
+    onSwipe: handleNext,
+    threshold: 150,
+  });
 
   return (
     <section id="discover" className="py-24 px-4">
@@ -59,75 +79,114 @@ const DiscoverSection = () => {
         </div>
 
         <div className="max-w-md mx-auto">
-          <Card className="bg-card border-border shadow-card overflow-hidden card-gradient-hover">
-            <div className="relative h-96 overflow-hidden">
-              <img 
-                src={profilePlaceholder} 
-                alt={currentProfile.name}
-                className="w-full h-full object-cover"
-              />
-              {currentProfile.verified && (
-                <div className="absolute top-4 right-4">
-                  <Badge className="bg-verified text-verified-foreground flex items-center gap-1">
-                    <ShieldCheck className="h-3 w-3" />
-                    Verified
-                  </Badge>
-                </div>
-              )}
-            </div>
-            
-            <CardContent className="p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-2xl font-bold flex items-center gap-2">
-                    {currentProfile.name}
-                    {currentProfile.verified && (
-                      <ShieldCheck className="h-5 w-5 text-verified" />
-                    )}
-                  </h3>
-                  <p className="text-muted-foreground">{currentProfile.age} • {currentProfile.distance}</p>
-                </div>
-              </div>
-
-              <p className="text-foreground/90">{currentProfile.bio}</p>
-
-              <div className="flex flex-wrap gap-2">
-                {currentProfile.interests.map((interest) => (
-                  <Badge key={interest} variant="secondary" className="bg-muted">
-                    {interest}
-                  </Badge>
-                ))}
-              </div>
-
-              <div className="flex items-center justify-center gap-4 pt-4">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="rounded-full h-16 w-16 border-destructive/50 hover:bg-destructive/10"
-                  onClick={handleNext}
-                >
-                  <X className="h-6 w-6 text-destructive" />
-                </Button>
+          <div
+            ref={cardRef}
+            onMouseDown={handleStart}
+            onTouchStart={handleStart}
+            className="relative select-none"
+            style={{
+              transform: `translateX(${position.x}px) translateY(${position.y}px) rotate(${rotation}deg)`,
+              opacity,
+              cursor: isDragging ? 'grabbing' : 'grab',
+              transition: isDragging || isAnimating ? 'none' : 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              willChange: 'transform',
+            }}
+          >
+            <Card className="bg-card border-border shadow-card overflow-hidden card-gradient-hover">
+              <div className="relative h-96 overflow-hidden">
+                <img 
+                  src={currentProfile.image} 
+                  alt={currentProfile.name}
+                  className="w-full h-full object-cover pointer-events-none"
+                  draggable="false"
+                />
                 
-                <Button
-                  size="lg"
-                  className="rounded-full h-20 w-20 bg-gradient-primary shadow-glow"
-                  onClick={handleNext}
-                >
-                  <Heart className="h-8 w-8" />
-                </Button>
-                
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="rounded-full h-16 w-16 border-accent/50 hover:bg-accent/10"
-                  onClick={handleNext}
-                >
-                  <MessageCircle className="h-6 w-6 text-accent" />
-                </Button>
+                {/* Left swipe indicator (Pass) */}
+                {position.x < -50 && (
+                  <div 
+                    className="absolute inset-0 flex items-center justify-center bg-destructive/20 rounded-t-lg"
+                    style={{ opacity: Math.min(Math.abs(position.x) / 150, 0.8) }}
+                  >
+                    <X className="h-32 w-32 text-destructive" strokeWidth={3} />
+                  </div>
+                )}
+
+                {/* Right swipe indicator (Like) */}
+                {position.x > 50 && (
+                  <div 
+                    className="absolute inset-0 flex items-center justify-center bg-green-500/20 rounded-t-lg"
+                    style={{ opacity: Math.min(position.x / 150, 0.8) }}
+                  >
+                    <Heart className="h-32 w-32 text-green-500 fill-green-500" strokeWidth={3} />
+                  </div>
+                )}
+
+                {currentProfile.verified && (
+                  <div className="absolute top-4 right-4">
+                    <Badge className="bg-verified text-verified-foreground flex items-center gap-1">
+                      <ShieldCheck className="h-3 w-3" />
+                      Verified
+                    </Badge>
+                  </div>
+                )}
               </div>
-            </CardContent>
-          </Card>
+              
+              <CardContent className="p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-2xl font-bold flex items-center gap-2">
+                      {currentProfile.name}
+                      {currentProfile.verified && (
+                        <ShieldCheck className="h-5 w-5 text-verified" />
+                      )}
+                    </h3>
+                    <p className="text-muted-foreground">{currentProfile.age} • {currentProfile.distance}</p>
+                  </div>
+                </div>
+
+                <p className="text-foreground/90">{currentProfile.bio}</p>
+
+                <div className="flex flex-wrap gap-2">
+                  {currentProfile.interests.map((interest) => (
+                    <Badge key={interest} variant="secondary" className="bg-muted">
+                      {interest}
+                    </Badge>
+                  ))}
+                </div>
+
+                <div className="flex items-center justify-center gap-4 pt-4">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="rounded-full h-16 w-16 border-destructive/50 hover:bg-destructive/10"
+                    onClick={() => animateSwipe('left')}
+                    disabled={isAnimating}
+                  >
+                    <X className="h-6 w-6 text-destructive" />
+                  </Button>
+                  
+                  <Button
+                    size="lg"
+                    className="rounded-full h-20 w-20 bg-gradient-primary shadow-glow"
+                    onClick={() => animateSwipe('right')}
+                    disabled={isAnimating}
+                  >
+                    <Heart className="h-8 w-8" />
+                  </Button>
+                  
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="rounded-full h-16 w-16 border-accent/50 hover:bg-accent/10"
+                    onClick={handleNext}
+                    disabled={isAnimating}
+                  >
+                    <MessageCircle className="h-6 w-6 text-accent" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </section>

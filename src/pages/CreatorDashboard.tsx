@@ -9,12 +9,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Shield, DollarSign } from 'lucide-react';
+import { CreateCompanionDialog } from '@/components/creator/CreateCompanionDialog';
 
 const CreatorDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [profile, setProfile] = useState<any>(null);
+  const [companions, setCompanions] = useState<any[]>([]);
   const [earnings, setEarnings] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,6 +32,7 @@ const CreatorDashboard = () => {
     }
     loadProfile();
     loadEarnings();
+    loadCompanions();
   }, [user, navigate]);
 
   const loadProfile = async () => {
@@ -46,6 +49,21 @@ const CreatorDashboard = () => {
       console.error('Error loading profile:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadCompanions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('ai_companions')
+        .select('*')
+        .eq('creator_id', user!.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setCompanions(data || []);
+    } catch (error) {
+      console.error('Error loading companions:', error);
     }
   };
 
@@ -111,7 +129,12 @@ const CreatorDashboard = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <h1 className="text-4xl font-bold mb-8">Creator Dashboard</h1>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-4xl font-bold">Creator Dashboard</h1>
+        {profile?.can_create_companion && (
+          <CreateCompanionDialog onSuccess={loadCompanions} />
+        )}
+      </div>
 
       <div className="grid gap-6 md:grid-cols-3 mb-8">
           <Card>
@@ -225,6 +248,48 @@ const CreatorDashboard = () => {
                 Your verification application is under review. We'll notify you once it's processed.
               </CardDescription>
             </CardHeader>
+          </Card>
+        )}
+
+        {profile?.can_create_companion && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>My AI Companions</CardTitle>
+              <CardDescription>Companions you've created and listed in the marketplace</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {companions.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground mb-4">You haven't created any companions yet</p>
+                  <CreateCompanionDialog onSuccess={loadCompanions} />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {companions.map((companion) => (
+                    <div
+                      key={companion.id}
+                      className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 rounded-full bg-gradient-primary flex items-center justify-center text-lg font-bold">
+                          {companion.name[0]}
+                        </div>
+                        <div>
+                          <p className="font-medium">{companion.name}</p>
+                          <p className="text-sm text-muted-foreground">{companion.tagline}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold">{companion.access_price} {companion.currency}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {companion.is_active ? 'Active' : 'Inactive'}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
           </Card>
         )}
 

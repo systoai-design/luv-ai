@@ -15,6 +15,7 @@ const LeftSidebar = () => {
   const [profile, setProfile] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [canCreateCompanion, setCanCreateCompanion] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -65,11 +66,11 @@ const LeftSidebar = () => {
         activeClassName="bg-muted text-primary font-medium"
       >
         <item.icon className="h-5 w-5 flex-shrink-0" />
-        {!isCollapsed && <span>{item.label}</span>}
+        {displayWidth && <span>{item.label}</span>}
       </NavLink>
     );
 
-    if (isCollapsed) {
+    if (!displayWidth) {
       return (
         <TooltipProvider delayDuration={0}>
           <Tooltip>
@@ -83,14 +84,19 @@ const LeftSidebar = () => {
     return content;
   };
 
+  const shouldExpand = isCollapsed && isHovered;
+  const displayWidth = shouldExpand || !isCollapsed;
+
   return (
     <aside 
-      className={`hidden lg:flex flex-col border-r border-border/50 bg-card/30 fixed left-0 top-16 bottom-0 overflow-y-auto transition-all duration-300 ${
-        isCollapsed ? 'w-16' : 'w-64'
-      } ${isCollapsed ? 'p-2' : 'p-4'}`}
+      className={`hidden lg:flex flex-col border-r border-border/50 bg-card/30 fixed left-0 top-16 bottom-0 overflow-y-auto transition-all duration-300 z-40 ${
+        displayWidth ? 'w-64' : 'w-16'
+      } ${displayWidth ? 'p-4' : 'p-2'}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       {/* Toggle Button */}
-      <div className={`flex ${isCollapsed ? 'justify-center' : 'justify-end'} mb-4`}>
+      <div className={`flex ${displayWidth ? 'justify-end' : 'justify-center'} mb-4`}>
         <Button
           variant="ghost"
           size="icon"
@@ -106,7 +112,7 @@ const LeftSidebar = () => {
       </div>
 
       {/* User Profile Section */}
-      {profile && !isCollapsed && (
+      {profile && displayWidth && (
         <>
           <NavLink 
             to="/profile" 
@@ -129,7 +135,7 @@ const LeftSidebar = () => {
       )}
 
       {/* Collapsed Profile Icon */}
-      {profile && isCollapsed && (
+      {profile && !displayWidth && (
         <>
           <TooltipProvider delayDuration={0}>
             <Tooltip>
@@ -165,7 +171,7 @@ const LeftSidebar = () => {
 
       {/* Additional Links */}
       <nav className="flex flex-col gap-1">
-        {isCollapsed ? (
+        {!displayWidth ? (
           <>
             <TooltipProvider delayDuration={0}>
               <Tooltip>

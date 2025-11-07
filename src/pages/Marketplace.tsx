@@ -58,18 +58,19 @@ const Marketplace = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2 bg-gradient-primary bg-clip-text text-transparent">
-          AI Companion Marketplace
-        </h1>
-        <p className="text-muted-foreground">
-          Discover and connect with unique AI companions
-        </p>
-      </div>
+    <div className="h-screen overflow-y-auto">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold mb-2 bg-gradient-primary bg-clip-text text-transparent">
+            AI Companion Marketplace
+          </h1>
+          <p className="text-muted-foreground">
+            Discover and connect with unique AI companions
+          </p>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {companions.map((companion) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-8">
+          {companions.map((companion) => (
           <Card key={companion.id} className="overflow-hidden hover:shadow-glow transition-all duration-300 bg-card/50 border-border/50">
             <CardHeader className="p-0">
               <div className="relative h-48 bg-gradient-primary">
@@ -120,11 +121,12 @@ const Marketplace = () => {
         ))}
       </div>
 
-      {companions.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">No AI companions available yet.</p>
-        </div>
-      )}
+        {companions.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">No AI companions available yet.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

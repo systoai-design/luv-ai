@@ -19,13 +19,26 @@ export const useTheme = () => {
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [theme, setThemeState] = useState<Theme>(() => {
-    const saved = localStorage.getItem("gradient-theme");
-    return (saved as Theme) || "default";
+    try {
+      if (typeof window !== "undefined") {
+        const saved = localStorage.getItem("gradient-theme");
+        return (saved as Theme) || "default";
+      }
+    } catch (error) {
+      console.error("Error accessing localStorage:", error);
+    }
+    return "default";
   });
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("gradient-theme", theme);
+    try {
+      if (typeof window !== "undefined") {
+        document.documentElement.setAttribute("data-theme", theme);
+        localStorage.setItem("gradient-theme", theme);
+      }
+    } catch (error) {
+      console.error("Error setting theme:", error);
+    }
   }, [theme]);
 
   const setTheme = (newTheme: Theme) => {

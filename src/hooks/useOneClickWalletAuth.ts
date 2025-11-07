@@ -32,6 +32,14 @@ export const useOneClickWalletAuth = () => {
         return { success: true };
       }
 
+      // Check for rate limiting
+      if (signInError.message.includes("rate limit") || signInError.message.includes("too many")) {
+        toast.error("Too many login attempts. Please wait 60 seconds and try again.", {
+          duration: 8000,
+        });
+        return { success: false, error: "rate_limit" };
+      }
+
       // If sign in fails, try to sign up
       if (signInError.message.includes("Invalid login credentials")) {
         const { error: signUpError } = await supabase.auth.signUp({
@@ -53,21 +61,21 @@ export const useOneClickWalletAuth = () => {
           return { success: true };
         }
 
-        // If user already registered, retry sign in
-        if (signUpError.message.includes("User already registered")) {
-          const { error: retryError } = await supabase.auth.signInWithPassword({
-            email,
-            password,
+        // Check for rate limiting on sign up
+        if (signUpError.message.includes("rate limit") || signUpError.message.includes("too many")) {
+          toast.error("Too many registration attempts. Please wait 60 seconds and try again.", {
+            duration: 8000,
           });
+          return { success: false, error: "rate_limit" };
+        }
 
-          if (!retryError) {
-            toast.success("Welcome back! 💜");
-            navigate("/home");
-            return { success: true };
-          }
-
-          toast.error("Authentication failed. Please try again.");
-          return { success: false, error: retryError.message };
+        // If user already registered, this means the password doesn't match
+        // Don't retry - this prevents the authentication loop
+        if (signUpError.message.includes("User already registered")) {
+          toast.error("Account exists but authentication failed. Please disconnect and try again or use email login.", {
+            duration: 10000,
+          });
+          return { success: false, error: "password_mismatch" };
         }
 
         toast.error(signUpError.message);
@@ -77,6 +85,12 @@ export const useOneClickWalletAuth = () => {
       toast.error(signInError.message);
       return { success: false, error: signInError.message };
     } catch (error: any) {
+      if (error.message?.includes("rate limit") || error.message?.includes("too many")) {
+        toast.error("Too many attempts. Please wait 60 seconds and try again.", {
+          duration: 8000,
+        });
+        return { success: false, error: "rate_limit" };
+      }
       toast.error(error.message || "Authentication failed");
       return { success: false, error: error.message };
     } finally {

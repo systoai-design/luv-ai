@@ -69,7 +69,11 @@ const Auth = () => {
       });
 
       if (error) {
-        if (error.message.includes("already registered")) {
+        if (error.message.includes("rate limit") || error.message.includes("too many")) {
+          toast.error("Too many registration attempts. Please wait 60 seconds before trying again.", {
+            duration: 8000,
+          });
+        } else if (error.message.includes("already registered")) {
           toast.error("This email is already registered. Please sign in instead.");
         } else {
           toast.error(error.message);
@@ -101,7 +105,11 @@ const Auth = () => {
       });
 
       if (error) {
-        if (error.message.includes("Invalid login credentials")) {
+        if (error.message.includes("rate limit") || error.message.includes("too many")) {
+          toast.error("Too many login attempts. Please wait 60 seconds before trying again.", {
+            duration: 8000,
+          });
+        } else if (error.message.includes("Invalid login credentials")) {
           toast.error("Invalid email or password");
         } else {
           toast.error(error.message);

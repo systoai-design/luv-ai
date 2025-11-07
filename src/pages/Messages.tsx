@@ -1,16 +1,21 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, Heart, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { MessageCircle, Heart, Sparkles, Inbox } from "lucide-react";
 import { useMatches } from "@/hooks/useMatches";
+import { useRequestNotifications } from "@/hooks/useRequestNotifications";
 import { formatDistanceToNow } from "date-fns";
 import MatchChat from "@/components/matches/MatchChat";
 
 const Messages = () => {
   const { matches, loading } = useMatches();
+  const { count: requestCount } = useRequestNotifications();
   const [selectedMatch, setSelectedMatch] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const selectedMatchData = matches.find(m => m.id === selectedMatch);
 
@@ -20,10 +25,25 @@ const Messages = () => {
         {/* Matches List */}
         <Card className="bg-card/50 border-border/50 lg:col-span-1">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Heart className="h-5 w-5 text-primary fill-primary" />
-              Matches
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Heart className="h-5 w-5 text-primary fill-primary" />
+                Matches
+              </CardTitle>
+              {requestCount > 0 && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate('/chat-requests')}
+                >
+                  <Inbox className="h-4 w-4 mr-2" />
+                  Requests
+                  <Badge variant="destructive" className="ml-2">
+                    {requestCount}
+                  </Badge>
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="matches">

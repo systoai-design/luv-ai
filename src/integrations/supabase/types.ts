@@ -171,6 +171,36 @@ export type Database = {
           },
         ]
       }
+      chat_requests: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          receiver_id: string
+          sender_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          receiver_id: string
+          sender_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          receiver_id?: string
+          sender_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       comments: {
         Row: {
           content: string
@@ -673,6 +703,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_chat_request: { Args: { request_id: string }; Returns: string }
       check_and_award_badges: {
         Args: { check_user_id: string }
         Returns: undefined

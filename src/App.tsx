@@ -22,6 +22,7 @@ import Notifications from "./pages/Notifications";
 import Friends from "./pages/Friends";
 import Discover from "./pages/Discover";
 import Matches from "./pages/Matches";
+import ChatRequests from "./pages/ChatRequests";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -104,6 +105,11 @@ const App = () => (
                 <Route path="/badges" element={
                   <ProtectedRoute>
                     <Badges />
+                  </ProtectedRoute>
+                } />
+                <Route path="/chat-requests" element={
+                  <ProtectedRoute>
+                    <ChatRequests />
                   </ProtectedRoute>
                 } />
               </Route>

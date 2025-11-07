@@ -17,6 +17,7 @@ interface ProfileHeaderProps {
   onEditClick?: () => void;
   onAvatarUpdate: (url: string) => void;
   onCoverUpdate: (url: string) => void;
+  chatRequestButton?: React.ReactNode;
 }
 
 export const ProfileHeader = ({
@@ -31,6 +32,7 @@ export const ProfileHeader = ({
   onEditClick,
   onAvatarUpdate,
   onCoverUpdate,
+  chatRequestButton,
 }: ProfileHeaderProps) => {
   return (
     <div className="bg-card rounded-lg overflow-hidden border border-border shadow-sm">
@@ -68,7 +70,10 @@ export const ProfileHeader = ({
               </Button>
             )}
             {!isOwnProfile && currentUserId && (
-              <FollowButton currentUserId={currentUserId} targetUserId={userId} />
+              <div className="flex gap-2">
+                <FollowButton currentUserId={currentUserId} targetUserId={userId} />
+                {chatRequestButton}
+              </div>
             )}
           </div>
         </div>

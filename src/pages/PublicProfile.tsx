@@ -12,6 +12,8 @@ import { PostFeed } from "@/components/posts/PostFeed";
 import { FollowersModal } from "@/components/profile/FollowersModal";
 import { Loader2 } from "lucide-react";
 import { useUserBadges } from "@/hooks/useUserBadges";
+import { useChatRequest } from "@/hooks/useChatRequest";
+import { ChatRequestButton } from "@/components/chat/ChatRequestButton";
 
 const PublicProfile = () => {
   const { username } = useParams();
@@ -24,6 +26,7 @@ const PublicProfile = () => {
   const [followersModalTab, setFollowersModalTab] = useState<"followers" | "following">("followers");
   
   const { badges } = useUserBadges(profile?.user_id);
+  const { status, matchId, loading: requestLoading, sendRequest, acceptRequest } = useChatRequest(profile?.user_id);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -93,6 +96,19 @@ const PublicProfile = () => {
             currentUserId={user?.id}
             onAvatarUpdate={() => {}}
             onCoverUpdate={() => {}}
+            chatRequestButton={
+              user && (
+                <ChatRequestButton
+                  status={status}
+                  matchId={matchId}
+                  loading={requestLoading}
+                  recipientName={profile.display_name || profile.username || 'User'}
+                  recipientAvatar={profile.avatar_url}
+                  onSendRequest={sendRequest}
+                  onAcceptRequest={acceptRequest}
+                />
+              )
+            }
           />
 
           <ProfileStats 

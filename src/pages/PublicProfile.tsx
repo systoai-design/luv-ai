@@ -7,7 +7,9 @@ import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileStats } from "@/components/profile/ProfileStats";
 import { ProfileTabs } from "@/components/profile/ProfileTabs";
 import { ProfileAbout } from "@/components/profile/ProfileAbout";
+import { ProfileIntro } from "@/components/profile/ProfileIntro";
 import { PostFeed } from "@/components/posts/PostFeed";
+import { FollowersModal } from "@/components/profile/FollowersModal";
 import { Loader2 } from "lucide-react";
 
 const PublicProfile = () => {
@@ -17,6 +19,8 @@ const PublicProfile = () => {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [postsCount, setPostsCount] = useState(0);
+  const [followersModalOpen, setFollowersModalOpen] = useState(false);
+  const [followersModalTab, setFollowersModalTab] = useState<"followers" | "following">("followers");
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -74,42 +78,74 @@ const PublicProfile = () => {
   return (
     <div className="min-h-screen bg-gradient-hero">
       <Header />
-      <div className="container mx-auto px-4 pt-24 pb-12 max-w-4xl">
-        <div className="space-y-6">
+      <div className="container mx-auto px-4 pt-24 pb-12 max-w-6xl">
+        <div className="space-y-0">
           <ProfileHeader
             userId={profile.user_id}
             displayName={profile.display_name}
             username={profile.username}
-            bio={profile.bio}
             avatarUrl={profile.avatar_url}
             coverPhotoUrl={profile.cover_photo_url}
             verifiedBadgeId={profile.verified_badge_id}
             isOwnProfile={false}
+            currentUserId={user?.id}
             onAvatarUpdate={() => {}}
             onCoverUpdate={() => {}}
           />
 
-          <ProfileStats postsCount={postsCount} />
-
-          <ProfileTabs
-            postsContent={
-              user ? (
-                <PostFeed userId={profile.user_id} currentUserId={user.id} />
-              ) : (
-                <div className="text-center py-12 text-muted-foreground">
-                  Please log in to view posts
-                </div>
-              )
-            }
-            aboutContent={
-              <ProfileAbout
-                profile={profile}
-                isOwnProfile={false}
-              />
-            }
+          <ProfileStats 
+            userId={profile.user_id}
+            postsCount={postsCount}
+            onFollowersClick={() => {
+              setFollowersModalTab("followers");
+              setFollowersModalOpen(true);
+            }}
+            onFollowingClick={() => {
+              setFollowersModalTab("following");
+              setFollowersModalOpen(true);
+            }}
           />
+
+          {/* Two-column layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+            {/* Left sidebar - Intro */}
+            <div className="lg:col-span-1">
+              <ProfileIntro
+                bio={profile.bio}
+                walletAddress={profile.wallet_address}
+              />
+            </div>
+
+            {/* Right column - Posts */}
+            <div className="lg:col-span-2">
+              <ProfileTabs
+                postsContent={
+                  user ? (
+                    <PostFeed userId={profile.user_id} currentUserId={user.id} />
+                  ) : (
+                    <div className="text-center py-12 text-muted-foreground">
+                      Please log in to view posts
+                    </div>
+                  )
+                }
+                aboutContent={
+                  <ProfileAbout
+                    profile={profile}
+                    isOwnProfile={false}
+                  />
+                }
+              />
+            </div>
+          </div>
         </div>
       </div>
+
+      <FollowersModal
+        open={followersModalOpen}
+        onOpenChange={setFollowersModalOpen}
+        userId={profile.user_id}
+        defaultTab={followersModalTab}
+      />
     </div>
   );
 };

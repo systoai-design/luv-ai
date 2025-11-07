@@ -87,9 +87,9 @@ export const AvatarUpload = ({
 
   return (
     <div className="relative">
-      <Avatar className="h-32 w-32 border-4 border-background">
+      <Avatar className="h-40 w-40 border-4 border-background shadow-lg">
         <AvatarImage src={currentAvatarUrl} alt={displayName || "User"} />
-        <AvatarFallback className="text-3xl">
+        <AvatarFallback className="text-4xl">
           {displayName?.charAt(0).toUpperCase() || "U"}
         </AvatarFallback>
       </Avatar>
@@ -99,7 +99,7 @@ export const AvatarUpload = ({
           <Button
             variant="secondary"
             size="icon"
-            className="absolute bottom-0 right-0 rounded-full h-10 w-10"
+            className="absolute bottom-2 right-2 rounded-full h-10 w-10 shadow-md"
             disabled={uploading}
             asChild
           >

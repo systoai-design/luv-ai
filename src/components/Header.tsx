@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Wallet, Heart, Sparkles, LogOut, User, ShoppingBag, LayoutDashboard, Shield } from "lucide-react";
+import { Wallet, Heart, Sparkles, LogOut, User, ShoppingBag, LayoutDashboard, Shield, Home } from "lucide-react";
 import logo from "@/assets/logo.svg";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWallet } from "@solana/wallet-adapter-react";
@@ -110,6 +110,10 @@ const Header = () => {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate("/home")}>
+                    <Home className="mr-2 h-4 w-4" />
+                    Home Feed
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/profile")}>
                     <User className="mr-2 h-4 w-4" />
                     Profile

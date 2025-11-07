@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { WalletContextProvider } from "@/contexts/WalletContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
+import Home from "./pages/Home";
 import Profile from "./pages/Profile";
 import PublicProfile from "./pages/PublicProfile";
 import Chat from "./pages/Chat";
@@ -27,6 +28,11 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/home" element={
+                <ProtectedRoute>
+                  <Home />
+                </ProtectedRoute>
+              } />
               <Route path="/profile" element={
                 <ProtectedRoute>
                   <Profile />

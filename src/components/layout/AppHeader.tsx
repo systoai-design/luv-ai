@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { LogOut, User, ShoppingBag, LayoutDashboard, Shield, Home } from "lucide-react";
+import { LogOut, User, ShoppingBag, LayoutDashboard, Shield, Home, ArrowLeft } from "lucide-react";
 import logo from "@/assets/logo.svg";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWallet } from "@solana/wallet-adapter-react";
@@ -93,6 +93,10 @@ const AppHeader = () => {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate("/")}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Landing
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate("/home")}>
                 <Home className="mr-2 h-4 w-4" />
                 Home Feed

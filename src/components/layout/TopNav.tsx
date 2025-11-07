@@ -22,7 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { DisconnectDialog } from "@/components/DisconnectDialog";
 import { useWalletAuth } from "@/hooks/useWalletAuth";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { LogOut, ShoppingBag, LayoutDashboard, Shield, Home as HomeIcon } from "lucide-react";
+import { LogOut, ShoppingBag, LayoutDashboard, Shield, Home as HomeIcon, ArrowLeft } from "lucide-react";
 
 const TopNav = () => {
   useUserPresence(); // Initialize presence tracking
@@ -159,6 +159,10 @@ const TopNav = () => {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate("/")}>
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Landing
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/home")}>
                   <HomeIcon className="mr-2 h-4 w-4" />
                   Home Feed

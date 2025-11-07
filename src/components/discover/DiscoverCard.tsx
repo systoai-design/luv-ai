@@ -4,6 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { X, Heart, Star, Check } from 'lucide-react';
 import { useSwipe } from '@/hooks/useSwipe';
+import { useCardSwipe } from '@/hooks/useCardSwipe';
+import { triggerHaptic } from '@/lib/haptics';
 import { toast } from 'sonner';
 
 interface DiscoverCardProps {
@@ -24,21 +26,76 @@ interface DiscoverCardProps {
 const DiscoverCard = ({ profile, onSwipe }: DiscoverCardProps) => {
   const { swipe, isLoading } = useSwipe();
 
-  const handleSwipe = async (action: 'like' | 'pass' | 'super_like') => {
+  const handleSwipeAction = async (action: 'like' | 'pass' | 'super_like') => {
     const matchData = await swipe(profile.user_id, action);
     
     if (matchData) {
+      triggerHaptic('heavy'); // Celebration haptic on match
       toast.success("It's a match! 🎉");
     }
     
     onSwipe(matchData);
   };
 
+  const {
+    position,
+    rotation,
+    opacity: cardOpacity,
+    isDragging,
+    handleStart,
+    animateSwipe,
+    cardRef,
+  } = useCardSwipe({
+    onSwipe: (direction) => {
+      const action = direction === 'right' ? 'like' : 'pass';
+      handleSwipeAction(action);
+    },
+    threshold: 150,
+  });
+
   const isSharedInterest = (interest: string) => 
     profile.sharedInterests?.includes(interest);
 
+  // Calculate swipe indicators
+  const swipeLeftOpacity = Math.min(Math.abs(Math.min(position.x, 0)) / 100, 1);
+  const swipeRightOpacity = Math.min(Math.max(position.x, 0) / 100, 1);
+
   return (
-    <Card className="bg-card border-border overflow-hidden">
+    <Card 
+      ref={cardRef}
+      className="bg-card border-border overflow-hidden select-none cursor-grab active:cursor-grabbing transition-opacity"
+      style={{
+        transform: `translateX(${position.x}px) translateY(${position.y}px) rotate(${rotation}deg)`,
+        opacity: cardOpacity,
+        transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease-out',
+      }}
+      onMouseDown={handleStart}
+      onTouchStart={handleStart}
+    >
+      {/* Swipe Left Indicator (X) */}
+      {position.x < -50 && (
+        <div
+          className="absolute inset-0 z-10 flex items-center justify-center bg-destructive/20 pointer-events-none"
+          style={{ opacity: swipeLeftOpacity }}
+        >
+          <div className="rounded-full bg-destructive p-8">
+            <X className="h-20 w-20 text-destructive-foreground" strokeWidth={3} />
+          </div>
+        </div>
+      )}
+
+      {/* Swipe Right Indicator (Heart) */}
+      {position.x > 50 && (
+        <div
+          className="absolute inset-0 z-10 flex items-center justify-center bg-primary/20 pointer-events-none"
+          style={{ opacity: swipeRightOpacity }}
+        >
+          <div className="rounded-full bg-primary p-8">
+            <Heart className="h-20 w-20 text-primary-foreground fill-current" strokeWidth={3} />
+          </div>
+        </div>
+      )}
+
       <div className="relative h-96 bg-gradient-to-b from-background/50 to-background">
         <Avatar className="w-full h-full rounded-none">
           <AvatarImage
@@ -110,7 +167,7 @@ const DiscoverCard = ({ profile, onSwipe }: DiscoverCardProps) => {
             size="lg"
             variant="outline"
             className="rounded-full w-16 h-16 p-0 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
-            onClick={() => handleSwipe('pass')}
+            onClick={() => animateSwipe('left')}
             disabled={isLoading}
           >
             <X className="h-8 w-8" />
@@ -119,7 +176,7 @@ const DiscoverCard = ({ profile, onSwipe }: DiscoverCardProps) => {
           <Button
             size="lg"
             className="rounded-full w-20 h-20 p-0 bg-primary hover:bg-primary/90"
-            onClick={() => handleSwipe('like')}
+            onClick={() => animateSwipe('right')}
             disabled={isLoading}
           >
             <Heart className="h-10 w-10 fill-current" />
@@ -129,7 +186,10 @@ const DiscoverCard = ({ profile, onSwipe }: DiscoverCardProps) => {
             size="lg"
             variant="outline"
             className="rounded-full w-16 h-16 p-0 border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black"
-            onClick={() => handleSwipe('super_like')}
+            onClick={() => {
+              triggerHaptic('success');
+              handleSwipeAction('super_like');
+            }}
             disabled={isLoading}
           >
             <Star className="h-8 w-8" />

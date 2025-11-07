@@ -167,6 +167,7 @@ const Discover = () => {
   }
 
   const currentProfile = profiles[currentIndex];
+  const nextProfile = profiles[currentIndex + 1];
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
@@ -177,9 +178,32 @@ const Discover = () => {
         </p>
       </div>
 
-      {currentProfile && (
-        <DiscoverCard profile={currentProfile} onSwipe={handleSwipe} />
-      )}
+      <div className="relative">
+        {/* Next card (background) - shown behind with depth effect */}
+        {nextProfile && (
+          <div 
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              transform: 'scale(0.95) translateY(10px)',
+              opacity: 0.5,
+              zIndex: 1,
+            }}
+          >
+            <DiscoverCard profile={nextProfile} onSwipe={() => {}} />
+          </div>
+        )}
+        
+        {/* Current card (foreground) - interactive */}
+        {currentProfile && (
+          <div 
+            key={currentProfile.id}
+            style={{ position: 'relative', zIndex: 2 }}
+            className="animate-scale-in"
+          >
+            <DiscoverCard profile={currentProfile} onSwipe={handleSwipe} />
+          </div>
+        )}
+      </div>
 
       {matchedProfile && (
         <MatchModal

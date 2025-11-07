@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { triggerHaptic } from '@/lib/haptics';
 
 interface Position {
   x: number;
@@ -32,6 +33,7 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
     setIsDragging(true);
     const pos = getEventPosition(e);
     startPos.current = pos;
+    triggerHaptic('light'); // Light haptic on drag start
   }, [isAnimating]);
 
   const handleMove = useCallback((e: React.TouchEvent | React.MouseEvent | TouchEvent | MouseEvent) => {
@@ -55,6 +57,9 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
       const direction = position.x > 0 ? 'right' : 'left';
       const exitX = position.x > 0 ? 600 : -600;
       
+      // Haptic feedback for valid swipe
+      triggerHaptic(direction === 'right' ? 'success' : 'light');
+      
       setPosition({ x: exitX, y: position.y });
       
       setTimeout(() => {
@@ -73,6 +78,9 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
     
     setIsAnimating(true);
     const exitX = direction === 'right' ? 600 : -600;
+    
+    // Haptic feedback for programmatic swipe
+    triggerHaptic(direction === 'right' ? 'success' : 'light');
     
     setPosition({ x: exitX, y: 0 });
     

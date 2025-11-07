@@ -12,7 +12,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Check, X } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Loader2, Check, X, AlertCircle, Wifi, WifiOff } from "lucide-react";
 
 // Simple validation function
 const validateUsername = (username: string): string | null => {
@@ -47,8 +49,9 @@ export const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => 
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [registrationStep, setRegistrationStep] = useState<string>("");
-  const [showTimeout, setShowTimeout] = useState(false);
+  const [loadingState, setLoadingState] = useState<'idle' | 'connecting' | 'verifying' | 'creating' | 'success'>('idle');
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
 
   // Log wallet state for debugging
   useEffect(() => {
@@ -120,30 +123,46 @@ export const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => 
     }
 
     setIsSubmitting(true);
-    setRegistrationStep("Creating account...");
-    setShowTimeout(false);
+    setLoadingState('creating');
+    setConnectionError(null);
+    setShowTimeoutWarning(false);
     
-    // Show timeout message after 5 seconds
+    // Show timeout warning after 10 seconds
     const timeoutId = setTimeout(() => {
-      setShowTimeout(true);
-    }, 5000);
+      setShowTimeoutWarning(true);
+    }, 10000);
 
     const result = await registerWithWallet(walletAddress, username, displayName);
 
     clearTimeout(timeoutId);
     setIsSubmitting(false);
-    setRegistrationStep("");
-    setShowTimeout(false);
+    setLoadingState('idle');
+    setShowTimeoutWarning(false);
 
     if (result.success) {
-      onOpenChange(false);
-      onSuccess?.();
+      setLoadingState('success');
+      setTimeout(() => {
+        onOpenChange(false);
+        onSuccess?.();
+      }, 500);
+    } else if (result.error) {
+      setConnectionError(result.error);
+    }
+  };
+
+  const handleRetryConnection = () => {
+    setConnectionError(null);
+    setShowTimeoutWarning(false);
+    if (step === 'register') {
+      handleRegister();
     }
   };
 
   const handleConnectWallet = async (walletName?: string) => {
     try {
       setIsConnecting(true);
+      setLoadingState('connecting');
+      setConnectionError(null);
       console.log('Attempting to connect wallet:', walletName || 'current');
       
       if (walletName) {
@@ -153,12 +172,36 @@ export const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => 
         await new Promise(resolve => setTimeout(resolve, 100));
       }
       
+      setLoadingState('verifying');
       await connect();
       console.log('Wallet connected successfully');
-    } catch (error) {
+      setLoadingState('success');
+    } catch (error: any) {
       console.error('Failed to connect wallet:', error);
+      setConnectionError(error?.message || 'Failed to connect wallet');
+      setLoadingState('idle');
     } finally {
       setIsConnecting(false);
+    }
+  };
+
+  // Loading state messages
+  const loadingMessages = {
+    idle: '',
+    connecting: 'Connecting to wallet...',
+    verifying: 'Verifying wallet signature...',
+    creating: 'Creating your profile...',
+    success: 'Success! Redirecting...'
+  };
+
+  // Progress value based on loading state
+  const getProgressValue = () => {
+    switch (loadingState) {
+      case 'connecting': return 25;
+      case 'verifying': return 50;
+      case 'creating': return 75;
+      case 'success': return 100;
+      default: return 0;
     }
   };
 
@@ -357,14 +400,62 @@ export const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => 
               </div>
 
               {!connected && (
-                <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">
-                  ⚠️ Wallet disconnected. Please reconnect to complete registration.
-                </div>
+                <Alert variant="destructive">
+                  <WifiOff className="h-4 w-4" />
+                  <AlertTitle>Wallet Disconnected</AlertTitle>
+                  <AlertDescription>
+                    Please reconnect your wallet to complete registration.
+                  </AlertDescription>
+                </Alert>
               )}
 
-              {showTimeout && isSubmitting && (
-                <div className="bg-warning/10 text-warning text-sm p-3 rounded-md">
-                  This is taking longer than usual. Please wait...
+              {connectionError && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Connection Failed</AlertTitle>
+                  <AlertDescription className="space-y-3">
+                    <p>{connectionError}</p>
+                    <div className="text-sm">
+                      <p className="font-semibold mb-1">Troubleshooting:</p>
+                      <ul className="list-disc list-inside space-y-1 text-xs">
+                        <li>Ensure your wallet is installed and unlocked</li>
+                        <li>Check your internet connection</li>
+                        <li>Try refreshing the page</li>
+                        <li>Make sure you have approved the connection</li>
+                      </ul>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleRetryConnection}
+                      className="w-full mt-2"
+                    >
+                      Try Again
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {showTimeoutWarning && isSubmitting && !connectionError && (
+                <Alert>
+                  <Wifi className="h-4 w-4" />
+                  <AlertTitle>Taking Longer Than Usual</AlertTitle>
+                  <AlertDescription>
+                    The connection is still in progress. Please wait a moment...
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Progress indicator */}
+              {isSubmitting && !connectionError && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    <p className="text-sm text-muted-foreground">
+                      {loadingMessages[loadingState]}
+                    </p>
+                  </div>
+                  <Progress value={getProgressValue()} className="h-2" />
                 </div>
               )}
 
@@ -380,10 +471,15 @@ export const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => 
                 }
                 className="w-full bg-gradient-primary hover:opacity-90"
               >
-                {isSubmitting ? (
+                {loadingState === 'success' ? (
+                  <>
+                    <Check className="mr-2 h-4 w-4" />
+                    Success!
+                  </>
+                ) : isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {registrationStep || "Creating Account..."}
+                    {loadingMessages[loadingState]}
                   </>
                 ) : (
                   "Complete Registration"

@@ -177,13 +177,22 @@ export const useWalletAuth = () => {
   // Handle wallet disconnection
   const handleDisconnect = async () => {
     try {
+      // Sign out from Supabase first
       await supabase.auth.signOut();
+      
+      // Clear wallet adapter localStorage to prevent reconnection issues
+      localStorage.removeItem('walletName');
+      localStorage.removeItem('walletAdapter');
+      
+      // Disconnect wallet
       if (connected) {
         await disconnect();
       }
+      
       toast.success("Disconnected successfully");
       navigate("/");
     } catch (error) {
+      console.error('Error disconnecting:', error);
       toast.error("Error disconnecting");
     }
   };

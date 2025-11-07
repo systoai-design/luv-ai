@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface LikeSent {
   id: string;
@@ -100,8 +101,30 @@ const LikesSent = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="mb-8">
+          <Skeleton className="h-10 w-48 mb-2" />
+          <Skeleton className="h-5 w-64" />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} className="overflow-hidden">
+              <Skeleton className="aspect-square w-full" />
+              <CardContent className="p-4 space-y-2">
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+                <div className="flex gap-1">
+                  <Skeleton className="h-5 w-16" />
+                  <Skeleton className="h-5 w-16" />
+                  <Skeleton className="h-5 w-16" />
+                </div>
+                <Skeleton className="h-3 w-24" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }

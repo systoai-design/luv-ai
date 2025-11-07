@@ -71,8 +71,16 @@ export const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => 
       setDisplayName("");
       setUsernameError("");
       setUsernameAvailable(null);
+      setLoadingState('idle');
+      setConnectionError(null);
+      setIsConnecting(false);
+      
+      // Force wallet selector reset by clearing selection
+      if (select) {
+        (select as any)(null);
+      }
     }
-  }, [open]);
+  }, [open, select]);
 
   // Move to registration if new user and wallet connected
   useEffect(() => {

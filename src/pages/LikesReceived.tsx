@@ -7,6 +7,8 @@ import DiscoverCard from '@/components/discover/DiscoverCard';
 import MatchModal from '@/components/discover/MatchModal';
 import { Button } from '@/components/ui/button';
 import { calculateMatchScore } from '@/lib/interests';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 
 interface LikeReceived {
   id: string;
@@ -151,8 +153,33 @@ const LikesReceived = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="container mx-auto px-4 py-8 max-w-2xl">
+        <div className="mb-6 text-center">
+          <Skeleton className="h-10 w-40 mx-auto mb-2" />
+          <Skeleton className="h-5 w-48 mx-auto" />
+        </div>
+        
+        <Card className="animate-pulse">
+          <CardHeader className="space-y-4">
+            <Skeleton className="h-64 w-full rounded-lg" />
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex gap-2">
+              <Skeleton className="h-12 flex-1" />
+              <Skeleton className="h-12 flex-1" />
+              <Skeleton className="h-12 flex-1" />
+            </div>
+            <div className="flex gap-2">
+              <Skeleton className="h-12 flex-1" />
+              <Skeleton className="h-12 flex-1" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

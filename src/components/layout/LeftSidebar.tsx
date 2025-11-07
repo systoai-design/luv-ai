@@ -9,6 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useSidebarState } from "@/hooks/useSidebarState";
 import { CreateCompanionDialog } from "@/components/creator/CreateCompanionDialog";
+import { MiniProfileCard } from "./MiniProfileCard";
+import { useUnreadCounts } from "@/hooks/useUnreadCounts";
+import { Badge } from "@/components/ui/badge";
 
 const LeftSidebar = () => {
   const { user } = useAuth();
@@ -16,6 +19,7 @@ const LeftSidebar = () => {
   const [profile, setProfile] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [canCreateCompanion, setCanCreateCompanion] = useState(false);
+  const { unreadMessages } = useUnreadCounts();
   const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
@@ -60,6 +64,8 @@ const LeftSidebar = () => {
   ];
 
   const NavItem = ({ item }: { item: typeof navItems[0] }) => {
+    const showBadge = item.path === '/messages' && unreadMessages > 0;
+    
     const content = (
       <NavLink
         to={item.path}
@@ -67,7 +73,16 @@ const LeftSidebar = () => {
         activeClassName="bg-muted text-primary font-medium"
       >
         <item.icon className="h-5 w-5 flex-shrink-0" />
-        {displayWidth && <span className="animate-fade-in">{item.label}</span>}
+        {displayWidth && (
+          <>
+            <span className="animate-fade-in flex-1">{item.label}</span>
+            {showBadge && (
+              <Badge variant="destructive" className="ml-auto">
+                {unreadMessages > 99 ? '99+' : unreadMessages}
+              </Badge>
+            )}
+          </>
+        )}
       </NavLink>
     );
 
@@ -76,7 +91,10 @@ const LeftSidebar = () => {
         <TooltipProvider delayDuration={0}>
           <Tooltip>
             <TooltipTrigger asChild>{content}</TooltipTrigger>
-            <TooltipContent side="right">{item.label}</TooltipContent>
+            <TooltipContent side="right">
+              {item.label}
+              {showBadge && ` (${unreadMessages})`}
+            </TooltipContent>
           </Tooltip>
         </TooltipProvider>
       );
@@ -97,6 +115,8 @@ const LeftSidebar = () => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
+      {/* Mini Profile Card - show on hover when collapsed */}
+      <MiniProfileCard show={isCollapsed && isHovered} />
       {/* Toggle Button */}
       <div className={`flex ${displayWidth ? 'justify-end' : 'justify-center'} mb-4`}>
         <Button

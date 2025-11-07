@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Heart, Loader2, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const Matches = () => {
   const { matches, loading } = useMatches();
@@ -12,8 +13,31 @@ const Matches = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <Card className="bg-card/50 border-border/50">
+          <CardHeader>
+            <Skeleton className="h-8 w-48" />
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[...Array(6)].map((_, i) => (
+                <Card key={i} className="bg-background/50 border-border">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <Skeleton className="w-16 h-16 rounded-full" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-5 w-32" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                      <Skeleton className="w-5 h-5" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

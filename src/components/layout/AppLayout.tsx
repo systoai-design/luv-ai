@@ -4,9 +4,11 @@ import LeftSidebar from "./LeftSidebar";
 import RightSidebar from "./RightSidebar";
 import MobileSidebar from "./MobileSidebar";
 import { useSidebarState } from "@/hooks/useSidebarState";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 const AppLayout = () => {
   const { isCollapsed } = useSidebarState();
+  useKeyboardShortcuts(); // Enable keyboard shortcuts
 
   return (
     <div className="min-h-screen bg-background flex flex-col w-full overflow-x-hidden">

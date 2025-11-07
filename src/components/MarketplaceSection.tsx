@@ -69,7 +69,7 @@ const MarketplaceSection = () => {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("ai_companions")
-        .select("id, name, description, tagline, avatar_url, price_per_message, currency, average_rating, total_chats, romance, intelligence, playfulness, empathy, dominance, lust, loyalty, humor")
+        .select("id, name, description, tagline, avatar_url, access_price, currency, average_rating, total_chats, romance, intelligence, playfulness, empathy, dominance, lust, loyalty, humor")
         .eq("is_active", true)
         .order("average_rating", { ascending: false });
       

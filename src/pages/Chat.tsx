@@ -136,7 +136,7 @@ const Chat = () => {
   if (!hasAccess) {
     return (
       <>
-        <div className="container mx-auto px-4 py-12 max-w-2xl lg:ml-64 xl:mr-80">
+        <div className="container mx-auto px-4 py-12 max-w-2xl">
           <div className="text-center space-y-6">
             <Avatar className="h-32 w-32 mx-auto">
               <AvatarImage src={companion.avatar_url} alt={companion.name} />

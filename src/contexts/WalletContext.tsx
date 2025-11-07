@@ -5,7 +5,6 @@ import {
   PhantomWalletAdapter,
   SolflareWalletAdapter,
 } from '@solana/wallet-adapter-wallets';
-import { BackpackWalletAdapter } from '@solana/wallet-adapter-backpack';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { clusterApiUrl } from '@solana/web3.js';
 
@@ -21,19 +20,22 @@ export const WalletContextProvider = ({ children }: { children: ReactNode }) => 
   const network = WalletAdapterNetwork.Devnet;
   const endpoint = useMemo(() => clusterApiUrl(network), [network]);
   
-  // Configure multiple wallet adapters
+  // Configure wallet adapters (removed Backpack temporarily for stability)
   const wallets = useMemo(
     () => [
       new PhantomWalletAdapter(),
       new SolflareWalletAdapter(),
-      new BackpackWalletAdapter(),
     ],
     []
   );
 
+  const onError = (error: any) => {
+    console.error('Wallet adapter error:', error);
+  };
+
   return (
     <ConnectionProvider endpoint={endpoint}>
-      <SolanaWalletProvider wallets={wallets} autoConnect={false}>
+      <SolanaWalletProvider wallets={wallets} autoConnect={false} onError={onError}>
         <WalletModalProvider>
           <WalletContext.Provider value={{}}>
             {children}

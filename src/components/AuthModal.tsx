@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useWalletAuth } from "@/hooks/useWalletAuth";
+import { WalletConnectPanel } from "@/components/wallet/WalletConnectPanel";
 import {
   Dialog,
   DialogContent,
@@ -52,7 +52,7 @@ export const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => 
   const [connectionError, setConnectionError] = useState<string | null>(null);
 
 
-  // Reset state when modal closes
+  // Reset state and clear wallet cache when modal opens/closes
   useEffect(() => {
     if (!open) {
       setStep("connect");
@@ -62,8 +62,21 @@ export const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => 
       setUsernameAvailable(null);
       setLoadingState('idle');
       setConnectionError(null);
+    } else if (step === "connect") {
+      // Aggressively clear wallet cache when opening to connect
+      const keysToRemove = [
+        'walletName',
+        'walletAdapter',
+        'walletAdapterNetwork',
+        'wallet-adapter-connected-wallet',
+      ];
+      
+      keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+        sessionStorage.removeItem(key);
+      });
     }
-  }, [open]);
+  }, [open, step]);
 
   // Move to registration if new user and wallet connected
   useEffect(() => {
@@ -176,49 +189,8 @@ export const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => 
                 Connect your Solana wallet to get started
               </DialogDescription>
             </DialogHeader>
-            <div className="flex flex-col items-center gap-6 py-6">
-              <div className="w-full space-y-4">
-                <div className="text-center">
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Click the button below to connect your wallet
-                  </p>
-                </div>
-                
-                {/* Use native WalletMultiButton - it handles everything correctly */}
-                <div className="wallet-adapter-button-container flex justify-center">
-                  <WalletMultiButton className="!bg-gradient-primary !text-white hover:!opacity-90" />
-                </div>
-              </div>
-              
-              <p className="text-sm text-muted-foreground text-center">
-                Don't have a wallet?{" "}
-                <a
-                  href="https://phantom.app/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  Get Phantom
-                </a>
-                {" · "}
-                <a
-                  href="https://solflare.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  Get Solflare
-                </a>
-                {" · "}
-                <a
-                  href="https://backpack.app/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  Get Backpack
-                </a>
-              </p>
+            <div className="py-4">
+              <WalletConnectPanel onConnected={() => {}} />
             </div>
           </>
         )}

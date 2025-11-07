@@ -180,14 +180,26 @@ export const useWalletAuth = () => {
       // Sign out from Supabase first
       await supabase.auth.signOut();
       
-      // Clear wallet adapter localStorage to prevent reconnection issues
-      localStorage.removeItem('walletName');
-      localStorage.removeItem('walletAdapter');
-      
       // Disconnect wallet
       if (connected) {
         await disconnect();
       }
+      
+      // Aggressively clear all wallet-related cache
+      const keysToRemove = [
+        'walletName',
+        'walletAdapter',
+        'walletAdapterNetwork',
+        'wallet-adapter-connected-wallet',
+      ];
+      
+      keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+        sessionStorage.removeItem(key);
+      });
+      
+      // Small delay to ensure state clears
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       toast.success("Disconnected successfully");
       navigate("/");

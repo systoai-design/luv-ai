@@ -53,10 +53,7 @@ const LeftSidebar = () => {
   const navItems = [
     { icon: Home, label: "Home", path: "/home" },
     { icon: Users, label: "Friends", path: "/friends" },
-    { icon: Heart, label: "Discover", path: "/discover" },
-    { icon: Heart, label: "Likes You", path: "/likes-received" },
-    { icon: Heart, label: "Your Likes", path: "/likes-sent" },
-    { icon: Heart, label: "Matches", path: "/matches" },
+    { icon: Heart, label: "Connections", path: "/connections" },
     { icon: MessageCircle, label: "Messages", path: "/messages" },
     { icon: ShoppingBag, label: "Marketplace", path: "/marketplace" },
     { icon: Bell, label: "Notifications", path: "/notifications" },
@@ -70,7 +67,7 @@ const LeftSidebar = () => {
         activeClassName="bg-muted text-primary font-medium"
       >
         <item.icon className="h-5 w-5 flex-shrink-0" />
-        {displayWidth && <span>{item.label}</span>}
+        {displayWidth && <span className="animate-fade-in">{item.label}</span>}
       </NavLink>
     );
 
@@ -93,9 +90,10 @@ const LeftSidebar = () => {
 
   return (
     <aside 
-      className={`hidden lg:flex flex-col border-r border-border/50 bg-card fixed left-0 top-16 bottom-0 overflow-y-auto transition-all duration-300 ${
+      className={`hidden lg:flex flex-col border-r border-border/50 bg-card fixed left-0 top-16 bottom-0 transition-all duration-300 ease-in-out overscroll-contain overflow-y-hidden hover:overflow-y-auto ${
         displayWidth ? 'w-64' : 'w-16'
       } ${shouldExpand ? 'shadow-xl z-50' : 'z-40'} ${displayWidth ? 'p-4' : 'p-2'}`}
+      style={{ willChange: 'width' }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >

@@ -26,6 +26,7 @@ import Matches from "./pages/Matches";
 import ChatRequests from "./pages/ChatRequests";
 import LikesSent from "./pages/LikesSent";
 import LikesReceived from "./pages/LikesReceived";
+import Connections from "./pages/Connections";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -84,6 +85,11 @@ const App = () => (
                 <Route path="/purchases" element={
                   <ProtectedRoute>
                     <Purchases />
+                  </ProtectedRoute>
+                } />
+                <Route path="/connections" element={
+                  <ProtectedRoute>
+                    <Connections />
                   </ProtectedRoute>
                 } />
                 <Route path="/discover" element={

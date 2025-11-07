@@ -33,8 +33,10 @@ export const calculateMatchScore = (
   userInterests: string[] = [],
   targetInterests: string[] = []
 ): { score: number; percentage: number; shared: string[] } => {
-  const shared = userInterests.filter(interest => 
-    targetInterests.includes(interest)
+  // Case-insensitive matching
+  const userSet = new Set(userInterests.map(x => x.toLowerCase()));
+  const shared = targetInterests.filter(interest => 
+    userSet.has(interest.toLowerCase())
   );
   
   const score = shared.length;

@@ -64,14 +64,18 @@ const Discover = () => {
 
       const swipedIds = swipedUsers?.map((s) => s.target_user_id) || [];
 
-      // Get profiles excluding current user and already swiped users
-      const { data, error } = await supabase
+      // Get profiles excluding current user and already swiped users - fix UUID quoting
+      const baseQuery = supabase
         .from('profiles')
         .select('*')
         .neq('user_id', user.id)
-        .not('user_id', 'in', `(${swipedIds.join(',') || 'null'})`)
         .not('interests', 'is', null)
         .limit(50);
+
+      // Only add the NOT IN clause if there are IDs to exclude, with proper UUID quoting
+      const { data, error } = swipedIds.length > 0
+        ? await baseQuery.not('user_id', 'in', `(${swipedIds.map(id => `'${id}'`).join(',')})`)
+        : await baseQuery;
 
       if (error) throw error;
 

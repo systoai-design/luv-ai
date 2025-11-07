@@ -5,17 +5,32 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { Heart, MessageCircle, Sparkles } from "lucide-react";
+import { Heart, MessageCircle, Sparkles, Star } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CreateCompanionDialog } from "@/components/creator/CreateCompanionDialog";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Marketplace = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [companions, setCompanions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [canCreate, setCanCreate] = useState(false);
 
   useEffect(() => {
     loadCompanions();
+    checkCreatorStatus();
   }, []);
+
+  const checkCreatorStatus = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('profiles')
+      .select('can_create_companion')
+      .eq('user_id', user.id)
+      .single();
+    setCanCreate(data?.can_create_companion || false);
+  };
 
   const loadCompanions = async () => {
     try {
@@ -60,13 +75,16 @@ const Marketplace = () => {
   return (
     <div className="h-screen overflow-y-auto">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-primary bg-clip-text text-transparent">
-            AI Companion Marketplace
-          </h1>
-          <p className="text-muted-foreground">
-            Discover and connect with unique AI companions
-          </p>
+        <div className="mb-8 flex items-start justify-between">
+          <div>
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-primary bg-clip-text text-transparent">
+              AI Companion Marketplace
+            </h1>
+            <p className="text-muted-foreground">
+              Discover and connect with unique AI companions
+            </p>
+          </div>
+          {canCreate && <CreateCompanionDialog onSuccess={loadCompanions} />}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-8">
@@ -93,19 +111,21 @@ const Marketplace = () => {
               <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                 {companion.tagline}
               </p>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                <span className="flex items-center gap-1">
-                  <Heart className="h-4 w-4" />
-                  {companion.likes_count || 0}
-                </span>
-                <span className="flex items-center gap-1">
+              <div className="flex items-center gap-3 text-sm mb-3">
+                {companion.average_rating > 0 && (
+                  <Badge variant="outline" className="border-verified text-verified">
+                    <Star className="h-3 w-3 mr-1 fill-current" />
+                    {companion.average_rating.toFixed(1)}
+                  </Badge>
+                )}
+                <span className="flex items-center gap-1 text-muted-foreground">
                   <MessageCircle className="h-4 w-4" />
-                  {companion.messages_count || 0}
+                  {companion.total_chats || 0}
                 </span>
               </div>
-              {companion.price_sol > 0 && (
+              {companion.access_price > 0 && (
                 <Badge variant="outline" className="border-primary text-primary">
-                  {companion.price_sol} SOL
+                  {companion.access_price} SOL
                 </Badge>
               )}
             </CardContent>

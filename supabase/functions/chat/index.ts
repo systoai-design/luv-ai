@@ -19,10 +19,10 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get companion details for system prompt
+    // Get companion details for system prompt - use actual schema columns
     const { data: companion } = await supabase
       .from('ai_companions')
-      .select('name, personality_traits, system_prompt')
+      .select('name, system_prompt, voice_tone, romance, lust, loyalty, humor, intelligence, empathy, playfulness, dominance')
       .eq('id', companionId)
       .single();
 
@@ -36,10 +36,14 @@ serve(async (req) => {
       .order('created_at', { ascending: true })
       .limit(20);
 
+    // Build system prompt with personality traits
+    const traits = `Personality traits — romance:${companion.romance}, humor:${companion.humor}, intelligence:${companion.intelligence}, empathy:${companion.empathy}, playfulness:${companion.playfulness}, dominance:${companion.dominance}, loyalty:${companion.loyalty}, lust:${companion.lust}. Voice tone: ${companion.voice_tone || 'friendly'}.`;
+    const systemPrompt = companion.system_prompt || `You are ${companion.name}. Be ${companion.voice_tone || 'friendly'}. ${traits}`;
+
     const messages = [
       { 
         role: "system", 
-        content: companion.system_prompt || `You are ${companion.name}. ${Object.entries(companion.personality_traits || {}).map(([k, v]) => `${k}: ${v}`).join(', ')}`
+        content: systemPrompt
       },
       ...(history || []).map(msg => ({
         role: msg.sender_type === 'user' ? 'user' : 'assistant',

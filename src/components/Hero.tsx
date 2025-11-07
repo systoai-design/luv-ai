@@ -1,23 +1,18 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Shield, Zap, Lock, Rocket } from "lucide-react";
+import { Shield, Zap, Lock, Rocket } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import OneClickConnect from "@/components/auth/OneClickConnect";
 import ParticleBackground from "@/components/landing/ParticleBackground";
 
 const Hero = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   const handleLaunchApp = () => {
     if (user) {
       navigate("/home");
-    } else {
-      setAuthModalOpen(true);
     }
   };
 
@@ -63,15 +58,19 @@ const Hero = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button 
-              size="lg" 
-              onClick={handleLaunchApp}
-              variant="gradient"
-              className="shadow-glow text-lg px-8"
-            >
-              <Rocket className="mr-2 h-5 w-5" />
-              LAUNCH APP
-            </Button>
+            {user ? (
+              <Button 
+                size="lg" 
+                onClick={handleLaunchApp}
+                variant="gradient"
+                className="shadow-glow text-lg px-8"
+              >
+                <Rocket className="mr-2 h-5 w-5" />
+                LAUNCH APP
+              </Button>
+            ) : (
+              <OneClickConnect className="!bg-gradient-to-r !from-primary !via-purple-500 !to-pink-500 hover:!shadow-glow !text-primary-foreground !px-8 !py-3 !rounded-full !transition-all !duration-300 !text-lg !font-medium !flex !items-center !gap-2" />
+            )}
             <Button size="lg" variant="outline" className="border-primary/50 hover:bg-primary/10 text-lg px-8">
               Learn More
             </Button>
@@ -105,17 +104,6 @@ const Hero = () => {
           </div>
         </div>
       </div>
-
-      <Dialog open={authModalOpen} onOpenChange={setAuthModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-center">Connect Your Wallet</DialogTitle>
-          </DialogHeader>
-          <div className="flex justify-center py-6">
-            <OneClickConnect />
-          </div>
-        </DialogContent>
-      </Dialog>
     </section>
   );
 };

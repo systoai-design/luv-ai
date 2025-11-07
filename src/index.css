@@ -106,6 +106,15 @@ All colors MUST be HSL.
   }
 }
 
+/* Wallet adapter modal z-index boost */
+.wallet-adapter-modal-wrapper {
+  z-index: 10000 !important;
+}
+
+.wallet-adapter-modal {
+  z-index: 10000 !important;
+}
+
 /* Gradient Text Animations */
 @keyframes gradient-shift {
   0%, 100% {

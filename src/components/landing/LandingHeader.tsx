@@ -3,8 +3,6 @@ import { Rocket } from "lucide-react";
 import logo from "@/assets/logo.svg";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import OneClickConnect from "@/components/auth/OneClickConnect";
 import { smoothScrollTo } from "@/lib/smoothScroll";
 import { useActiveSection } from "@/hooks/useActiveSection";
@@ -13,14 +11,11 @@ import { cn } from "@/lib/utils";
 const LandingHeader = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [authModalOpen, setAuthModalOpen] = useState(false);
   const activeSection = useActiveSection(["discover", "marketplace", "how-it-works"]);
 
   const handleLaunchApp = () => {
     if (user) {
       navigate("/home");
-    } else {
-      setAuthModalOpen(true);
     }
   };
 
@@ -61,27 +56,20 @@ const LandingHeader = () => {
           </button>
         </nav>
 
-        <Button
-          onClick={handleLaunchApp}
-          size="lg"
-          variant="gradient"
-          className="shadow-glow"
-        >
-          <Rocket className="h-5 w-5 mr-2" />
-          LAUNCH APP
-        </Button>
+        {user ? (
+          <Button
+            onClick={handleLaunchApp}
+            size="lg"
+            variant="gradient"
+            className="shadow-glow"
+          >
+            <Rocket className="h-5 w-5 mr-2" />
+            LAUNCH APP
+          </Button>
+        ) : (
+          <OneClickConnect className="!bg-gradient-to-r !from-primary !via-purple-500 !to-pink-500 hover:!shadow-glow !text-primary-foreground !px-6 !py-2 !rounded-full !transition-all !duration-300 !text-sm !font-medium !flex !items-center !gap-2" />
+        )}
       </div>
-      
-      <Dialog open={authModalOpen} onOpenChange={setAuthModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-center">Connect Your Wallet</DialogTitle>
-          </DialogHeader>
-          <div className="flex justify-center py-6">
-            <OneClickConnect />
-          </div>
-        </DialogContent>
-      </Dialog>
     </header>
   );
 };

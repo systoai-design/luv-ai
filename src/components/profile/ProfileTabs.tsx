@@ -3,11 +3,13 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 interface ProfileTabsProps {
   postsContent: React.ReactNode;
   aboutContent: React.ReactNode;
+  activeTab?: string;
+  onTabChange?: (tab: "posts" | "about") => void;
 }
 
-export const ProfileTabs = ({ postsContent, aboutContent }: ProfileTabsProps) => {
+export const ProfileTabs = ({ postsContent, aboutContent, activeTab, onTabChange }: ProfileTabsProps) => {
   return (
-    <Tabs defaultValue="posts" className="w-full">
+    <Tabs value={activeTab} onValueChange={onTabChange as any} defaultValue="posts" className="w-full">
       <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent">
         <TabsTrigger 
           value="posts" 

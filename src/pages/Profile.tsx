@@ -9,6 +9,7 @@ import { ProfileStats } from "@/components/profile/ProfileStats";
 import { ProfileTabs } from "@/components/profile/ProfileTabs";
 import { ProfileAbout } from "@/components/profile/ProfileAbout";
 import { ProfileIntro } from "@/components/profile/ProfileIntro";
+import { ProfileCompletion } from "@/components/profile/ProfileCompletion";
 import { PostComposer } from "@/components/posts/PostComposer";
 import { PostFeed } from "@/components/posts/PostFeed";
 import { FollowersModal } from "@/components/profile/FollowersModal";
@@ -21,6 +22,7 @@ const Profile = () => {
   const [postsCount, setPostsCount] = useState(0);
   const [followersModalOpen, setFollowersModalOpen] = useState(false);
   const [followersModalTab, setFollowersModalTab] = useState<"followers" | "following">("followers");
+  const [activeTab, setActiveTab] = useState<"posts" | "about">("posts");
   const [profile, setProfile] = useState({
     username: "",
     display_name: "",
@@ -31,6 +33,17 @@ const Profile = () => {
     verified_badge_id: null,
     interests: [] as string[],
   });
+
+  const handleFieldClick = (field: string) => {
+    // Switch to about tab for editable fields
+    if (["display_name", "bio", "interests"].includes(field)) {
+      setActiveTab("about");
+      // Scroll to top after a brief delay to allow tab transition
+      setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 100);
+    }
+    // For avatar/cover, these are clickable on the header
+    // For wallet, user needs to connect wallet via wallet button
+  };
 
   useEffect(() => {
     if (user) {
@@ -165,7 +178,14 @@ const Profile = () => {
             }}
           />
 
+          <ProfileCompletion 
+            profile={profile}
+            onFieldClick={handleFieldClick}
+          />
+
           <ProfileTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
             postsContent={
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-1">

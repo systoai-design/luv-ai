@@ -1,4 +1,4 @@
-import { Home, Users, MessageCircle, ShoppingBag, Bell, User, Shield, LayoutDashboard, Package, ChevronLeft, ChevronRight, Heart } from "lucide-react";
+import { Home, Users, MessageCircle, ShoppingBag, Bell, User, Shield, LayoutDashboard, Package, ChevronLeft, ChevronRight, Heart, Plus } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useSidebarState } from "@/hooks/useSidebarState";
+import { CreateCompanionDialog } from "@/components/creator/CreateCompanionDialog";
 
 const LeftSidebar = () => {
   const { user } = useAuth();
@@ -53,6 +54,7 @@ const LeftSidebar = () => {
     { icon: Home, label: "Home", path: "/home" },
     { icon: Users, label: "Friends", path: "/friends" },
     { icon: Heart, label: "Discover", path: "/discover" },
+    { icon: Heart, label: "Matches", path: "/matches" },
     { icon: MessageCircle, label: "Messages", path: "/messages" },
     { icon: ShoppingBag, label: "Marketplace", path: "/marketplace" },
     { icon: Bell, label: "Notifications", path: "/notifications" },
@@ -166,6 +168,29 @@ const LeftSidebar = () => {
           <NavItem key={item.path} item={item} />
         ))}
       </nav>
+
+      {/* Create AI Companion Button */}
+      {canCreateCompanion && (
+        <>
+          <Separator className="my-4" />
+          <div className={`${displayWidth ? 'px-0' : 'px-0'}`}>
+            {displayWidth ? (
+              <CreateCompanionDialog />
+            ) : (
+              <TooltipProvider delayDuration={0}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div>
+                      <CreateCompanionDialog />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Create AI Companion</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
+        </>
+      )}
 
       <Separator className="my-4" />
 

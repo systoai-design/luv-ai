@@ -64,6 +64,19 @@ export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthMod
     }
   }, [open]);
 
+  // Safety guard: if "checking" takes too long, fall back to register
+  useEffect(() => {
+    if (step !== "checking") return;
+    const t = setTimeout(() => {
+      if (step === "checking") {
+        console.warn('[wallet] Checking timed out, moving to register');
+        toast.error("This is taking too long. Please complete quick registration.");
+        setStep("register");
+      }
+    }, 9000);
+    return () => clearTimeout(t);
+  }, [step]);
+
   // Username validation with debounce
   useEffect(() => {
     if (!username || step !== "register") return;
@@ -158,7 +171,7 @@ export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthMod
       setStep("checking");
       
       const address = publicKey!.toBase58();
-      const result = await signInWithWallet(address);
+      const result = await withTimeout(signInWithWallet(address), 8000);
 
       if (result.isNewUser) {
         console.info('[wallet] New user detected, showing registration');
@@ -168,6 +181,10 @@ export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthMod
         toast.success("Welcome back! 💜");
         onOpenChange(false);
         onSuccess?.();
+      } else {
+        console.info('[wallet] Sign-in failed, falling back to registration', result?.error);
+        toast.error(result?.error || "Sign-in failed. Please complete quick registration.");
+        setStep("register");
       }
     } catch (error: any) {
       console.error('[wallet] Connection failed:', error);

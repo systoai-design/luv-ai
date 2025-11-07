@@ -8,6 +8,7 @@ import { WalletContextProvider } from "@/contexts/WalletContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Profile from "./pages/Profile";
+import PublicProfile from "./pages/PublicProfile";
 import Chat from "./pages/Chat";
 import CreatorDashboard from "./pages/CreatorDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -31,6 +32,7 @@ const App = () => (
                   <Profile />
                 </ProtectedRoute>
               } />
+              <Route path="/profile/:username" element={<PublicProfile />} />
               <Route path="/chat/:companionId" element={
                 <ProtectedRoute>
                   <Chat />

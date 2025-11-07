@@ -1,29 +1,30 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, ShieldCheck, Wallet as WalletIcon } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import Header from "@/components/Header";
+import { ProfileHeader } from "@/components/profile/ProfileHeader";
+import { ProfileStats } from "@/components/profile/ProfileStats";
+import { ProfileTabs } from "@/components/profile/ProfileTabs";
+import { ProfileAbout } from "@/components/profile/ProfileAbout";
+import { PostComposer } from "@/components/posts/PostComposer";
+import { PostFeed } from "@/components/posts/PostFeed";
 
 const Profile = () => {
   const { user } = useAuth();
   const { publicKey, connected } = useWallet();
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [postsCount, setPostsCount] = useState(0);
   const [profile, setProfile] = useState({
     username: "",
     display_name: "",
     bio: "",
     wallet_address: "",
+    avatar_url: "",
+    cover_photo_url: "",
     verified_badge_id: null,
   });
 
@@ -55,9 +56,18 @@ const Profile = () => {
           display_name: data.display_name || "",
           bio: data.bio || "",
           wallet_address: data.wallet_address || "",
+          avatar_url: data.avatar_url || "",
+          cover_photo_url: data.cover_photo_url || "",
           verified_badge_id: data.verified_badge_id,
         });
       }
+
+      const { count } = await supabase
+        .from("posts")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user!.id);
+
+      setPostsCount(count || 0);
     } catch (error) {
       console.error("Error loading profile:", error);
     } finally {
@@ -82,20 +92,25 @@ const Profile = () => {
     }
   };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = async (data: { display_name: string; bio: string }) => {
     setSaving(true);
 
     try {
       const { error } = await supabase
         .from("profiles")
         .update({
-          display_name: profile.display_name,
-          bio: profile.bio,
+          display_name: data.display_name,
+          bio: data.bio,
         })
         .eq("user_id", user!.id);
 
       if (error) throw error;
+
+      setProfile((prev) => ({
+        ...prev,
+        display_name: data.display_name,
+        bio: data.bio,
+      }));
 
       toast.success("Profile updated successfully");
     } catch (error) {
@@ -117,101 +132,48 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-gradient-hero">
       <Header />
-      <div className="container mx-auto px-4 pt-24 pb-12">
-        <Card className="max-w-2xl mx-auto bg-card/95 backdrop-blur-sm border-primary/30">
-          <CardHeader>
-              <CardTitle className="text-3xl font-bold flex items-center gap-2">
-                Your Profile
-                {profile.verified_badge_id && (
-                  <Badge className="bg-verified text-verified-foreground">
-                    <ShieldCheck className="h-3 w-3 mr-1" />
-                    Verified
-                  </Badge>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSave} className="space-y-6">
-                {profile.username && (
-                  <div className="space-y-2">
-                    <Label>Username</Label>
-                    <div className="p-3 rounded-lg bg-muted font-medium text-sm">
-                      @{profile.username}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Your username cannot be changed
-                    </p>
-                  </div>
-                )}
+      <div className="container mx-auto px-4 pt-24 pb-12 max-w-4xl">
+        <div className="space-y-6">
+          <ProfileHeader
+            userId={user!.id}
+            displayName={profile.display_name}
+            username={profile.username}
+            bio={profile.bio}
+            avatarUrl={profile.avatar_url}
+            coverPhotoUrl={profile.cover_photo_url}
+            verifiedBadgeId={profile.verified_badge_id}
+            isOwnProfile={true}
+            onAvatarUpdate={(url) => setProfile((prev) => ({ ...prev, avatar_url: url }))}
+            onCoverUpdate={(url) => setProfile((prev) => ({ ...prev, cover_photo_url: url }))}
+          />
 
-                <div className="space-y-2">
-                  <Label htmlFor="display_name">Display Name</Label>
-                  <Input
-                    id="display_name"
-                    value={profile.display_name}
-                    onChange={(e) =>
-                      setProfile({ ...profile, display_name: e.target.value })
-                    }
-                    placeholder="Your name"
-                  />
-                </div>
+          <ProfileStats postsCount={postsCount} />
 
-                <div className="space-y-2">
-                  <Label htmlFor="bio">Bio</Label>
-                  <Textarea
-                    id="bio"
-                    value={profile.bio}
-                    onChange={(e) =>
-                      setProfile({ ...profile, bio: e.target.value })
-                    }
-                    placeholder="Tell us about yourself..."
-                    rows={4}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Email</Label>
-                  <Input value={user?.email || ""} disabled />
-                </div>
-
-                {profile.wallet_address && (
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
-                      <WalletIcon className="h-4 w-4" />
-                      Connected Wallet
-                    </Label>
-                    <div className="p-3 rounded-lg bg-muted font-mono text-sm break-all">
-                      {profile.wallet_address}
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex gap-4">
-                  <Button
-                    type="submit"
-                    className="bg-gradient-primary"
-                    disabled={saving}
-                  >
-                    {saving ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      "Save Changes"
-                    )}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => navigate("/")}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-            </form>
-          </CardContent>
-        </Card>
+          <ProfileTabs
+            postsContent={
+              <div className="space-y-6">
+                <PostComposer
+                  userId={user!.id}
+                  avatarUrl={profile.avatar_url}
+                  displayName={profile.display_name}
+                  onPostCreated={() => {
+                    loadProfile();
+                  }}
+                />
+                <PostFeed userId={user!.id} currentUserId={user!.id} />
+              </div>
+            }
+            aboutContent={
+              <ProfileAbout
+                profile={profile}
+                userEmail={user?.email}
+                isOwnProfile={true}
+                onSave={handleSave}
+                saving={saving}
+              />
+            }
+          />
+        </div>
       </div>
     </div>
   );

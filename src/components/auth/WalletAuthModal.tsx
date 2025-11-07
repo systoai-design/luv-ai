@@ -36,7 +36,7 @@ const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> => {
 };
 
 export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthModalProps) => {
-  const { wallets, select, connected, publicKey, disconnect } = useWallet();
+  const { wallets, select, connected, publicKey, disconnect, connect } = useWallet();
   const { authState, checkUsernameAvailable, registerWithWallet, signInWithWallet } = useWalletAuth();
 
   const [step, setStep] = useState<Step>("connect");
@@ -134,32 +134,31 @@ export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthMod
       setConnecting(true);
       setSelectedWallet(walletName);
 
-      // Disconnect any existing connection first
-      if (connected) {
-        console.info('[wallet] Disconnecting existing wallet');
-        await disconnect().catch(() => {});
-        await new Promise(r => setTimeout(r, 200));
-      }
-
-      // Clear wallet cache
-      await clearWalletStorage();
-
-      // Select the wallet
+      // Select the wallet synchronously
       select(walletName);
-      await new Promise(r => setTimeout(r, 100));
 
-      // Get the adapter
-      const wallet = wallets.find(w => w.adapter.name === walletName);
-      if (!wallet) {
-        throw new Error("Wallet adapter not found");
+      // Immediately trigger the wallet popup within the user gesture
+      console.info('[wallet] Calling provider connect()...');
+      const connectPromise = withTimeout(connect(), 20000);
+
+      // If in an iframe, the popup may be blocked – nudge to open in a new window
+      setTimeout(() => {
+        if (isIframed && !publicKey) {
+          toast.info("Wallet popup may be blocked in an embedded view.", {
+            action: { label: "Open in New Window", onClick: openInNewWindow } as any,
+          } as any);
+        }
+      }, 1500);
+
+      // Kick off background cleanup WITHOUT blocking the popup
+      if (connected) {
+        disconnect().catch(() => {});
       }
+      clearWalletStorage().catch(() => {});
 
-      console.info('[wallet] Wallet adapter ready state:', wallet.adapter.readyState);
-
-      // Immediately invoke connect() to trigger the extension popup
-      console.info('[wallet] Calling adapter.connect()...');
-      await withTimeout(wallet.adapter.connect(), 12000);
-      console.info('[wallet] adapter.connect() resolved');
+      // Wait for connect to resolve
+      await connectPromise;
+      console.info('[wallet] connect() resolved');
 
       // Wait for connection state to update
       const isConnected = await waitForConnected(7000);
@@ -167,14 +166,15 @@ export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthMod
         throw new Error("Connection state did not update");
       }
 
-      // Request a message signature to confirm ownership (if supported)
+      // Optional: request a message signature if supported
       try {
-        const adapterAny = wallet.adapter as any;
-        if (adapterAny && typeof adapterAny.signMessage === 'function') {
+        const wallet = wallets.find(w => w.adapter.name === walletName);
+        const adapterAny = wallet?.adapter as any;
+        if (adapterAny && typeof adapterAny.signMessage === 'function' && publicKey) {
           console.info('[wallet] Requesting message signature...');
           const encoder = new TextEncoder();
           const nonce = Math.random().toString(36).slice(2);
-          const msg = `LUVAI Sign-In\nAddress: ${publicKey!.toBase58()}\nNonce: ${nonce}\nDomain: ${window.location.host}\nTime: ${new Date().toISOString()}`;
+          const msg = `LUVAI Sign-In\nAddress: ${publicKey.toBase58()}\nNonce: ${nonce}\nDomain: ${window.location.host}\nTime: ${new Date().toISOString()}`;
           await withTimeout(adapterAny.signMessage(encoder.encode(msg)), 20000);
           console.info('[wallet] Message signed');
         } else {
@@ -182,13 +182,12 @@ export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthMod
         }
       } catch (sigErr) {
         console.warn('[wallet] Message signing skipped/failed:', sigErr);
-        // Do not block login flow on signature problems
       }
 
       // Proceed to account check
       console.info('[wallet] Connection successful, checking account...');
       setStep("checking");
-      
+
       const address = publicKey!.toBase58();
       const result = await withTimeout(signInWithWallet(address), 8000);
 
@@ -211,7 +210,7 @@ export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthMod
           const password = `wallet_luvai_${address}`;
           
           // Try to reset/recreate the auth account
-          const { error: deleteError } = await supabase.auth.admin.deleteUser(profile.user_id).catch(() => ({ error: null }));
+          await supabase.auth.admin.deleteUser(profile.user_id).catch(() => ({ error: null }));
           
           // Sign up fresh
           const { data: authData, error: signUpError } = await supabase.auth.signUp({
@@ -225,7 +224,7 @@ export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthMod
             }
           });
           
-          if (!signUpError && authData.user) {
+          if (!signUpError && authData?.user) {
             console.info('[wallet] Auth recreated for existing profile');
             toast.success(`Welcome back, ${profile.username}! 💜`);
             onOpenChange(false);
@@ -239,8 +238,8 @@ export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthMod
           setStep("connect");
         }
       } else {
-        console.info('[wallet] Sign-in failed, falling back to registration', result?.error);
-        toast.error(result?.error || "Sign-in failed. Please complete quick registration.");
+        console.info('[wallet] Sign-in failed, falling back to registration', (result as any)?.error);
+        toast.error((result as any)?.error || "Sign-in failed. Please complete quick registration.");
         setStep("register");
       }
     } catch (error: any) {
@@ -289,6 +288,20 @@ export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthMod
   const openInNewWindow = () => {
     window.open(window.location.href, "_blank");
     toast.info("Opening in new window...");
+  };
+
+  const forcePhantomPopup = async () => {
+    try {
+      const anyWindow = window as any;
+      const phantom = anyWindow?.phantom?.solana || anyWindow?.solana;
+      if (phantom?.isPhantom && typeof phantom.connect === "function") {
+        await phantom.connect({ onlyIfTrusted: false });
+      } else {
+        toast.error("Phantom not detected.");
+      }
+    } catch (e: any) {
+      showError(e);
+    }
   };
 
   const availableWallets = wallets.filter(w => w.readyState === "Installed" || w.readyState === "Loadable");
@@ -363,6 +376,16 @@ export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthMod
             </div>
 
             <div className="flex flex-col gap-2 pt-2 border-t">
+              {phantomWallet && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={forcePhantomPopup}
+                  className="w-full"
+                >
+                  Force Phantom Popup
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="sm"

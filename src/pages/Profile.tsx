@@ -29,6 +29,7 @@ const Profile = () => {
     avatar_url: "",
     cover_photo_url: "",
     verified_badge_id: null,
+    interests: [] as string[],
   });
 
   useEffect(() => {
@@ -62,6 +63,7 @@ const Profile = () => {
           avatar_url: data.avatar_url || "",
           cover_photo_url: data.cover_photo_url || "",
           verified_badge_id: data.verified_badge_id,
+          interests: data.interests || [],
         });
       }
 
@@ -95,7 +97,7 @@ const Profile = () => {
     }
   };
 
-  const handleSave = async (data: { display_name: string; bio: string }) => {
+  const handleSave = async (data: { display_name: string; bio: string; interests: string[] }) => {
     setSaving(true);
 
     try {
@@ -104,6 +106,7 @@ const Profile = () => {
         .update({
           display_name: data.display_name,
           bio: data.bio,
+          interests: data.interests,
         })
         .eq("user_id", user!.id);
 
@@ -113,6 +116,7 @@ const Profile = () => {
         ...prev,
         display_name: data.display_name,
         bio: data.bio,
+        interests: data.interests,
       }));
 
       toast.success("Profile updated successfully");

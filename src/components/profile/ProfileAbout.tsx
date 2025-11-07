@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { WalletIcon } from "lucide-react";
+import { InterestSelector } from "./InterestSelector";
 
 interface ProfileAboutProps {
   profile: {
@@ -11,10 +14,11 @@ interface ProfileAboutProps {
     display_name?: string;
     bio?: string;
     wallet_address?: string;
+    interests?: string[];
   };
   userEmail?: string;
   isOwnProfile: boolean;
-  onSave?: (data: { display_name: string; bio: string }) => void;
+  onSave?: (data: { display_name: string; bio: string; interests: string[] }) => void;
   saving?: boolean;
 }
 
@@ -25,6 +29,10 @@ export const ProfileAbout = ({
   onSave,
   saving = false,
 }: ProfileAboutProps) => {
+  const [selectedInterests, setSelectedInterests] = useState<string[]>(
+    profile.interests || []
+  );
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!onSave) return;
@@ -33,6 +41,7 @@ export const ProfileAbout = ({
     onSave({
       display_name: formData.get("display_name") as string,
       bio: formData.get("bio") as string,
+      interests: selectedInterests,
     });
   };
 
@@ -53,6 +62,18 @@ export const ProfileAbout = ({
             <div>
               <Label className="text-muted-foreground">Bio</Label>
               <p className="text-foreground">{profile.bio}</p>
+            </div>
+          )}
+          {profile.interests && profile.interests.length > 0 && (
+            <div>
+              <Label className="text-muted-foreground">Interests</Label>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {profile.interests.map((interest, idx) => (
+                  <Badge key={idx} variant="secondary">
+                    {interest}
+                  </Badge>
+                ))}
+              </div>
             </div>
           )}
         </CardContent>
@@ -99,6 +120,11 @@ export const ProfileAbout = ({
               rows={4}
             />
           </div>
+
+          <InterestSelector
+            selectedInterests={selectedInterests}
+            onChange={setSelectedInterests}
+          />
 
           <div className="space-y-2">
             <Label>Email</Label>

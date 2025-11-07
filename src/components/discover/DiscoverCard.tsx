@@ -2,7 +2,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { X, Heart, Star } from 'lucide-react';
+import { X, Heart, Star, Check } from 'lucide-react';
 import { useSwipe } from '@/hooks/useSwipe';
 import { toast } from 'sonner';
 
@@ -14,6 +14,9 @@ interface DiscoverCardProps {
     avatar_url: string | null;
     bio: string | null;
     interests: string[] | null;
+    matchScore?: number;
+    matchPercentage?: number;
+    sharedInterests?: string[];
   };
   onSwipe: (matchData: any) => void;
 }
@@ -31,6 +34,9 @@ const DiscoverCard = ({ profile, onSwipe }: DiscoverCardProps) => {
     onSwipe(matchData);
   };
 
+  const isSharedInterest = (interest: string) => 
+    profile.sharedInterests?.includes(interest);
+
   return (
     <Card className="bg-card border-border overflow-hidden">
       <div className="relative h-96 bg-gradient-to-b from-background/50 to-background">
@@ -45,10 +51,24 @@ const DiscoverCard = ({ profile, onSwipe }: DiscoverCardProps) => {
           </AvatarFallback>
         </Avatar>
         
+        {/* Match Score Badge */}
+        {profile.matchPercentage && profile.matchPercentage > 0 && (
+          <div className="absolute top-4 right-4">
+            <Badge className="bg-primary text-primary-foreground text-lg font-bold px-4 py-2">
+              {profile.matchPercentage}% Match
+            </Badge>
+          </div>
+        )}
+        
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background to-transparent p-6">
           <h2 className="text-3xl font-bold text-foreground mb-2">
             {profile.display_name || 'Anonymous User'}
           </h2>
+          {profile.matchScore && profile.matchScore > 0 && (
+            <p className="text-sm text-primary font-semibold">
+              {profile.matchScore} shared interest{profile.matchScore !== 1 ? 's' : ''}
+            </p>
+          )}
         </div>
       </div>
 
@@ -58,12 +78,30 @@ const DiscoverCard = ({ profile, onSwipe }: DiscoverCardProps) => {
         )}
 
         {profile.interests && profile.interests.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {profile.interests.map((interest, idx) => (
-              <Badge key={idx} variant="secondary">
-                {interest}
-              </Badge>
-            ))}
+          <div className="space-y-2">
+            {profile.sharedInterests && profile.sharedInterests.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                <span className="text-xs font-semibold text-primary">Shared:</span>
+                {profile.sharedInterests.map((interest, idx) => (
+                  <Badge 
+                    key={idx} 
+                    className="bg-primary/20 text-primary border-primary"
+                  >
+                    <Check className="h-3 w-3 mr-1" />
+                    {interest}
+                  </Badge>
+                ))}
+              </div>
+            )}
+            <div className="flex flex-wrap gap-2">
+              {profile.interests
+                .filter(interest => !isSharedInterest(interest))
+                .map((interest, idx) => (
+                  <Badge key={idx} variant="secondary">
+                    {interest}
+                  </Badge>
+                ))}
+            </div>
           </div>
         )}
 

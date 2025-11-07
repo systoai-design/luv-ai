@@ -133,8 +133,9 @@ const Profile = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl lg:pl-64 xl:pr-80">
-      <div className="space-y-0">
+    <>
+      <div className="container mx-auto px-4 py-8 max-w-6xl lg:pl-64 xl:pr-80">
+        <div className="space-y-0">
           <ProfileHeader
             userId={user!.id}
             displayName={profile.display_name}
@@ -208,7 +209,7 @@ const Profile = () => {
         userId={user!.id}
         defaultTab={followersModalTab}
       />
-    </div>
+    </>
   );
 };
 

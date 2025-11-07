@@ -166,8 +166,14 @@ export const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
         className="sm:max-w-md"
-        onInteractOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
+        onInteractOutside={(e) => {
+          // Only prevent closing during submission
+          if (isSubmitting) e.preventDefault();
+        }}
+        onEscapeKeyDown={(e) => {
+          // Only prevent closing during submission
+          if (isSubmitting) e.preventDefault();
+        }}
       >
         {step === "connect" && (
           <>

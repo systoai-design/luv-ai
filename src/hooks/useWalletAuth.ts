@@ -10,6 +10,11 @@ interface WalletAuthState {
   error: string | null;
 }
 
+// Helper function to create consistent deterministic password from wallet address
+const createWalletPassword = (walletAddress: string): string => {
+  return `wallet_luvai_${walletAddress}`;
+};
+
 export const useWalletAuth = () => {
   const { publicKey, connected, disconnect } = useWallet();
   const navigate = useNavigate();
@@ -69,9 +74,9 @@ export const useWalletAuth = () => {
 
       setAuthState({ isChecking: true, isNewUser: false, error: null });
 
-      // Create deterministic email from wallet address
+      // Create deterministic email and password from wallet address
       const email = `${walletAddress}@wallet.luvai.app`;
-      const password = `wallet_${walletAddress}_${Date.now()}`;
+      const password = createWalletPassword(walletAddress);
 
       console.log('Step 2: Creating auth account...', { email });
 
@@ -128,16 +133,23 @@ export const useWalletAuth = () => {
     try {
       setAuthState({ isChecking: true, isNewUser: false, error: null });
 
-      // For existing users, we need to sign them in
-      // Since we don't store the password, we use the wallet signature as verification
-      const email = `${walletAddress}@wallet.luvai.app`;
-      
       // Check if profile exists
       const profile = await checkWalletExists(walletAddress);
       if (!profile) {
         setAuthState({ isChecking: false, isNewUser: true, error: null });
         return { isNewUser: true };
       }
+
+      // Sign in with the same deterministic credentials used during registration
+      const email = `${walletAddress}@wallet.luvai.app`;
+      const password = createWalletPassword(walletAddress);
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
 
       toast.success("Welcome back! 💜");
       setAuthState({ isChecking: false, isNewUser: false, error: null });

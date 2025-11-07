@@ -39,6 +39,7 @@ export const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => 
     authState,
     checkUsernameAvailable,
     registerWithWallet,
+    signInWithWallet,
     walletAddress,
   } = useWalletAuth();
 
@@ -181,9 +182,28 @@ export const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => 
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">
-              <WalletConnectPanel onConnected={() => {
-                console.info('[auth] Wallet connected, advancing to registration');
-                setStep("register");
+              <WalletConnectPanel onConnected={async () => {
+                console.info('[auth] Wallet connected, checking if user exists...');
+                
+                if (!walletAddress) {
+                  console.error('[auth] No wallet address available');
+                  return;
+                }
+                
+                // Check if this is an existing user or new user
+                const result = await signInWithWallet(walletAddress);
+                
+                if (result.isNewUser) {
+                  // New user - show registration form
+                  console.info('[auth] New user detected, showing registration form');
+                  setStep("register");
+                } else if (result.success) {
+                  // Existing user - already signed in, close modal
+                  console.info('[auth] Existing user signed in successfully');
+                  onOpenChange(false);
+                  onSuccess?.();
+                }
+                // Errors are already handled by signInWithWallet with toast
               }} />
             </div>
           </>

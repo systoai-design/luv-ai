@@ -287,17 +287,26 @@ const Discover = () => {
   if (!profiles.length) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center">
-        <h2 className="text-2xl font-bold mb-2">No Matches Found</h2>
-        <p className="text-muted-foreground mb-4 max-w-md">
+        <Heart className="h-16 w-16 text-muted-foreground mb-4" />
+        <h2 className="text-2xl font-bold mb-2">You've Seen Everyone!</h2>
+        <p className="text-muted-foreground mb-6 max-w-md">
           {userInterests.length > 0 
-            ? "No one with your interests right now. Try adding more interests or check back later!"
-            : "Check back later for more people to discover!"}
+            ? "You've swiped on everyone with matching interests. Check your 'Likes You' page to see who liked you, or visit 'Your Likes' to see who you're waiting on!"
+            : "No more profiles to show. Add interests to your profile to find more matches!"}
         </p>
-        {userInterests.length > 0 && (
-          <Button onClick={() => navigate('/profile')} variant="outline">
-            Update Interests
+        <div className="flex gap-3 flex-wrap justify-center">
+          <Button onClick={() => navigate('/likes-received')}>
+            See Who Likes You
           </Button>
-        )}
+          <Button onClick={() => navigate('/likes-sent')} variant="outline">
+            Your Pending Likes
+          </Button>
+          {userInterests.length === 0 && (
+            <Button onClick={() => navigate('/profile')} variant="secondary">
+              Add Interests
+            </Button>
+          )}
+        </div>
       </div>
     );
   }

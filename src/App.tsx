@@ -24,6 +24,8 @@ import Friends from "./pages/Friends";
 import Discover from "./pages/Discover";
 import Matches from "./pages/Matches";
 import ChatRequests from "./pages/ChatRequests";
+import LikesSent from "./pages/LikesSent";
+import LikesReceived from "./pages/LikesReceived";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -87,6 +89,16 @@ const App = () => (
                 <Route path="/discover" element={
                   <ProtectedRoute>
                     <Discover />
+                  </ProtectedRoute>
+                } />
+                <Route path="/likes-sent" element={
+                  <ProtectedRoute>
+                    <LikesSent />
+                  </ProtectedRoute>
+                } />
+                <Route path="/likes-received" element={
+                  <ProtectedRoute>
+                    <LikesReceived />
                   </ProtectedRoute>
                 } />
                 <Route path="/matches" element={

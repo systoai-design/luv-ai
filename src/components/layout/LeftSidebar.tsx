@@ -54,6 +54,8 @@ const LeftSidebar = () => {
     { icon: Home, label: "Home", path: "/home" },
     { icon: Users, label: "Friends", path: "/friends" },
     { icon: Heart, label: "Discover", path: "/discover" },
+    { icon: Heart, label: "Likes You", path: "/likes-received" },
+    { icon: Heart, label: "Your Likes", path: "/likes-sent" },
     { icon: Heart, label: "Matches", path: "/matches" },
     { icon: MessageCircle, label: "Messages", path: "/messages" },
     { icon: ShoppingBag, label: "Marketplace", path: "/marketplace" },

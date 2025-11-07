@@ -341,6 +341,36 @@ export type Database = {
           },
         ]
       }
+      matches: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_message_at: string | null
+          unread_count_1: number | null
+          unread_count_2: number | null
+          user_id_1: string
+          user_id_2: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_message_at?: string | null
+          unread_count_1?: number | null
+          unread_count_2?: number | null
+          user_id_1: string
+          user_id_2: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_message_at?: string | null
+          unread_count_1?: number | null
+          unread_count_2?: number | null
+          user_id_1?: string
+          user_id_2?: string
+        }
+        Relationships: []
+      }
       posts: {
         Row: {
           comments_count: number
@@ -437,6 +467,30 @@ export type Database = {
         }
         Relationships: []
       }
+      swipes: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          target_user_id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          target_user_id: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          target_user_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_chats: {
         Row: {
           companion_id: string
@@ -474,6 +528,62 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          match_id: string
+          read: boolean | null
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          match_id: string
+          read?: boolean | null
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          match_id?: string
+          read?: boolean | null
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_messages_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_presence: {
+        Row: {
+          last_seen: string | null
+          online: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          last_seen?: string | null
+          online?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          last_seen?: string | null
+          online?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {

@@ -5,8 +5,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { Sparkles, TrendingUp, Users } from "lucide-react";
+import { Sparkles, TrendingUp, Users, Heart } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePresenceDisplay } from "@/hooks/usePresenceDisplay";
+import { useMatches } from "@/hooks/useMatches";
 
 const RightSidebar = () => {
   const navigate = useNavigate();
@@ -14,6 +16,11 @@ const RightSidebar = () => {
   const [featuredCompanions, setFeaturedCompanions] = useState<any[]>([]);
   const [suggestedUsers, setSuggestedUsers] = useState<any[]>([]);
   const [onlineFriends, setOnlineFriends] = useState<any[]>([]);
+  const { matches } = useMatches();
+  
+  const friendIds = onlineFriends.map(f => f.user_id).filter(Boolean);
+  const matchIds = matches.slice(0, 3).map(m => m.profile?.id).filter(Boolean);
+  const presenceMap = usePresenceDisplay([...friendIds, ...matchIds]);
 
   useEffect(() => {
     loadFeaturedCompanions();
@@ -93,26 +100,96 @@ const RightSidebar = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {onlineFriends.map((friend) => (
-              <div
-                key={friend.user_id}
-                className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                onClick={() => navigate(`/profile/${friend.username}`)}
-              >
-                <div className="relative">
-                  <Avatar className="h-9 w-9">
-                    <AvatarImage src={friend.avatar_url} />
-                    <AvatarFallback className="bg-primary/20 text-primary text-xs">
-                      {friend.display_name?.[0]?.toUpperCase() || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 border-2 border-card rounded-full" />
+            {onlineFriends.map((friend) => {
+              const presence = presenceMap[friend.user_id];
+              const isOnline = presence?.online || false;
+              
+              return (
+                <div
+                  key={friend.user_id}
+                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={() => navigate(`/profile/${friend.username}`)}
+                >
+                  <div className="relative">
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={friend.avatar_url} />
+                      <AvatarFallback className="bg-primary/20 text-primary text-xs">
+                        {friend.display_name?.[0]?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className={`absolute bottom-0 right-0 h-3 w-3 border-2 border-card rounded-full ${
+                      isOnline ? 'bg-green-500' : 'bg-muted'
+                    }`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{friend.display_name}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {presence?.formattedLastSeen || 'Offline'}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{friend.display_name}</p>
+              );
+            })}
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full mt-2"
+              onClick={() => navigate('/friends')}
+            >
+              See All
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Your Matches */}
+      {matches.length > 0 && (
+        <Card className="bg-card/50 border-border/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <Heart className="h-4 w-4 text-primary fill-primary" />
+              Your Matches
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {matches.slice(0, 3).map((match) => {
+              const presence = presenceMap[match.profile?.id];
+              const isOnline = presence?.online || false;
+              
+              return (
+                <div
+                  key={match.id}
+                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={() => navigate('/messages')}
+                >
+                  <div className="relative">
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={match.profile?.avatar_url || ''} />
+                      <AvatarFallback className="bg-primary/20 text-primary text-xs">
+                        {match.profile?.display_name?.[0]?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className={`absolute bottom-0 right-0 h-3 w-3 border-2 border-card rounded-full ${
+                      isOnline ? 'bg-green-500' : 'bg-muted'
+                    }`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{match.profile?.display_name || 'Anonymous'}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {presence?.formattedLastSeen || 'Offline'}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full mt-2"
+              onClick={() => navigate('/matches')}
+            >
+              See All Matches
+            </Button>
           </CardContent>
         </Card>
       )}

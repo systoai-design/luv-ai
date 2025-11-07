@@ -19,6 +19,8 @@ import Marketplace from "./pages/Marketplace";
 import Messages from "./pages/Messages";
 import Notifications from "./pages/Notifications";
 import Friends from "./pages/Friends";
+import Discover from "./pages/Discover";
+import Matches from "./pages/Matches";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -76,6 +78,16 @@ const App = () => (
                 <Route path="/purchases" element={
                   <ProtectedRoute>
                     <Purchases />
+                  </ProtectedRoute>
+                } />
+                <Route path="/discover" element={
+                  <ProtectedRoute>
+                    <Discover />
+                  </ProtectedRoute>
+                } />
+                <Route path="/matches" element={
+                  <ProtectedRoute>
+                    <Matches />
                   </ProtectedRoute>
                 } />
                 <Route path="/creator" element={

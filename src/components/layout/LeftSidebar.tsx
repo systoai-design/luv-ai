@@ -1,4 +1,4 @@
-import { Home, Users, MessageCircle, ShoppingBag, Bell, User, Shield, LayoutDashboard, Package, ChevronLeft, ChevronRight } from "lucide-react";
+import { Home, Users, MessageCircle, ShoppingBag, Bell, User, Shield, LayoutDashboard, Package, ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
@@ -51,6 +51,7 @@ const LeftSidebar = () => {
   const navItems = [
     { icon: Home, label: "Home", path: "/home" },
     { icon: Users, label: "Friends", path: "/friends" },
+    { icon: Heart, label: "Discover", path: "/discover" },
     { icon: MessageCircle, label: "Messages", path: "/messages" },
     { icon: ShoppingBag, label: "Marketplace", path: "/marketplace" },
     { icon: Bell, label: "Notifications", path: "/notifications" },

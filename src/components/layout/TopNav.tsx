@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUnreadCounts } from "@/hooks/useUnreadCounts";
 import { useSidebarState } from "@/hooks/useSidebarState";
+import { useUserPresence } from "@/hooks/useUserPresence";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +25,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { LogOut, ShoppingBag, LayoutDashboard, Shield, Home as HomeIcon } from "lucide-react";
 
 const TopNav = () => {
+  useUserPresence(); // Initialize presence tracking
   const { user } = useAuth();
   const { publicKey } = useWallet();
   const navigate = useNavigate();

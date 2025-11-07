@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { WalletContextProvider } from "@/contexts/WalletContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import AppLayout from "@/components/layout/AppLayout";
 import Index from "./pages/Index";
 import Home from "./pages/Home";
 import Profile from "./pages/Profile";
@@ -14,6 +15,10 @@ import Chat from "./pages/Chat";
 import CreatorDashboard from "./pages/CreatorDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import Purchases from "./pages/Purchases";
+import Marketplace from "./pages/Marketplace";
+import Messages from "./pages/Messages";
+import Notifications from "./pages/Notifications";
+import Friends from "./pages/Friends";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,38 +32,64 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
+              {/* Landing Page (No Layout) */}
               <Route path="/" element={<Index />} />
-              <Route path="/home" element={
-                <ProtectedRoute>
-                  <Home />
-                </ProtectedRoute>
-              } />
-              <Route path="/profile" element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              } />
-              <Route path="/profile/:username" element={<PublicProfile />} />
-              <Route path="/chat/:companionId" element={
-                <ProtectedRoute>
-                  <Chat />
-                </ProtectedRoute>
-              } />
-              <Route path="/creator" element={
-                <ProtectedRoute>
-                  <CreatorDashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin" element={
-                <ProtectedRoute>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/purchases" element={
-                <ProtectedRoute>
-                  <Purchases />
-                </ProtectedRoute>
-              } />
+              
+              {/* Web App Routes (With AppLayout) */}
+              <Route element={<AppLayout />}>
+                <Route path="/home" element={
+                  <ProtectedRoute>
+                    <Home />
+                  </ProtectedRoute>
+                } />
+                <Route path="/profile" element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                } />
+                <Route path="/profile/:username" element={<PublicProfile />} />
+                <Route path="/marketplace" element={
+                  <ProtectedRoute>
+                    <Marketplace />
+                  </ProtectedRoute>
+                } />
+                <Route path="/messages" element={
+                  <ProtectedRoute>
+                    <Messages />
+                  </ProtectedRoute>
+                } />
+                <Route path="/notifications" element={
+                  <ProtectedRoute>
+                    <Notifications />
+                  </ProtectedRoute>
+                } />
+                <Route path="/friends" element={
+                  <ProtectedRoute>
+                    <Friends />
+                  </ProtectedRoute>
+                } />
+                <Route path="/chat/:companionId" element={
+                  <ProtectedRoute>
+                    <Chat />
+                  </ProtectedRoute>
+                } />
+                <Route path="/purchases" element={
+                  <ProtectedRoute>
+                    <Purchases />
+                  </ProtectedRoute>
+                } />
+                <Route path="/creator" element={
+                  <ProtectedRoute>
+                    <CreatorDashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin" element={
+                  <ProtectedRoute>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                } />
+              </Route>
+              
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -8,8 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, Shield, DollarSign } from 'lucide-react';
-import AppHeader from '@/components/layout/AppHeader';
+import { Loader2, Shield, DollarSign } from 'lucide-react';
 
 const CreatorDashboard = () => {
   const { user } = useAuth();
@@ -99,7 +98,7 @@ const CreatorDashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -111,18 +110,10 @@ const CreatorDashboard = () => {
     .reduce((sum, e) => sum + Number(e.amount), 0);
 
   return (
-    <div className="min-h-screen bg-gradient-hero">
-      <AppHeader />
-      
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <Button variant="ghost" onClick={() => navigate('/home')} className="mb-6">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Home
-        </Button>
+    <div className="container mx-auto px-4 py-8 max-w-6xl lg:pl-64 xl:pr-80">
+      <h1 className="text-4xl font-bold mb-8">Creator Dashboard</h1>
 
-        <h1 className="text-4xl font-bold mb-8">Creator Dashboard</h1>
-
-        <div className="grid gap-6 md:grid-cols-3 mb-8">
+      <div className="grid gap-6 md:grid-cols-3 mb-8">
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
@@ -268,7 +259,6 @@ const CreatorDashboard = () => {
             )}
           </CardContent>
         </Card>
-      </div>
     </div>
   );
 };

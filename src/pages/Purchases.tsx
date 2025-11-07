@@ -6,8 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, MessageCircle } from 'lucide-react';
-import AppHeader from '@/components/layout/AppHeader';
+import { Loader2, MessageCircle } from 'lucide-react';
 
 const Purchases = () => {
   const { user } = useAuth();
@@ -48,29 +47,21 @@ const Purchases = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-hero">
-      <AppHeader />
-      
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <Button variant="ghost" onClick={() => navigate('/')} className="mb-6">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Home
-        </Button>
+    <div className="container mx-auto px-4 py-8 max-w-4xl lg:pl-64 xl:pr-80">
+      <h1 className="text-4xl font-bold mb-8">My Purchases</h1>
 
-        <h1 className="text-4xl font-bold mb-8">My Purchases</h1>
-
-        {purchases.length === 0 ? (
+      {purchases.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
               <p className="text-muted-foreground mb-4">You haven't purchased access to any companions yet</p>
-              <Button onClick={() => navigate('/')}>Browse Companions</Button>
+              <Button onClick={() => navigate('/marketplace')}>Browse Companions</Button>
             </CardContent>
           </Card>
         ) : (
@@ -112,7 +103,6 @@ const Purchases = () => {
             ))}
           </div>
         )}
-      </div>
     </div>
   );
 };

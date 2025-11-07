@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import AppHeader from "@/components/layout/AppHeader";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileStats } from "@/components/profile/ProfileStats";
 import { ProfileTabs } from "@/components/profile/ProfileTabs";
@@ -67,7 +66,7 @@ const PublicProfile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-hero">
+      <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -76,10 +75,8 @@ const PublicProfile = () => {
   if (!profile) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-hero">
-      <AppHeader />
-      <div className="container mx-auto px-4 pt-24 pb-12 max-w-6xl">
-        <div className="space-y-0">
+    <div className="container mx-auto px-4 py-8 max-w-6xl lg:pl-64 xl:pr-80">
+      <div className="space-y-0">
           <ProfileHeader
             userId={profile.user_id}
             displayName={profile.display_name}

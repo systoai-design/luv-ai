@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import AppHeader from "@/components/layout/AppHeader";
 import { PostCard } from "@/components/posts/PostCard";
 import { PostComposer } from "@/components/posts/PostComposer";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -149,62 +148,56 @@ const Home = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-hero">
-        <AppHeader />
-        <div className="container mx-auto px-4 pt-24 pb-12 max-w-2xl">
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-48 w-full" />
-            ))}
-          </div>
+      <div className="container mx-auto px-4 py-8 max-w-2xl lg:pl-64 xl:pr-80">
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-48 w-full" />
+          ))}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-hero">
-      <AppHeader />
-      <div className="container mx-auto px-4 pt-24 pb-12 max-w-2xl">
-        <div className="space-y-6">
-          {profile && (
-            <PostComposer
-              userId={user!.id}
-              avatarUrl={profile.avatar_url}
-              displayName={profile.display_name}
-              onPostCreated={() => loadPosts()}
-            />
-          )}
+    <div className="container mx-auto px-4 py-8 max-w-2xl lg:pl-64 xl:pr-80">
+      <div className="space-y-6">
+        {profile && (
+          <PostComposer
+            userId={user!.id}
+            avatarUrl={profile.avatar_url}
+            displayName={profile.display_name}
+            onPostCreated={() => loadPosts()}
+          />
+        )}
 
-          {posts.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground bg-card rounded-lg border border-border">
-              No posts yet. Start following users to see their posts!
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {posts.map((post) => (
-                <PostCard
-                  key={post.id}
-                  post={post}
-                  profile={post.profiles}
-                  currentUserId={user!.id}
-                  userLiked={userLikes.has(post.id)}
-                  onDelete={() => loadPosts()}
-                  onLikeToggle={() => loadPosts()}
-                />
-              ))}
-            </div>
-          )}
+        {posts.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground bg-card rounded-lg border border-border">
+            No posts yet. Start following users to see their posts!
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {posts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                profile={post.profiles}
+                currentUserId={user!.id}
+                userLiked={userLikes.has(post.id)}
+                onDelete={() => loadPosts()}
+                onLikeToggle={() => loadPosts()}
+              />
+            ))}
+          </div>
+        )}
 
-          {/* Infinite scroll trigger */}
-          {hasMore && (
-            <div ref={observerTarget} className="flex justify-center py-4">
-              {loadingMore && (
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              )}
-            </div>
-          )}
-        </div>
+        {/* Infinite scroll trigger */}
+        {hasMore && (
+          <div ref={observerTarget} className="flex justify-center py-4">
+            {loadingMore && (
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -5,8 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
-import AppHeader from '@/components/layout/AppHeader';
+import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -110,7 +109,7 @@ const AdminDashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -121,18 +120,10 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-hero">
-      <AppHeader />
-      
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <Button variant="ghost" onClick={() => navigate('/home')} className="mb-6">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Home
-        </Button>
+    <div className="container mx-auto px-4 py-8 max-w-6xl lg:pl-64 xl:pr-80">
+      <h1 className="text-4xl font-bold mb-8">Admin Dashboard</h1>
 
-        <h1 className="text-4xl font-bold mb-8">Admin Dashboard</h1>
-
-        <Card>
+      <Card>
           <CardHeader>
             <CardTitle>Pending Verifications</CardTitle>
             <CardDescription>Review and approve creator verification requests</CardDescription>
@@ -204,7 +195,6 @@ const AdminDashboard = () => {
             )}
           </CardContent>
         </Card>
-      </div>
     </div>
   );
 };

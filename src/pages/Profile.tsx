@@ -4,7 +4,6 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import AppHeader from "@/components/layout/AppHeader";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileStats } from "@/components/profile/ProfileStats";
 import { ProfileTabs } from "@/components/profile/ProfileTabs";
@@ -127,17 +126,15 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-hero">
+      <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-hero">
-      <AppHeader />
-      <div className="container mx-auto px-4 pt-24 pb-12 max-w-6xl">
-        <div className="space-y-0">
+    <div className="container mx-auto px-4 py-8 max-w-6xl lg:pl-64 xl:pr-80">
+      <div className="space-y-0">
           <ProfileHeader
             userId={user!.id}
             displayName={profile.display_name}

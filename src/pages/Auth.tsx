@@ -10,6 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { z } from "zod";
+import OneClickConnect from "@/components/auth/OneClickConnect";
+import { Separator } from "@/components/ui/separator";
 
 const emailSchema = z.string().email("Invalid email address");
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
@@ -131,6 +133,19 @@ const Auth = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="mb-6">
+            <OneClickConnect className="!w-full !bg-gradient-to-r !from-primary !via-purple-500 !to-pink-500 hover:!shadow-glow !text-primary-foreground !py-3 !rounded-lg !transition-all !duration-300 !font-medium" />
+            
+            <div className="relative my-6">
+              <Separator />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="bg-card px-2 text-xs text-muted-foreground">
+                  Or continue with email
+                </span>
+              </div>
+            </div>
+          </div>
+
           <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign In</TabsTrigger>

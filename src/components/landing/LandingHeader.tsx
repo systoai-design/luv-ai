@@ -3,7 +3,6 @@ import { Rocket } from "lucide-react";
 import logo from "@/assets/logo.svg";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import OneClickConnect from "@/components/auth/OneClickConnect";
 import { smoothScrollTo } from "@/lib/smoothScroll";
 import { useActiveSection } from "@/hooks/useActiveSection";
 import { cn } from "@/lib/utils";
@@ -16,6 +15,8 @@ const LandingHeader = () => {
   const handleLaunchApp = () => {
     if (user) {
       navigate("/home");
+    } else {
+      navigate("/auth");
     }
   };
 
@@ -56,19 +57,15 @@ const LandingHeader = () => {
           </button>
         </nav>
 
-        {user ? (
-          <Button
-            onClick={handleLaunchApp}
-            size="lg"
-            variant="gradient"
-            className="shadow-glow"
-          >
-            <Rocket className="h-5 w-5 mr-2" />
-            LAUNCH APP
-          </Button>
-        ) : (
-          <OneClickConnect className="!bg-gradient-to-r !from-primary !via-purple-500 !to-pink-500 hover:!shadow-glow !text-primary-foreground !px-6 !py-2 !rounded-full !transition-all !duration-300 !text-sm !font-medium !flex !items-center !gap-2" />
-        )}
+        <Button
+          onClick={handleLaunchApp}
+          size="lg"
+          variant="gradient"
+          className="shadow-glow"
+        >
+          <Rocket className="h-5 w-5 mr-2" />
+          LAUNCH APP
+        </Button>
       </div>
     </header>
   );

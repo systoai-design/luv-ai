@@ -106,13 +106,22 @@ All colors MUST be HSL.
   }
 }
 
-/* Wallet adapter modal z-index boost */
+/* Wallet adapter modal z-index - overlay below modal */
+.wallet-adapter-modal-overlay {
+  z-index: 99990 !important;
+}
+
 .wallet-adapter-modal-wrapper {
-  z-index: 10000 !important;
+  z-index: 100000 !important;
 }
 
 .wallet-adapter-modal {
-  z-index: 10000 !important;
+  z-index: 100000 !important;
+  pointer-events: auto !important;
+}
+
+.wallet-adapter-modal * {
+  pointer-events: auto !important;
 }
 
 /* Gradient Text Animations */
@@ -261,11 +270,6 @@ All colors MUST be HSL.
   transform: translateY(-4px);
 }
 
-/* Wallet adapter modal z-index override */
-.wallet-adapter-modal-wrapper,
-.wallet-adapter-modal-overlay {
-  z-index: 99999 !important;
-}
 
 /* Phantom Wallet Button Styling */
 .wallet-adapter-button {

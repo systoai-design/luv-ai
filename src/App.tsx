@@ -28,6 +28,7 @@ import LikesSent from "./pages/LikesSent";
 import LikesReceived from "./pages/LikesReceived";
 import Connections from "./pages/Connections";
 import NotFound from "./pages/NotFound";
+import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,9 @@ const App = () => (
             <Routes>
               {/* Landing Page (No Layout) */}
               <Route path="/" element={<Index />} />
+              
+              {/* Auth Page (No Layout) */}
+              <Route path="/auth" element={<Auth />} />
               
               {/* Web App Routes (With AppLayout) */}
               <Route element={<AppLayout />}>

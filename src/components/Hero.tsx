@@ -3,7 +3,6 @@ import { Shield, Zap, Lock, Rocket } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import OneClickConnect from "@/components/auth/OneClickConnect";
 import ParticleBackground from "@/components/landing/ParticleBackground";
 
 const Hero = () => {
@@ -13,6 +12,8 @@ const Hero = () => {
   const handleLaunchApp = () => {
     if (user) {
       navigate("/home");
+    } else {
+      navigate("/auth");
     }
   };
 
@@ -58,18 +59,24 @@ const Hero = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            {user ? (
+            <Button 
+              size="lg" 
+              onClick={handleLaunchApp}
+              variant="gradient"
+              className="shadow-glow text-lg px-8"
+            >
+              <Rocket className="mr-2 h-5 w-5" />
+              LAUNCH APP
+            </Button>
+            {!user && (
               <Button 
                 size="lg" 
-                onClick={handleLaunchApp}
-                variant="gradient"
-                className="shadow-glow text-lg px-8"
+                variant="outline" 
+                onClick={() => navigate("/auth")}
+                className="border-primary/50 hover:bg-primary/10 text-lg px-8"
               >
-                <Rocket className="mr-2 h-5 w-5" />
-                LAUNCH APP
+                Sign In
               </Button>
-            ) : (
-              <OneClickConnect className="!bg-gradient-to-r !from-primary !via-purple-500 !to-pink-500 hover:!shadow-glow !text-primary-foreground !px-8 !py-3 !rounded-full !transition-all !duration-300 !text-lg !font-medium !flex !items-center !gap-2" />
             )}
             <Button size="lg" variant="outline" className="border-primary/50 hover:bg-primary/10 text-lg px-8">
               Learn More

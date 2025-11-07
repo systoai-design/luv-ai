@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletAuth } from "@/hooks/useWalletAuth";
 import { WalletConnectPanel } from "@/components/wallet/WalletConnectPanel";
+import { clearWalletStorage } from "@/lib/walletReset";
 import {
   Dialog,
   DialogContent,
@@ -64,17 +65,7 @@ export const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => 
       setConnectionError(null);
     } else if (step === "connect") {
       // Aggressively clear wallet cache when opening to connect
-      const keysToRemove = [
-        'walletName',
-        'walletAdapter',
-        'walletAdapterNetwork',
-        'wallet-adapter-connected-wallet',
-      ];
-      
-      keysToRemove.forEach(key => {
-        localStorage.removeItem(key);
-        sessionStorage.removeItem(key);
-      });
+      clearWalletStorage();
     }
   }, [open, step]);
 

@@ -1,12 +1,12 @@
 import { Button } from "@/components/ui/button";
-import { LogOut, User, ShoppingBag, LayoutDashboard, Shield, Home, ArrowLeft } from "lucide-react";
+import { LogOut, User, ShoppingBag, LayoutDashboard, Shield, Home, ArrowLeft, Wallet } from "lucide-react";
 import logo from "@/assets/logo.svg";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useNavigate } from "react-router-dom";
 import { DisconnectDialog } from "@/components/DisconnectDialog";
 import { useWalletAuth } from "@/hooks/useWalletAuth";
+import { AuthModal } from "@/components/AuthModal";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -24,6 +24,7 @@ const AppHeader = () => {
   const navigate = useNavigate();
   const { handleDisconnect } = useWalletAuth();
   const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const [displayName, setDisplayName] = useState<string>("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [canCreateCompanion, setCanCreateCompanion] = useState(false);
@@ -69,10 +70,18 @@ const AppHeader = () => {
         </button>
         
         <div className="flex items-center gap-3">
-          {/* Phantom Wallet Button */}
-          <div className="wallet-adapter-button-container">
-            <WalletMultiButton />
-          </div>
+          {/* Wallet Connection */}
+          {!connected ? (
+            <Button onClick={() => setAuthModalOpen(true)} variant="outline" className="gap-2">
+              <Wallet className="h-4 w-4" />
+              Connect Wallet
+            </Button>
+          ) : (
+            <Button variant="outline" className="gap-2 font-mono text-xs">
+              <Wallet className="h-4 w-4" />
+              {publicKey?.toBase58().slice(0, 4)}...{publicKey?.toBase58().slice(-4)}
+            </Button>
+          )}
 
           {/* User Menu */}
           <DropdownMenu>
@@ -133,6 +142,12 @@ const AppHeader = () => {
           </DropdownMenu>
         </div>
       </div>
+      
+      <AuthModal 
+        open={authModalOpen}
+        onOpenChange={setAuthModalOpen}
+        onSuccess={() => navigate("/home")}
+      />
       
       <DisconnectDialog
         open={disconnectDialogOpen}

@@ -1,8 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { Bell, MessageCircle, User, Menu } from "lucide-react";
+import { Bell, MessageCircle, User, Menu, Wallet } from "lucide-react";
 import logo from "@/assets/logo.svg";
 import { useAuth } from "@/contexts/AuthContext";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useNavigate } from "react-router-dom";
 import SearchBar from "./SearchBar";
 import { useState, useEffect } from "react";
@@ -10,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useUnreadCounts } from "@/hooks/useUnreadCounts";
 import { useSidebarState } from "@/hooks/useSidebarState";
 import { useUserPresence } from "@/hooks/useUserPresence";
+import { AuthModal } from "@/components/AuthModal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +36,7 @@ const TopNav = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [canCreateCompanion, setCanCreateCompanion] = useState(false);
   const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -136,9 +137,22 @@ const TopNav = () => {
             </Button>
 
             {/* Wallet */}
-            <div className="wallet-adapter-button-container hidden sm:block">
-              <WalletMultiButton />
-            </div>
+            {!publicKey ? (
+              <Button 
+                onClick={() => setAuthModalOpen(true)} 
+                variant="outline" 
+                size="sm"
+                className="gap-2 hidden sm:flex"
+              >
+                <Wallet className="h-4 w-4" />
+                Connect
+              </Button>
+            ) : (
+              <Button variant="outline" size="sm" className="gap-2 font-mono text-xs hidden sm:flex">
+                <Wallet className="h-4 w-4" />
+                {publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)}
+              </Button>
+            )}
 
             {/* User Menu */}
             <DropdownMenu>
@@ -206,6 +220,12 @@ const TopNav = () => {
         </div>
       </header>
 
+      <AuthModal 
+        open={authModalOpen}
+        onOpenChange={setAuthModalOpen}
+        onSuccess={() => navigate("/home")}
+      />
+      
       <DisconnectDialog
         open={disconnectDialogOpen}
         onOpenChange={setDisconnectDialogOpen}

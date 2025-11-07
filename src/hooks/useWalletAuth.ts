@@ -3,6 +3,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { clearWalletStorage } from "@/lib/walletReset";
 
 interface WalletAuthState {
   isChecking: boolean;
@@ -177,34 +178,27 @@ export const useWalletAuth = () => {
   // Handle wallet disconnection
   const handleDisconnect = async () => {
     try {
+      console.info('[auth] Starting disconnect flow');
+      
       // Sign out from Supabase first
       await supabase.auth.signOut();
       
       // Disconnect wallet
       if (connected) {
-        await disconnect();
+        await disconnect().catch(() => {});
       }
       
       // Aggressively clear all wallet-related cache
-      const keysToRemove = [
-        'walletName',
-        'walletAdapter',
-        'walletAdapterNetwork',
-        'wallet-adapter-connected-wallet',
-      ];
-      
-      keysToRemove.forEach(key => {
-        localStorage.removeItem(key);
-        sessionStorage.removeItem(key);
-      });
+      await clearWalletStorage();
       
       // Small delay to ensure state clears
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 150));
       
+      console.info('[auth] Disconnect complete');
       toast.success("Disconnected successfully");
       navigate("/");
     } catch (error) {
-      console.error('Error disconnecting:', error);
+      console.error('[auth] Error disconnecting:', error);
       toast.error("Error disconnecting");
     }
   };

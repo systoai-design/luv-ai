@@ -9,7 +9,7 @@ const AppLayout = () => {
   const { isCollapsed } = useSidebarState();
 
   return (
-    <div className="min-h-screen bg-background flex flex-col w-full">
+    <div className="min-h-screen bg-background flex flex-col w-full overflow-x-hidden">
       {/* Top Navigation Bar */}
       <TopNav />
       

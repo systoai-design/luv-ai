@@ -3,18 +3,25 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { Sparkles } from "lucide-react";
+import { Sparkles, TrendingUp, Users } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const RightSidebar = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [featuredCompanions, setFeaturedCompanions] = useState<any[]>([]);
   const [suggestedUsers, setSuggestedUsers] = useState<any[]>([]);
+  const [onlineFriends, setOnlineFriends] = useState<any[]>([]);
 
   useEffect(() => {
     loadFeaturedCompanions();
     loadSuggestedUsers();
-  }, []);
+    if (user) {
+      loadOnlineFriends();
+    }
+  }, [user]);
 
   const loadFeaturedCompanions = async () => {
     try {
@@ -36,7 +43,7 @@ const RightSidebar = () => {
     try {
       const { data } = await supabase
         .from('profiles')
-        .select('user_id, display_name, username, avatar_url')
+        .select('user_id, display_name, username, avatar_url, bio')
         .limit(5);
 
       if (data) {
@@ -47,8 +54,69 @@ const RightSidebar = () => {
     }
   };
 
+  const loadOnlineFriends = async () => {
+    try {
+      // Load users that the current user follows
+      const { data: followingData } = await supabase
+        .from('followers')
+        .select(`
+          following_id,
+          profiles:following_id (
+            user_id,
+            display_name,
+            username,
+            avatar_url
+          )
+        `)
+        .eq('follower_id', user!.id)
+        .limit(5);
+
+      if (followingData) {
+        // In a real app, you'd check online status via presence tracking
+        // For now, we'll just show the friends list
+        setOnlineFriends(followingData.map(f => f.profiles) || []);
+      }
+    } catch (error) {
+      console.error('Error loading online friends:', error);
+    }
+  };
+
   return (
-    <aside className="hidden xl:flex flex-col w-80 p-4 fixed right-0 top-16 bottom-0 overflow-y-auto space-y-4">
+    <aside className="hidden xl:flex flex-col w-80 p-4 fixed right-0 top-16 bottom-0 overflow-y-auto space-y-4 bg-background border-l border-border/50">
+      {/* Online Friends */}
+      {onlineFriends.length > 0 && (
+        <Card className="bg-card/50 border-border/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <Users className="h-4 w-4 text-primary" />
+              Friends Online
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {onlineFriends.map((friend) => (
+              <div
+                key={friend.user_id}
+                className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                onClick={() => navigate(`/profile/${friend.username}`)}
+              >
+                <div className="relative">
+                  <Avatar className="h-9 w-9">
+                    <AvatarImage src={friend.avatar_url} />
+                    <AvatarFallback className="bg-primary/20 text-primary text-xs">
+                      {friend.display_name?.[0]?.toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 border-2 border-card rounded-full" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{friend.display_name}</p>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Featured Companions */}
       {featuredCompanions.length > 0 && (
         <Card className="bg-card/50 border-border/50">
@@ -93,31 +161,39 @@ const RightSidebar = () => {
       {suggestedUsers.length > 0 && (
         <Card className="bg-card/50 border-border/50">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold">Suggested for You</CardTitle>
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              Suggested for You
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-2">
             {suggestedUsers.map((user) => (
               <div
                 key={user.user_id}
-                className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                className="group p-2 rounded-lg hover:bg-muted/50 transition-all cursor-pointer"
                 onClick={() => navigate(`/profile/${user.username}`)}
               >
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={user.avatar_url} />
-                  <AvatarFallback className="bg-primary/20 text-primary">
-                    {user.display_name?.[0]?.toUpperCase() || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{user.display_name}</p>
-                  <p className="text-xs text-muted-foreground truncate">@{user.username}</p>
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10 border-2 border-transparent group-hover:border-primary/50 transition-all">
+                    <AvatarImage src={user.avatar_url} />
+                    <AvatarFallback className="bg-primary/20 text-primary">
+                      {user.display_name?.[0]?.toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">{user.display_name}</p>
+                    <p className="text-xs text-muted-foreground truncate">@{user.username}</p>
+                  </div>
                 </div>
+                {user.bio && (
+                  <p className="text-xs text-muted-foreground mt-2 line-clamp-2 ml-13">{user.bio}</p>
+                )}
               </div>
             ))}
             <Button
               variant="outline"
               size="sm"
-              className="w-full"
+              className="w-full mt-2 hover:bg-primary hover:text-primary-foreground transition-colors"
               onClick={() => navigate('/friends')}
             >
               See All

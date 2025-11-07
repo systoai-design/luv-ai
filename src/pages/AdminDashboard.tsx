@@ -120,7 +120,7 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl lg:pl-64 xl:pr-80">
+    <div className="container mx-auto px-4 py-8 max-w-6xl">
       <h1 className="text-4xl font-bold mb-8">Admin Dashboard</h1>
 
       <Card>

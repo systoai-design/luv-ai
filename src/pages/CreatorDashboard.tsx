@@ -110,7 +110,7 @@ const CreatorDashboard = () => {
     .reduce((sum, e) => sum + Number(e.amount), 0);
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl lg:pl-64 xl:pr-80">
+    <div className="container mx-auto px-4 py-8 max-w-6xl">
       <h1 className="text-4xl font-bold mb-8">Creator Dashboard</h1>
 
       <div className="grid gap-6 md:grid-cols-3 mb-8">

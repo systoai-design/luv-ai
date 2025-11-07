@@ -148,7 +148,7 @@ const Home = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-2xl lg:pl-64 xl:pr-80">
+      <div className="container mx-auto px-4 py-8 max-w-2xl">
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-48 w-full" />
@@ -159,7 +159,7 @@ const Home = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl lg:pl-64 xl:pr-80">
+    <div className="container mx-auto px-4 py-8 max-w-2xl">
       <div className="space-y-6">
         {profile && (
           <PostComposer

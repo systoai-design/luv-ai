@@ -7,6 +7,8 @@ import { useNavigate } from "react-router-dom";
 import SearchBar from "./SearchBar";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useUnreadCounts } from "@/hooks/useUnreadCounts";
+import { useSidebarState } from "@/hooks/useSidebarState";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,13 +28,12 @@ const TopNav = () => {
   const { publicKey } = useWallet();
   const navigate = useNavigate();
   const { handleDisconnect } = useWalletAuth();
+  const { toggleMobile } = useSidebarState();
+  const { unreadNotifications, unreadMessages } = useUnreadCounts();
   const [displayName, setDisplayName] = useState<string>("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [canCreateCompanion, setCanCreateCompanion] = useState(false);
   const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
-  const [unreadNotifications, setUnreadNotifications] = useState(0);
-  const [unreadMessages, setUnreadMessages] = useState(0);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -68,7 +69,7 @@ const TopNav = () => {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-card/80 backdrop-blur-lg">
+      <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-card/95 backdrop-blur-lg">
         <div className="flex items-center justify-between h-16 px-4">
           {/* Left: Logo + Menu (Mobile) */}
           <div className="flex items-center gap-4">
@@ -76,7 +77,7 @@ const TopNav = () => {
               variant="ghost"
               size="icon"
               className="lg:hidden"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
+              onClick={toggleMobile}
             >
               <Menu className="h-5 w-5" />
             </Button>
@@ -194,7 +195,7 @@ const TopNav = () => {
         </div>
 
         {/* Mobile Search Bar */}
-        <div className="md:hidden px-4 pb-3">
+        <div className="md:hidden px-4 pb-3 pt-1">
           <SearchBar />
         </div>
       </header>

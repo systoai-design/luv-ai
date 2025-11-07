@@ -54,7 +54,7 @@ const Purchases = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl lg:pl-64 xl:pr-80">
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
       <h1 className="text-4xl font-bold mb-8">My Purchases</h1>
 
       {purchases.length === 0 ? (

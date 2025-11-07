@@ -43,7 +43,7 @@ const Marketplace = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-7xl lg:pl-64 xl:pr-80">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="mb-8">
           <Skeleton className="h-10 w-64 mb-2" />
           <Skeleton className="h-6 w-96" />
@@ -58,7 +58,7 @@ const Marketplace = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl lg:pl-64 xl:pr-80">
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-2 bg-gradient-primary bg-clip-text text-transparent">
           AI Companion Marketplace

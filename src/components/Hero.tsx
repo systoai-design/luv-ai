@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { AuthModal } from "@/components/AuthModal";
 import { useState } from "react";
+import ParticleBackground from "@/components/landing/ParticleBackground";
 
 const Hero = () => {
   const { user } = useAuth();
@@ -28,10 +29,11 @@ const Hero = () => {
           alt="Hero background" 
           className="w-full h-full object-cover opacity-20 mix-blend-overlay"
         />
+        <ParticleBackground />
       </div>
       
       {/* Floating elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 2 }}>
         <div className="absolute top-20 left-10 w-72 h-72 bg-primary/20 rounded-full blur-3xl animate-float" />
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-secondary/20 rounded-full blur-3xl animate-float" style={{ animationDelay: "2s" }} />
       </div>

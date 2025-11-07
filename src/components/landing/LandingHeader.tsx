@@ -5,11 +5,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { AuthModal } from "@/components/AuthModal";
 import { useState } from "react";
+import { smoothScrollTo } from "@/lib/smoothScroll";
+import { useActiveSection } from "@/hooks/useActiveSection";
+import { cn } from "@/lib/utils";
 
 const LandingHeader = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const activeSection = useActiveSection(["discover", "marketplace", "how-it-works"]);
 
   const handleLaunchApp = () => {
     if (user) {
@@ -27,15 +31,33 @@ const LandingHeader = () => {
         </a>
         
         <nav className="hidden md:flex items-center gap-6">
-          <a href="#discover" className="text-foreground/80 hover:text-foreground transition-colors">
+          <button
+            onClick={() => smoothScrollTo("discover")}
+            className={cn(
+              "text-foreground/80 hover:text-foreground transition-colors relative",
+              activeSection === "discover" && "text-foreground after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-0.5 after:bg-primary"
+            )}
+          >
             Discover
-          </a>
-          <a href="#marketplace" className="text-foreground/80 hover:text-foreground transition-colors">
+          </button>
+          <button
+            onClick={() => smoothScrollTo("marketplace")}
+            className={cn(
+              "text-foreground/80 hover:text-foreground transition-colors relative",
+              activeSection === "marketplace" && "text-foreground after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-0.5 after:bg-primary"
+            )}
+          >
             Marketplace
-          </a>
-          <a href="#how-it-works" className="text-foreground/80 hover:text-foreground transition-colors">
+          </button>
+          <button
+            onClick={() => smoothScrollTo("how-it-works")}
+            className={cn(
+              "text-foreground/80 hover:text-foreground transition-colors relative",
+              activeSection === "how-it-works" && "text-foreground after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-0.5 after:bg-primary"
+            )}
+          >
             How It Works
-          </a>
+          </button>
         </nav>
 
         <Button

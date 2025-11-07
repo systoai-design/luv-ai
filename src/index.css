@@ -57,6 +57,45 @@ All colors MUST be HSL.
   }
 }
 
+/* Theme Variations */
+[data-theme="ocean"] {
+  --primary: 220 75% 60%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 180 75% 55%;
+  --gradient-primary: linear-gradient(135deg, hsl(220 75% 60%), hsl(180 75% 55%));
+  --gradient-accent: linear-gradient(135deg, hsl(180 75% 55%), hsl(220 75% 60%));
+  --shadow-glow: 0 0 40px hsl(180 75% 55% / 0.3);
+}
+
+[data-theme="sunset"] {
+  --primary: 0 85% 60%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 330 80% 65%;
+  --gradient-primary: linear-gradient(135deg, hsl(0 85% 60%), hsl(330 80% 65%));
+  --gradient-accent: linear-gradient(135deg, hsl(330 80% 65%), hsl(0 85% 60%));
+  --shadow-glow: 0 0 40px hsl(330 80% 65% / 0.3);
+}
+
+[data-theme="forest"] {
+  --primary: 160 70% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 140 75% 55%;
+  --gradient-primary: linear-gradient(135deg, hsl(160 70% 50%), hsl(140 75% 55%));
+  --gradient-accent: linear-gradient(135deg, hsl(140 75% 55%), hsl(160 70% 50%));
+  --shadow-glow: 0 0 40px hsl(140 75% 55% / 0.3);
+}
+
+/* Smooth theme transitions */
+:root {
+  transition: background-color 0.5s ease-in-out, color 0.5s ease-in-out;
+}
+
+* {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-duration: 0.5s;
+  transition-timing-function: ease-in-out;
+}
+
 @layer base {
   * {
     @apply border-border;

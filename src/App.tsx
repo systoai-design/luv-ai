@@ -14,6 +14,7 @@ import PublicProfile from "./pages/PublicProfile";
 import Chat from "./pages/Chat";
 import CreatorDashboard from "./pages/CreatorDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import Badges from "./pages/Badges";
 import Purchases from "./pages/Purchases";
 import Marketplace from "./pages/Marketplace";
 import Messages from "./pages/Messages";
@@ -98,6 +99,11 @@ const App = () => (
                 <Route path="/admin" element={
                   <ProtectedRoute>
                     <AdminDashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/badges" element={
+                  <ProtectedRoute>
+                    <Badges />
                   </ProtectedRoute>
                 } />
               </Route>

@@ -1,6 +1,8 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import * as LucideIcons from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import {
   Tooltip,
   TooltipContent,
@@ -41,16 +43,28 @@ const getBadgeColor = (color: string) => {
 };
 
 export const ProfileBadges = ({ badges }: ProfileBadgesProps) => {
+  const navigate = useNavigate();
+
   if (badges.length === 0) return null;
 
   return (
     <Card className="p-6 bg-card border-border">
-      <h2 className="text-xl font-bold mb-4">
-        Badges
-        <Badge variant="secondary" className="ml-2 text-xs">
-          {badges.length}
-        </Badge>
-      </h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold">
+          Badges
+          <Badge variant="secondary" className="ml-2 text-xs">
+            {badges.length}
+          </Badge>
+        </h2>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate("/badges")}
+          className="text-sm"
+        >
+          View All <LucideIcons.ChevronRight className="h-4 w-4 ml-1" />
+        </Button>
+      </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <TooltipProvider>

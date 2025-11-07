@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
-import Header from '@/components/Header';
+import AppHeader from '@/components/layout/AppHeader';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -122,10 +122,10 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-hero">
-      <Header />
+      <AppHeader />
       
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <Button variant="ghost" onClick={() => navigate('/')} className="mb-6">
+        <Button variant="ghost" onClick={() => navigate('/home')} className="mb-6">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Home
         </Button>

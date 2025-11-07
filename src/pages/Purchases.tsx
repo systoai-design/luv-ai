@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft, MessageCircle } from 'lucide-react';
-import Header from '@/components/Header';
+import AppHeader from '@/components/layout/AppHeader';
 
 const Purchases = () => {
   const { user } = useAuth();
@@ -56,7 +56,7 @@ const Purchases = () => {
 
   return (
     <div className="min-h-screen bg-gradient-hero">
-      <Header />
+      <AppHeader />
       
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <Button variant="ghost" onClick={() => navigate('/')} className="mb-6">

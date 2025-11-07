@@ -24,7 +24,7 @@ const Auth = () => {
 
   useEffect(() => {
     if (user) {
-      navigate("/");
+      navigate("/home");
     }
   }, [user, navigate]);
 
@@ -108,7 +108,7 @@ const Auth = () => {
       }
 
       toast.success("Welcome back!");
-      navigate("/");
+      navigate("/home");
     } catch (error) {
       toast.error("An unexpected error occurred");
     } finally {

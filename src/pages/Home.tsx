@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import Header from "@/components/Header";
+import AppHeader from "@/components/layout/AppHeader";
 import { PostCard } from "@/components/posts/PostCard";
 import { PostComposer } from "@/components/posts/PostComposer";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -150,7 +150,7 @@ const Home = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-hero">
-        <Header />
+        <AppHeader />
         <div className="container mx-auto px-4 pt-24 pb-12 max-w-2xl">
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
@@ -164,7 +164,7 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gradient-hero">
-      <Header />
+      <AppHeader />
       <div className="container mx-auto px-4 pt-24 pb-12 max-w-2xl">
         <div className="space-y-6">
           {profile && (

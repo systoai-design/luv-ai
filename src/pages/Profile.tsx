@@ -4,7 +4,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import Header from "@/components/Header";
+import AppHeader from "@/components/layout/AppHeader";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileStats } from "@/components/profile/ProfileStats";
 import { ProfileTabs } from "@/components/profile/ProfileTabs";
@@ -135,7 +135,7 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-gradient-hero">
-      <Header />
+      <AppHeader />
       <div className="container mx-auto px-4 pt-24 pb-12 max-w-6xl">
         <div className="space-y-0">
           <ProfileHeader

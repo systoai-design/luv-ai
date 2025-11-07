@@ -1,8 +1,24 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Shield, Zap, Lock } from "lucide-react";
+import { ArrowRight, Shield, Zap, Lock, Rocket } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { AuthModal } from "@/components/AuthModal";
+import { useState } from "react";
 
 const Hero = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+
+  const handleLaunchApp = () => {
+    if (user) {
+      navigate("/home");
+    } else {
+      setAuthModalOpen(true);
+    }
+  };
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background */}
@@ -44,9 +60,13 @@ const Hero = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button size="lg" className="bg-gradient-primary hover:opacity-90 transition-opacity shadow-glow text-lg px-8">
-              Start Exploring
-              <ArrowRight className="ml-2 h-5 w-5" />
+            <Button 
+              size="lg" 
+              onClick={handleLaunchApp}
+              className="bg-gradient-primary hover:opacity-90 transition-opacity shadow-glow text-lg px-8"
+            >
+              <Rocket className="mr-2 h-5 w-5" />
+              LAUNCH APP
             </Button>
             <Button size="lg" variant="outline" className="border-primary/50 hover:bg-primary/10 text-lg px-8">
               Learn More
@@ -81,6 +101,12 @@ const Hero = () => {
           </div>
         </div>
       </div>
+
+      <AuthModal 
+        open={authModalOpen} 
+        onOpenChange={setAuthModalOpen}
+        onSuccess={() => navigate("/home")}
+      />
     </section>
   );
 };

@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft, Shield, DollarSign } from 'lucide-react';
-import Header from '@/components/Header';
+import AppHeader from '@/components/layout/AppHeader';
 
 const CreatorDashboard = () => {
   const { user } = useAuth();
@@ -112,10 +112,10 @@ const CreatorDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-hero">
-      <Header />
+      <AppHeader />
       
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <Button variant="ghost" onClick={() => navigate('/')} className="mb-6">
+        <Button variant="ghost" onClick={() => navigate('/home')} className="mb-6">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Home
         </Button>

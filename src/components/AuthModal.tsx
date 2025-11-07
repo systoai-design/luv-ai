@@ -27,9 +27,10 @@ const validateUsername = (username: string): string | null => {
 interface AuthModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
 }
 
-export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
+export const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
   const { connected, publicKey, connect, wallet, wallets, select } = useWallet();
   const {
     authState,
@@ -136,6 +137,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
 
     if (result.success) {
       onOpenChange(false);
+      onSuccess?.();
     }
   };
 

@@ -3,8 +3,9 @@ import { ArrowRight, Shield, Zap, Lock, Rocket } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { WalletAuthModal } from "@/components/auth/WalletAuthModal";
 import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import OneClickConnect from "@/components/auth/OneClickConnect";
 import ParticleBackground from "@/components/landing/ParticleBackground";
 
 const Hero = () => {
@@ -105,11 +106,16 @@ const Hero = () => {
         </div>
       </div>
 
-      <WalletAuthModal 
-        open={authModalOpen} 
-        onOpenChange={setAuthModalOpen}
-        onSuccess={() => navigate("/home")}
-      />
+      <Dialog open={authModalOpen} onOpenChange={setAuthModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-center">Connect Your Wallet</DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-center py-6">
+            <OneClickConnect />
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };

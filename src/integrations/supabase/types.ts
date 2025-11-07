@@ -106,6 +106,39 @@ export type Database = {
           },
         ]
       }
+      badges: {
+        Row: {
+          badge_type: string
+          color: string | null
+          created_at: string | null
+          criteria: Json
+          description: string
+          icon: string
+          id: string
+          name: string
+        }
+        Insert: {
+          badge_type?: string
+          color?: string | null
+          created_at?: string | null
+          criteria: Json
+          description: string
+          icon: string
+          id?: string
+          name: string
+        }
+        Update: {
+          badge_type?: string
+          color?: string | null
+          created_at?: string | null
+          criteria?: Json
+          description?: string
+          icon?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           chat_id: string
@@ -491,6 +524,35 @@ export type Database = {
         }
         Relationships: []
       }
+      user_badges: {
+        Row: {
+          badge_id: string
+          earned_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          badge_id: string
+          earned_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          badge_id?: string
+          earned_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_badges_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_chats: {
         Row: {
           companion_id: string
@@ -611,6 +673,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_and_award_badges: {
+        Args: { check_user_id: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

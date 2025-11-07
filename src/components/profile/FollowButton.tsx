@@ -9,6 +9,16 @@ interface FollowButtonProps {
   targetUserId: string;
 }
 
+const checkBadgesForUser = async (userId: string) => {
+  try {
+    await supabase.rpc("check_and_award_badges", {
+      check_user_id: userId,
+    });
+  } catch (error) {
+    console.error("Error checking badges:", error);
+  }
+};
+
 export const FollowButton = ({ currentUserId, targetUserId }: FollowButtonProps) => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -47,6 +57,9 @@ export const FollowButton = ({ currentUserId, targetUserId }: FollowButtonProps)
 
         setIsFollowing(false);
         toast.success("Unfollowed");
+        
+        // Check badges for the unfollowed user
+        await checkBadgesForUser(targetUserId);
       } else {
         // Follow
         const { error } = await supabase
@@ -60,6 +73,9 @@ export const FollowButton = ({ currentUserId, targetUserId }: FollowButtonProps)
 
         setIsFollowing(true);
         toast.success("Following");
+        
+        // Check badges for the followed user (they might have earned follower milestones)
+        await checkBadgesForUser(targetUserId);
       }
     } catch (error) {
       console.error("Error toggling follow:", error);

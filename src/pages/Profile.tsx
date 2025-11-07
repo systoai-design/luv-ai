@@ -10,9 +10,11 @@ import { ProfileTabs } from "@/components/profile/ProfileTabs";
 import { ProfileAbout } from "@/components/profile/ProfileAbout";
 import { ProfileIntro } from "@/components/profile/ProfileIntro";
 import { ProfileCompletion } from "@/components/profile/ProfileCompletion";
+import { ProfileBadges } from "@/components/profile/ProfileBadges";
 import { PostComposer } from "@/components/posts/PostComposer";
 import { PostFeed } from "@/components/posts/PostFeed";
 import { FollowersModal } from "@/components/profile/FollowersModal";
+import { useUserBadges } from "@/hooks/useUserBadges";
 
 const Profile = () => {
   const { user } = useAuth();
@@ -34,6 +36,8 @@ const Profile = () => {
     interests: [] as string[],
   });
 
+  const { badges, checkBadges } = useUserBadges(user?.id);
+
   const handleFieldClick = (field: string) => {
     // Switch to about tab for editable fields
     if (["display_name", "bio", "interests"].includes(field)) {
@@ -48,6 +52,8 @@ const Profile = () => {
   useEffect(() => {
     if (user) {
       loadProfile();
+      // Check for new badges when profile loads
+      checkBadges(user.id);
     }
   }, [user]);
 
@@ -132,6 +138,9 @@ const Profile = () => {
         interests: data.interests,
       }));
 
+      // Check for new badges after profile update
+      checkBadges(user!.id);
+
       toast.success("Profile updated successfully");
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -188,13 +197,14 @@ const Profile = () => {
             onTabChange={setActiveTab}
             postsContent={
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-1">
+                <div className="lg:col-span-1 space-y-6">
                   <ProfileIntro
                     bio={profile.bio}
                     email={user?.email}
                     walletAddress={profile.wallet_address}
                     interests={profile.interests}
                   />
+                  <ProfileBadges badges={badges} />
                 </div>
                 <div className="lg:col-span-2 space-y-6">
                   <PostComposer
@@ -203,6 +213,7 @@ const Profile = () => {
                     displayName={profile.display_name}
                     onPostCreated={() => {
                       loadProfile();
+                      checkBadges(user!.id);
                     }}
                   />
                   <PostFeed userId={user!.id} currentUserId={user!.id} />

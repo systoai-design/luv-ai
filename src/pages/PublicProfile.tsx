@@ -7,9 +7,11 @@ import { ProfileStats } from "@/components/profile/ProfileStats";
 import { ProfileTabs } from "@/components/profile/ProfileTabs";
 import { ProfileAbout } from "@/components/profile/ProfileAbout";
 import { ProfileIntro } from "@/components/profile/ProfileIntro";
+import { ProfileBadges } from "@/components/profile/ProfileBadges";
 import { PostFeed } from "@/components/posts/PostFeed";
 import { FollowersModal } from "@/components/profile/FollowersModal";
 import { Loader2 } from "lucide-react";
+import { useUserBadges } from "@/hooks/useUserBadges";
 
 const PublicProfile = () => {
   const { username } = useParams();
@@ -20,6 +22,8 @@ const PublicProfile = () => {
   const [postsCount, setPostsCount] = useState(0);
   const [followersModalOpen, setFollowersModalOpen] = useState(false);
   const [followersModalTab, setFollowersModalTab] = useState<"followers" | "following">("followers");
+  
+  const { badges } = useUserBadges(profile?.user_id);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -107,12 +111,13 @@ const PublicProfile = () => {
           <ProfileTabs
             postsContent={
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-1">
+                <div className="lg:col-span-1 space-y-6">
                   <ProfileIntro
                     bio={profile.bio}
                     walletAddress={profile.wallet_address}
                     interests={profile.interests}
                   />
+                  <ProfileBadges badges={badges} />
                 </div>
                 <div className="lg:col-span-2">
                   {user ? (

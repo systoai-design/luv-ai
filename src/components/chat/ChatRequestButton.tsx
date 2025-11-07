@@ -48,7 +48,7 @@ export const ChatRequestButton = ({
 
   if (status === 'pending_received') {
     return (
-      <Button onClick={handleAccept} disabled={loading} variant="default">
+      <Button onClick={handleAccept} disabled={loading} variant="default" className="notification-glow">
         <Check className="h-4 w-4 mr-2" />
         Accept Request
       </Button>

@@ -45,7 +45,7 @@ const Hero = () => {
           </div>
           
           <h1 className="text-5xl md:text-7xl font-bold leading-tight">
-            <span className="bg-gradient-primary bg-clip-text text-transparent">
+            <span className="text-gradient-animated">
               The Future of
             </span>
             <br />
@@ -63,7 +63,8 @@ const Hero = () => {
             <Button 
               size="lg" 
               onClick={handleLaunchApp}
-              className="bg-gradient-primary hover:opacity-90 transition-opacity shadow-glow text-lg px-8"
+              variant="gradient"
+              className="shadow-glow text-lg px-8"
             >
               <Rocket className="mr-2 h-5 w-5" />
               LAUNCH APP

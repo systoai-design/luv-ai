@@ -47,7 +47,7 @@ const DiscoverSection = () => {
       <div className="container mx-auto max-w-6xl">
         <div className="text-center mb-12">
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            <span className="bg-gradient-accent bg-clip-text text-transparent">
+            <span className="text-gradient-pulse">
               Discover
             </span>{" "}
             Real Connections
@@ -58,7 +58,7 @@ const DiscoverSection = () => {
         </div>
 
         <div className="max-w-md mx-auto">
-          <Card className="bg-card border-border shadow-card overflow-hidden">
+          <Card className="bg-card border-border shadow-card overflow-hidden card-gradient-hover">
             <div className="relative h-96 bg-gradient-to-br from-primary/20 to-secondary/20">
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-9xl opacity-10">👤</div>

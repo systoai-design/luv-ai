@@ -35,7 +35,7 @@ const HowItWorks = () => {
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
             How{" "}
-            <span className="bg-gradient-primary bg-clip-text text-transparent">
+            <span className="text-gradient-pulse">
               It Works
             </span>
           </h2>
@@ -50,7 +50,7 @@ const HowItWorks = () => {
             return (
               <Card
                 key={index}
-                className="bg-card border-border hover:border-primary/50 transition-all shadow-card relative overflow-hidden group"
+                className="bg-card border-border hover:border-primary/50 transition-all shadow-card relative overflow-hidden group card-gradient-hover"
               >
                 <div className={`absolute top-0 left-0 w-full h-1 bg-${step.color}`} />
                 <CardContent className="pt-8 pb-6 px-6 space-y-4">

@@ -95,7 +95,7 @@ const MarketplaceSection = () => {
         <div className="text-center mb-12">
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
             Discover Your{" "}
-            <span className="bg-gradient-primary bg-clip-text text-transparent">
+            <span className="text-gradient-animated">
               Perfect Companion
             </span>
           </h2>
@@ -135,7 +135,7 @@ const MarketplaceSection = () => {
               return (
                 <Card 
                   key={companion.id} 
-                  className="bg-card border-border hover:border-primary/50 transition-all shadow-card hover:shadow-glow group cursor-pointer"
+                  className="bg-card border-border hover:border-primary/50 transition-all shadow-card hover:shadow-glow group cursor-pointer card-gradient-hover"
                 >
                   <CardHeader className="text-center">
                     <div className="relative mx-auto mb-4">

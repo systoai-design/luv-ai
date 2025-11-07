@@ -41,7 +41,8 @@ const LandingHeader = () => {
         <Button
           onClick={handleLaunchApp}
           size="lg"
-          className="bg-gradient-primary hover:opacity-90 transition-opacity shadow-glow"
+          variant="gradient"
+          className="shadow-glow"
         >
           <Rocket className="h-5 w-5 mr-2" />
           LAUNCH APP

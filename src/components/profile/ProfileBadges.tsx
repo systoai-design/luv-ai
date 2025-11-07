@@ -42,6 +42,13 @@ const getBadgeColor = (color: string) => {
   return colorMap[color] || colorMap.primary;
 };
 
+const getBadgeRarityClass = (badgeType: string) => {
+  if (badgeType === "rare") return "badge-rare";
+  if (badgeType === "legendary") return "badge-legendary";
+  if (badgeType === "limited") return "badge-limited";
+  return "";
+};
+
 export const ProfileBadges = ({ badges }: ProfileBadgesProps) => {
   const navigate = useNavigate();
 
@@ -68,13 +75,14 @@ export const ProfileBadges = ({ badges }: ProfileBadgesProps) => {
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <TooltipProvider>
-          {badges.map((badge) => (
+          {badges.slice(0, 6).map((badge) => (
             <Tooltip key={badge.id}>
               <TooltipTrigger asChild>
                 <div
                   className={`
                     flex flex-col items-center gap-2 p-3 rounded-lg border-2 
                     ${getBadgeColor(badge.color)}
+                    ${getBadgeRarityClass(badge.badge_type)}
                     hover:scale-105 transition-transform cursor-help
                   `}
                 >
@@ -82,6 +90,11 @@ export const ProfileBadges = ({ badges }: ProfileBadgesProps) => {
                   <span className="text-xs font-medium text-center leading-tight">
                     {badge.name}
                   </span>
+                  {(badge.badge_type === "rare" || badge.badge_type === "legendary" || badge.badge_type === "limited") && (
+                    <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">
+                      {badge.badge_type === "legendary" ? "LEGENDARY" : badge.badge_type === "limited" ? "LIMITED" : "RARE"}
+                    </Badge>
+                  )}
                 </div>
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">

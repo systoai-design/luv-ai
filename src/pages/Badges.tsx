@@ -23,6 +23,13 @@ const getBadgeColor = (color: string) => {
   return colorMap[color] || colorMap.primary;
 };
 
+const getBadgeRarityClass = (badgeType: string) => {
+  if (badgeType === "rare") return "badge-rare";
+  if (badgeType === "legendary") return "badge-legendary";
+  if (badgeType === "limited") return "badge-limited";
+  return "";
+};
+
 const Badges = () => {
   const { badges, isLoading } = useAllBadges();
 
@@ -74,16 +81,31 @@ const Badges = () => {
                       className={`
                         flex items-center justify-center p-3 rounded-lg border-2
                         ${getBadgeColor(badge.color)}
+                        ${getBadgeRarityClass(badge.badge_type)}
                       `}
                     >
                       <BadgeIcon iconName={badge.icon} />
                     </div>
                     <div className="flex-1">
-                      <CardTitle className="flex items-center gap-2">
+                      <CardTitle className="flex items-center gap-2 flex-wrap">
                         {badge.name}
                         <Badge variant="secondary" className="text-xs">
                           Earned
                         </Badge>
+                        {(badge.badge_type === "rare" || badge.badge_type === "legendary" || badge.badge_type === "limited") && (
+                          <Badge 
+                            variant="outline" 
+                            className={`text-xs ${
+                              badge.badge_type === "legendary" 
+                                ? "border-yellow-500 text-yellow-500" 
+                                : badge.badge_type === "limited"
+                                ? "border-orange-500 text-orange-500"
+                                : "border-cyan-500 text-cyan-500"
+                            }`}
+                          >
+                            {badge.badge_type === "legendary" ? "LEGENDARY" : badge.badge_type === "limited" ? "LIMITED EDITION" : "RARE"}
+                          </Badge>
+                        )}
                       </CardTitle>
                       <CardDescription className="mt-1">
                         {badge.description}
@@ -126,11 +148,25 @@ const Badges = () => {
                       <BadgeIcon iconName={badge.icon} />
                     </div>
                     <div className="flex-1">
-                      <CardTitle className="flex items-center gap-2">
+                      <CardTitle className="flex items-center gap-2 flex-wrap">
                         {badge.name}
                         <Badge variant="outline" className="text-xs">
                           {Math.round(badge.progress)}%
                         </Badge>
+                        {(badge.badge_type === "rare" || badge.badge_type === "legendary" || badge.badge_type === "limited") && (
+                          <Badge 
+                            variant="outline" 
+                            className={`text-xs ${
+                              badge.badge_type === "legendary" 
+                                ? "border-yellow-500/50 text-yellow-500/70" 
+                                : badge.badge_type === "limited"
+                                ? "border-orange-500/50 text-orange-500/70"
+                                : "border-cyan-500/50 text-cyan-500/70"
+                            }`}
+                          >
+                            {badge.badge_type === "legendary" ? "LEGENDARY" : badge.badge_type === "limited" ? "LIMITED EDITION" : "RARE"}
+                          </Badge>
+                        )}
                       </CardTitle>
                       <CardDescription className="mt-1">
                         {badge.description}

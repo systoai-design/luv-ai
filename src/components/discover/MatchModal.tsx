@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Heart, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface MatchModalProps {
   profile: {
@@ -55,6 +56,7 @@ const MatchModal = ({ profile, onClose }: MatchModalProps) => {
               className="flex-1 gap-2"
               onClick={() => {
                 navigate('/messages');
+                toast.success('You can now message each other!');
                 onClose();
               }}
             >

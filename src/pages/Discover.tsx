@@ -7,6 +7,7 @@ import MatchModal from '@/components/discover/MatchModal';
 import { calculateMatchScore } from '@/lib/interests';
 import { Loader2, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 interface DiscoverProfile {
   id: string;
@@ -33,6 +34,43 @@ const Discover = () => {
   useEffect(() => {
     if (!user) return;
     loadProfiles();
+
+    // Subscribe to realtime match notifications
+    const channel = supabase
+      .channel('match-notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'matches',
+          filter: `user_id_1=eq.${user.id},user_id_2=eq.${user.id}`,
+        },
+        async (payload) => {
+          console.log('New match detected!', payload);
+          
+          // Determine the other user ID
+          const match = payload.new as any;
+          const otherUserId = match.user_id_1 === user.id ? match.user_id_2 : match.user_id_1;
+          
+          // Fetch the matched user's profile
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('user_id', otherUserId)
+            .single();
+          
+          if (profile) {
+            setMatchedProfile(profile);
+            toast.success("It's a match! 💕");
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const loadProfiles = async () => {

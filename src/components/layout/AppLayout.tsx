@@ -11,7 +11,14 @@ const AppLayout = () => {
   useKeyboardShortcuts(); // Enable keyboard shortcuts
 
   return (
-    <div className="min-h-screen bg-background flex flex-col w-full overflow-x-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90 flex flex-col w-full overflow-x-hidden relative">
+      {/* Floating blur orbs for ambiance */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 -left-20 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-float" />
+        <div className="absolute top-40 right-10 w-96 h-96 bg-secondary/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
+        <div className="absolute bottom-20 left-1/3 w-80 h-80 bg-accent/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '4s' }} />
+      </div>
+
       {/* Top Navigation Bar */}
       <TopNav />
       
@@ -19,7 +26,7 @@ const AppLayout = () => {
       <MobileSidebar />
       
       {/* Main Layout: Sidebar + Content + Right Sidebar */}
-      <div className="flex flex-1 w-full">
+      <div className="flex flex-1 w-full relative z-10">
         {/* Left Sidebar */}
         <LeftSidebar />
         

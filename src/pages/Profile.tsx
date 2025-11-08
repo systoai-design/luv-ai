@@ -163,8 +163,11 @@ const Profile = () => {
 
   return (
     <>
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <div className="space-y-6">
+      <div className="container mx-auto px-4 py-8 max-w-6xl relative">
+        {/* Gradient overlay for depth */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-secondary/5 to-transparent pointer-events-none" />
+        
+        <div className="space-y-6 relative z-10 animate-fade-in">
           <ProfileHeader
             userId={user!.id}
             displayName={profile.display_name}

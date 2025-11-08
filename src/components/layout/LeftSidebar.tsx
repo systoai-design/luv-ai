@@ -68,8 +68,8 @@ const LeftSidebar = () => {
     const content = (
       <NavLink
         to={item.path}
-        className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-muted/50 transition-all duration-200 text-foreground group"
-        activeClassName="bg-muted text-primary font-medium"
+        className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-muted/50 hover:shadow-glow transition-all duration-200 text-foreground group"
+        activeClassName="bg-gradient-to-r from-primary/20 to-secondary/20 text-primary font-medium shadow-glow border border-primary/30"
       >
         <item.icon className="h-5 w-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110" />
         {displayWidth && (
@@ -106,11 +106,13 @@ const LeftSidebar = () => {
 
   return (
     <aside 
-      className={`hidden lg:flex flex-col border-r border-border/50 bg-card fixed left-0 top-16 bottom-0 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-y-auto z-40 ${
+      className={`hidden lg:flex flex-col border-r border-border/50 bg-card/30 backdrop-blur-xl fixed left-0 top-16 bottom-0 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-y-auto z-40 ${
         displayWidth ? 'w-64 p-4' : 'w-16 p-2'
       }`}
       style={{ willChange: 'width' }}
     >
+      {/* Gradient border highlight */}
+      <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-primary/50 to-transparent pointer-events-none" />
 
       {/* User Profile Section */}
       {profile && displayWidth && (

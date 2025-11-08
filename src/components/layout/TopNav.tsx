@@ -72,8 +72,10 @@ const TopNav = () => {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-card/95 backdrop-blur-lg">
-        <div className="flex items-center justify-between h-16 px-4">
+      <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-card/30 backdrop-blur-xl shadow-glow">
+        {/* Subtle gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-secondary/5 pointer-events-none" />
+        <div className="flex items-center justify-between h-16 px-4 relative z-10">
           {/* Left: Logo + Menu */}
           <div className="flex items-center gap-2">
             <Button
@@ -118,12 +120,12 @@ const TopNav = () => {
             <Button
               variant="ghost"
               size="icon"
-              className="relative hidden sm:flex"
+              className="relative hidden sm:flex hover:scale-110 transition-transform duration-200"
               onClick={() => navigate("/messages")}
             >
               <MessageCircle className="h-5 w-5" />
               {unreadMessages > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-verified text-xs">
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-verified text-xs shadow-glow animate-pulse">
                   {unreadMessages}
                 </Badge>
               )}
@@ -133,12 +135,12 @@ const TopNav = () => {
             <Button
               variant="ghost"
               size="icon"
-              className="relative hidden sm:flex"
+              className="relative hidden sm:flex hover:scale-110 transition-transform duration-200"
               onClick={() => navigate("/notifications")}
             >
               <Bell className="h-5 w-5" />
               {unreadNotifications > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-verified text-xs">
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-verified text-xs shadow-glow animate-pulse">
                   {unreadNotifications}
                 </Badge>
               )}

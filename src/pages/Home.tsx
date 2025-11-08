@@ -159,8 +159,11 @@ const Home = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <div className="space-y-6">
+    <div className="container mx-auto px-4 py-8 max-w-2xl relative">
+      {/* Gradient overlay for depth */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent pointer-events-none" />
+      
+      <div className="space-y-6 relative z-10 animate-fade-in">
         {profile && (
           <PostComposer
             userId={user!.id}
@@ -171,8 +174,9 @@ const Home = () => {
         )}
 
         {posts.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground bg-card rounded-lg border border-border">
-            No posts yet. Start following users to see their posts!
+          <div className="text-center py-12 text-muted-foreground bg-card/30 backdrop-blur-sm rounded-lg border border-border/50 shadow-card">
+            <p className="text-lg font-medium mb-2">No posts yet</p>
+            <p className="text-sm">Start following users to see their posts!</p>
           </div>
         ) : (
           <div className="space-y-4">

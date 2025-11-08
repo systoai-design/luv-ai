@@ -89,10 +89,12 @@ const RightSidebar = () => {
   };
 
   return (
-    <aside className="hidden xl:flex flex-col w-80 p-4 fixed right-0 top-16 bottom-0 overflow-y-auto space-y-4 bg-background border-l border-border/50">
+    <aside className="hidden xl:flex flex-col w-80 p-4 fixed right-0 top-16 bottom-0 overflow-y-auto space-y-4 bg-background/50 backdrop-blur-xl border-l border-border/50">
+      {/* Gradient border highlight */}
+      <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-primary/50 to-transparent pointer-events-none" />
       {/* Online Friends */}
       {onlineFriends.length > 0 && (
-        <Card className="bg-card/50 border-border/50">
+        <Card className="bg-card/30 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-all shadow-card hover:shadow-glow">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <Users className="h-4 w-4 text-primary" />
@@ -144,7 +146,7 @@ const RightSidebar = () => {
 
       {/* Your Matches */}
       {matches.length > 0 && (
-        <Card className="bg-card/50 border-border/50">
+        <Card className="bg-card/30 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-all shadow-card hover:shadow-glow">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <Heart className="h-4 w-4 text-primary fill-primary" />
@@ -196,7 +198,7 @@ const RightSidebar = () => {
 
       {/* Featured Companions */}
       {featuredCompanions.length > 0 && (
-        <Card className="bg-card/50 border-border/50">
+        <Card className="bg-card/30 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-all shadow-card hover:shadow-glow">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-primary" />
@@ -236,7 +238,7 @@ const RightSidebar = () => {
 
       {/* Suggested Friends */}
       {suggestedUsers.length > 0 && (
-        <Card className="bg-card/50 border-border/50">
+        <Card className="bg-card/30 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-all shadow-card hover:shadow-glow">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-primary" />

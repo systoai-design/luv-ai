@@ -85,7 +85,7 @@ export const PostCard = ({
   };
 
   return (
-    <Card className="bg-card border-border">
+    <Card className="bg-card/30 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-all duration-300 shadow-card hover:shadow-glow hover:scale-[1.01]">
       <CardContent className="pt-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex gap-3">
@@ -135,9 +135,9 @@ export const PostCard = ({
             variant="ghost"
             size="sm"
             onClick={handleLike}
-            className="gap-2"
+            className="gap-2 hover:scale-110 transition-transform duration-200"
           >
-            <Heart className={`h-4 w-4 ${userLiked ? "fill-red-500 text-red-500" : ""}`} />
+            <Heart className={`h-4 w-4 transition-all ${userLiked ? "fill-red-500 text-red-500 animate-pulse" : ""}`} />
             <span>{post.likes_count}</span>
           </Button>
 
@@ -145,7 +145,7 @@ export const PostCard = ({
             variant="ghost"
             size="sm"
             onClick={() => setShowComments(!showComments)}
-            className="gap-2"
+            className="gap-2 hover:scale-110 transition-transform duration-200"
           >
             <MessageCircle className="h-4 w-4" />
             <span>{post.comments_count}</span>

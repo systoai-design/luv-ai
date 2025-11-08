@@ -5,6 +5,7 @@ import { PostCard } from "@/components/posts/PostCard";
 import { PostComposer } from "@/components/posts/PostComposer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2 } from "lucide-react";
+import { calculateMatchScore } from "@/lib/interests";
 
 const POSTS_PER_PAGE = 10;
 
@@ -16,6 +17,7 @@ const Home = () => {
   const [hasMore, setHasMore] = useState(true);
   const [userLikes, setUserLikes] = useState<Set<string>>(new Set());
   const [profile, setProfile] = useState<any>(null);
+  const [currentUserInterests, setCurrentUserInterests] = useState<string[]>([]);
   const observerTarget = useRef(null);
 
   const loadPosts = async (offset = 0) => {
@@ -29,7 +31,7 @@ const Home = () => {
         setLoadingMore(true);
       }
 
-      // Load posts from all users (or followed users)
+      // Load posts from all users with author interests
       const { data: postsData, error: postsError } = await supabase
         .from("posts")
         .select(`
@@ -37,7 +39,8 @@ const Home = () => {
           profiles:user_id (
             display_name,
             avatar_url,
-            username
+            username,
+            interests
           )
         `)
         .order("created_at", { ascending: false })
@@ -54,10 +57,33 @@ const Home = () => {
       const likedPostIds = new Set(likesData?.map((l) => l.post_id) || []);
       setUserLikes(likedPostIds);
 
+      // Score and sort posts by shared interests
+      const scoredPosts = (postsData || []).map((post: any) => {
+        const authorInterests = post.profiles?.interests || [];
+        const { score: sharedCount, shared } = calculateMatchScore(
+          currentUserInterests,
+          authorInterests
+        );
+        return {
+          ...post,
+          sharedInterests: shared,
+          interestScore: sharedCount,
+        };
+      });
+
+      // Sort: High interest match first, then medium, then low, within each group by date
+      scoredPosts.sort((a, b) => {
+        if (a.interestScore !== b.interestScore) {
+          return b.interestScore - a.interestScore; // Higher score first
+        }
+        // Within same score group, sort by date (most recent first)
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+
       if (isInitialLoad) {
-        setPosts(postsData || []);
+        setPosts(scoredPosts);
       } else {
-        setPosts((prev) => [...prev, ...(postsData || [])]);
+        setPosts((prev) => [...prev, ...scoredPosts]);
       }
 
       setHasMore((postsData?.length || 0) === POSTS_PER_PAGE);
@@ -81,6 +107,7 @@ const Home = () => {
 
       if (data) {
         setProfile(data);
+        setCurrentUserInterests(data.interests || []);
       }
     } catch (error) {
       console.error("Error loading profile:", error);
@@ -180,13 +207,14 @@ const Home = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {posts.map((post) => (
+            {posts.map((post: any) => (
               <PostCard
                 key={post.id}
                 post={post}
                 profile={post.profiles}
                 currentUserId={user!.id}
                 userLiked={userLikes.has(post.id)}
+                sharedInterests={post.sharedInterests || []}
                 onDelete={() => loadPosts()}
                 onLikeToggle={() => loadPosts()}
               />

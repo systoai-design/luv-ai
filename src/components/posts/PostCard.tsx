@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Heart, MessageCircle, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -25,6 +26,7 @@ interface PostCardProps {
   };
   currentUserId: string;
   userLiked: boolean;
+  sharedInterests?: string[];
   onDelete?: () => void;
   onLikeToggle: () => void;
 }
@@ -34,6 +36,7 @@ export const PostCard = ({
   profile,
   currentUserId,
   userLiked,
+  sharedInterests = [],
   onDelete,
   onLikeToggle,
 }: PostCardProps) => {
@@ -97,7 +100,14 @@ export const PostCard = ({
             </Avatar>
 
             <div>
-              <p className="font-semibold">{profile.display_name || "User"}</p>
+              <div className="flex items-center gap-2">
+                <p className="font-semibold">{profile.display_name || "User"}</p>
+                {sharedInterests.length > 0 && (
+                  <Badge variant="secondary" className="text-xs">
+                    🎯 {sharedInterests.length} shared
+                  </Badge>
+                )}
+              </div>
               {profile.username && (
                 <p className="text-sm text-muted-foreground">@{profile.username}</p>
               )}

@@ -313,7 +313,7 @@ const Discover = () => {
 
   if (!profiles.length) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center">
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-12rem)] p-4 text-center">
         <Heart className="h-16 w-16 text-muted-foreground mb-4" />
         <h2 className="text-2xl font-bold mb-2">You've Seen Everyone!</h2>
         <p className="text-muted-foreground mb-6 max-w-md">

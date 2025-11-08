@@ -21,6 +21,7 @@ const LeftSidebar = () => {
   const [canCreateCompanion, setCanCreateCompanion] = useState(false);
   const { unreadMessages } = useUnreadCounts();
   const [isHovered, setIsHovered] = useState(false);
+  const [hoverDisabled, setHoverDisabled] = useState(false);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -103,7 +104,7 @@ const LeftSidebar = () => {
     return content;
   };
 
-  const shouldExpand = isCollapsed && isHovered;
+  const shouldExpand = isCollapsed && isHovered && !hoverDisabled;
   const displayWidth = shouldExpand || !isCollapsed;
 
   return (
@@ -113,7 +114,10 @@ const LeftSidebar = () => {
       } ${shouldExpand ? 'shadow-xl z-50' : 'z-40'} ${displayWidth ? 'p-4' : 'p-2'}`}
       style={{ willChange: 'width' }}
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        setHoverDisabled(false);
+      }}
     >
       {/* Mini Profile Card - show on hover when collapsed */}
       <MiniProfileCard show={isCollapsed && isHovered} />
@@ -122,7 +126,11 @@ const LeftSidebar = () => {
         <Button
           variant="ghost"
           size="icon"
-          onClick={toggleCollapsed}
+          onClick={() => {
+            toggleCollapsed();
+            setHoverDisabled(true);
+            setTimeout(() => setHoverDisabled(false), 500);
+          }}
           className="h-8 w-8"
         >
           {isCollapsed ? (

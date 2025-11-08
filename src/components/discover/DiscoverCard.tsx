@@ -6,6 +6,7 @@ import { X, Heart, Star, Check, Sparkles } from 'lucide-react';
 import { useSwipe } from '@/hooks/useSwipe';
 import { useCardSwipe } from '@/hooks/useCardSwipe';
 import { triggerHaptic } from '@/lib/haptics';
+import { playSound } from '@/lib/sounds';
 import { toast } from 'sonner';
 import { useSuperLikes } from '@/hooks/useSuperLikes';
 
@@ -33,6 +34,7 @@ const DiscoverCard = ({ profile, onSwipe }: DiscoverCardProps) => {
     
     if (result?.match) {
       triggerHaptic('heavy');
+      playSound('match');
       toast.success("It's a match! 🎉");
     }
     
@@ -171,6 +173,7 @@ const DiscoverCard = ({ profile, onSwipe }: DiscoverCardProps) => {
             className="rounded-full w-16 h-16 p-0 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
             onClick={() => {
               triggerHaptic('medium');
+              playSound('swipe');
               animateSwipe('left');
             }}
             disabled={isLoading}
@@ -183,6 +186,7 @@ const DiscoverCard = ({ profile, onSwipe }: DiscoverCardProps) => {
             className="rounded-full w-20 h-20 p-0 bg-primary hover:bg-primary/90"
             onClick={() => {
               triggerHaptic('success');
+              playSound('swipe');
               animateSwipe('right');
             }}
             disabled={isLoading}
@@ -197,6 +201,7 @@ const DiscoverCard = ({ profile, onSwipe }: DiscoverCardProps) => {
               className="rounded-full w-16 h-16 p-0 border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black disabled:opacity-50 relative overflow-hidden group"
               onClick={() => {
                 triggerHaptic('success');
+                playSound('superlike');
                 handleSwipeAction('super_like');
               }}
               disabled={isLoading || superLikesRemaining === 0}

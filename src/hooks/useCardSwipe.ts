@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { triggerHaptic } from '@/lib/haptics';
+import { playSound } from '@/lib/sounds';
 
 interface Position {
   x: number;
@@ -35,7 +36,8 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
     setThresholdCrossed(false);
     const pos = getEventPosition(e);
     startPos.current = pos;
-    triggerHaptic('light'); // Light haptic on drag start
+    triggerHaptic('light');
+    playSound('tap');
   }, [isAnimating]);
 
   const handleMove = useCallback((e: React.TouchEvent | React.MouseEvent | TouchEvent | MouseEvent) => {
@@ -47,10 +49,11 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
     
     setPosition({ x: deltaX, y: deltaY });
     
-    // Trigger haptic when crossing threshold for the first time
+    // Trigger haptic and sound when crossing threshold for the first time
     if (!thresholdCrossed && Math.abs(deltaX) > threshold) {
       setThresholdCrossed(true);
       triggerHaptic('medium');
+      playSound('threshold');
     }
   }, [isDragging, isAnimating, thresholdCrossed, threshold]);
 
@@ -65,8 +68,9 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
       const direction = position.x > 0 ? 'right' : 'left';
       const exitX = position.x > 0 ? 600 : -600;
       
-      // Haptic feedback for valid swipe
+      // Haptic and sound feedback for valid swipe
       triggerHaptic(direction === 'right' ? 'success' : 'medium');
+      playSound(direction === 'right' ? 'like' : 'pass');
       
       setPosition({ x: exitX, y: position.y });
       
@@ -76,8 +80,9 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
         setIsAnimating(false);
       }, 300);
     } else {
-      // Spring back to center - light haptic for cancelled swipe
+      // Spring back to center - light haptic and sound for cancelled swipe
       triggerHaptic('light');
+      playSound('cancel');
       setPosition({ x: 0, y: 0 });
     }
   }, [isDragging, isAnimating, position, threshold, onSwipe]);
@@ -88,8 +93,9 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
     setIsAnimating(true);
     const exitX = direction === 'right' ? 600 : -600;
     
-    // Haptic feedback for programmatic swipe
+    // Haptic and sound feedback for programmatic swipe
     triggerHaptic(direction === 'right' ? 'success' : 'medium');
+    playSound(direction === 'right' ? 'like' : 'pass');
     
     setPosition({ x: exitX, y: 0 });
     

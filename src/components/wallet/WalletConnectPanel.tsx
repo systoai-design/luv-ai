@@ -39,8 +39,8 @@ export const WalletConnectPanel = ({ onConnected }: WalletConnectPanelProps) => 
   const [isCheckingUser, setIsCheckingUser] = useState(false);
   const [isExistingUser, setIsExistingUser] = useState<boolean | null>(null);
 
-  // Helper to wait for connection state to update
-  const waitForConnection = async (maxMs = 5000): Promise<boolean> => {
+// Helper to wait for connection state to update (increased timeout to 8s)
+  const waitForConnection = async (maxMs = 8000): Promise<boolean> => {
     const startTime = Date.now();
     while (Date.now() - startTime < maxMs) {
       if (connected && publicKey) {
@@ -93,15 +93,15 @@ export const WalletConnectPanel = ({ onConnected }: WalletConnectPanelProps) => 
     try {
       console.info('[wallet] Starting connection flow for:', walletName);
 
-      // Step 1: Disconnect any existing connection
-      if (connected) {
-        console.info('[wallet] Disconnecting existing wallet');
+      // Step 1: Only disconnect if connected to a DIFFERENT wallet
+      if (connected && wallet?.adapter?.name !== walletName) {
+        console.info('[wallet] Disconnecting existing wallet:', wallet?.adapter?.name);
         await disconnect().catch(() => {});
+        
+        // Step 2: Clear cached wallet state only when switching wallets
+        console.info('[wallet] Clearing wallet cache due to wallet switch');
+        await clearWalletStorage();
       }
-
-      // Step 2: Clear all cached wallet state
-      console.info('[wallet] Clearing wallet cache');
-      await clearWalletStorage();
 
       // Step 3: Select the target wallet
       console.info('[wallet] Selecting wallet:', walletName);
@@ -112,13 +112,16 @@ export const WalletConnectPanel = ({ onConnected }: WalletConnectPanelProps) => 
       await waitUntil(() => wallet?.adapter?.name === walletName, 3000, 50);
       console.info('[wallet] Wallet selected:', wallet?.adapter?.name);
 
-      // Step 5: Attempt connection with timeout
-      console.info('[wallet] Attempting to connect, readyState:', wallet?.adapter?.readyState);
-      await withTimeout(connect(), 10000);
+      // Step 5: Add small delay for state synchronization
+      await new Promise(resolve => setTimeout(resolve, 150));
 
-      // Step 6: Wait for connected state to actually update
-      console.info('[wallet] Connect call resolved, waiting for state update...');
-      const isConnected = await waitForConnection(5000);
+      // Step 6: Attempt connection with increased timeout (15s)
+      console.info('[wallet] Opening wallet popup...');
+      await withTimeout(connect(), 15000);
+
+      // Step 7: Wait for connected state to actually update
+      console.info('[wallet] Verifying connection...');
+      const isConnected = await waitForConnection(8000);
       
       if (!isConnected) {
         throw new Error('Connection state did not update. Please check your wallet and try again.');
@@ -153,10 +156,10 @@ export const WalletConnectPanel = ({ onConnected }: WalletConnectPanelProps) => 
       if (targetWallet && !connected) {
         try {
           console.info('[wallet] Trying fallback: direct adapter connection');
-          await withTimeout(targetWallet.adapter.connect(), 10000);
+          await withTimeout(targetWallet.adapter.connect(), 15000);
           
           // Wait for connection state to update
-          const isConnected = await waitForConnection(5000);
+          const isConnected = await waitForConnection(8000);
           if (!isConnected) {
             throw new Error('Fallback connection state did not update.');
           }
@@ -290,7 +293,7 @@ export const WalletConnectPanel = ({ onConnected }: WalletConnectPanelProps) => 
             <Button
               key={walletOption.adapter.name}
               onClick={() => handleWalletConnect(walletOption.adapter.name)}
-              disabled={connecting || !isDetected}
+              disabled={connecting}
               className="w-full justify-start gap-3 h-auto py-3"
               variant={isDetected ? "outline" : "ghost"}
             >

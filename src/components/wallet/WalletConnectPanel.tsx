@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletName } from "@solana/wallet-adapter-base";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Loader2, ExternalLink, RefreshCw } from "lucide-react";
 import { clearWalletStorage } from "@/lib/walletReset";
+import { supabase } from "@/integrations/supabase/client";
 
 interface WalletConnectPanelProps {
   onConnected: () => void;
@@ -35,6 +36,8 @@ export const WalletConnectPanel = ({ onConnected }: WalletConnectPanelProps) => 
   const [connecting, setConnecting] = useState(false);
   const [selectedWallet, setSelectedWallet] = useState<string | null>(null);
   const [connectionVerified, setConnectionVerified] = useState(false);
+  const [isCheckingUser, setIsCheckingUser] = useState(false);
+  const [isExistingUser, setIsExistingUser] = useState<boolean | null>(null);
 
   // Helper to wait for connection state to update
   const waitForConnection = async (maxMs = 5000): Promise<boolean> => {
@@ -47,6 +50,22 @@ export const WalletConnectPanel = ({ onConnected }: WalletConnectPanelProps) => 
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
     return false;
+  };
+
+  // Check if wallet exists in database
+  const checkWalletExists = async (walletAddress: string): Promise<boolean> => {
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("wallet_address")
+        .eq("wallet_address", walletAddress.toLowerCase())
+        .maybeSingle();
+      
+      return !!data;
+    } catch (error) {
+      console.error('[wallet] Error checking wallet:', error);
+      return false;
+    }
   };
 
   const showError = (error: any) => {
@@ -107,8 +126,24 @@ export const WalletConnectPanel = ({ onConnected }: WalletConnectPanelProps) => 
 
       console.info('[wallet] Connection verified!');
       setConnectionVerified(true);
-      toast.success("Wallet connected successfully! 🎉");
-      onConnected();
+      
+      // Check if user exists in database
+      setIsCheckingUser(true);
+      const walletAddress = publicKey.toBase58().toLowerCase();
+      const exists = await checkWalletExists(walletAddress);
+      setIsExistingUser(exists);
+      setIsCheckingUser(false);
+
+      if (exists) {
+        // Existing user - automatically proceed
+        console.info('[wallet] Existing user detected, auto-proceeding');
+        toast.success("Welcome back! 💜");
+        onConnected();
+      } else {
+        // New user - show registration prompt
+        console.info('[wallet] New user detected, showing registration prompt');
+        toast.success("Wallet connected successfully! 🎉");
+      }
       
     } catch (error: any) {
       console.error('[wallet] Connection failed:', error);
@@ -128,8 +163,24 @@ export const WalletConnectPanel = ({ onConnected }: WalletConnectPanelProps) => 
           
           console.info('[wallet] Fallback connection verified!');
           setConnectionVerified(true);
-          toast.success("Wallet connected successfully! 🎉");
-          onConnected();
+          
+          // Check if user exists in database
+          setIsCheckingUser(true);
+          const walletAddress = publicKey.toBase58().toLowerCase();
+          const exists = await checkWalletExists(walletAddress);
+          setIsExistingUser(exists);
+          setIsCheckingUser(false);
+
+          if (exists) {
+            // Existing user - automatically proceed
+            console.info('[wallet] Existing user detected, auto-proceeding');
+            toast.success("Welcome back! 💜");
+            onConnected();
+          } else {
+            // New user - show registration prompt
+            console.info('[wallet] New user detected, showing registration prompt');
+            toast.success("Wallet connected successfully! 🎉");
+          }
           return;
         } catch (fallbackError: any) {
           console.error('[wallet] Fallback also failed:', fallbackError);
@@ -169,19 +220,48 @@ export const WalletConnectPanel = ({ onConnected }: WalletConnectPanelProps) => 
   );
   const detectedWallets = wallets.filter(wallet => wallet.readyState === 'Installed');
 
+  // Auto-proceed for existing users once check completes
+  useEffect(() => {
+    if (connected && publicKey && !isCheckingUser && isExistingUser === true && !connectionVerified) {
+      console.info('[wallet] Auto-proceeding for existing user');
+      setConnectionVerified(true);
+      onConnected();
+    }
+  }, [connected, publicKey, isCheckingUser, isExistingUser, connectionVerified, onConnected]);
+
   if (connected && publicKey) {
-    return (
-      <div className="text-center py-4 space-y-3">
-        <p className="text-foreground">✅ Wallet connected successfully!</p>
-        <p className="text-sm text-muted-foreground">{publicKey.toBase58().slice(0, 8)}...{publicKey.toBase58().slice(-8)}</p>
-        {!connectionVerified && (
+    if (isCheckingUser) {
+      return (
+        <div className="text-center py-4 space-y-3">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+          <p className="text-foreground">Checking your account...</p>
+          <p className="text-sm text-muted-foreground">{publicKey.toBase58().slice(0, 8)}...{publicKey.toBase58().slice(-8)}</p>
+        </div>
+      );
+    }
+
+    if (isExistingUser === false) {
+      // New user - show registration button
+      return (
+        <div className="text-center py-4 space-y-3">
+          <p className="text-foreground">✅ Wallet connected successfully!</p>
+          <p className="text-sm text-muted-foreground">{publicKey.toBase58().slice(0, 8)}...{publicKey.toBase58().slice(-8)}</p>
           <Button 
             onClick={handleManualContinue}
             className="w-full"
           >
-            Continue to Registration
+            Complete Registration
           </Button>
-        )}
+        </div>
+      );
+    }
+
+    // Existing user or already verified - show loading/success
+    return (
+      <div className="text-center py-4 space-y-3">
+        <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+        <p className="text-foreground">Signing you in...</p>
+        <p className="text-sm text-muted-foreground">{publicKey.toBase58().slice(0, 8)}...{publicKey.toBase58().slice(-8)}</p>
       </div>
     );
   }

@@ -231,14 +231,14 @@ export const HomeSidebar = ({ currentUserInterests, userId }: HomeSidebarProps) 
 
   if (currentUserInterests.length === 0) {
     return (
-      <div className="hidden xl:block fixed right-8 top-24 w-80 space-y-4">
+      <div className="hidden xl:block sticky top-24 w-80 space-y-4 self-start">
         <EmptyInterestsState variant="sidebar" userId={userId} />
       </div>
     );
   }
 
   return (
-    <div className="hidden xl:block fixed right-8 top-24 w-80 space-y-4">
+    <div className="hidden xl:block sticky top-24 w-80 space-y-4 self-start">
       <Card className="bg-card/50 backdrop-blur-sm border-border/50 shadow-card">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">

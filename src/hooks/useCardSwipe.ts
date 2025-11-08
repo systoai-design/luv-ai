@@ -15,6 +15,7 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
   const [position, setPosition] = useState<Position>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [thresholdCrossed, setThresholdCrossed] = useState(false);
   const startPos = useRef<Position>({ x: 0, y: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -31,6 +32,7 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
   const handleStart = useCallback((e: React.TouchEvent | React.MouseEvent) => {
     if (isAnimating) return;
     setIsDragging(true);
+    setThresholdCrossed(false);
     const pos = getEventPosition(e);
     startPos.current = pos;
     triggerHaptic('light'); // Light haptic on drag start
@@ -44,7 +46,13 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
     const deltaY = currentPos.y - startPos.current.y;
     
     setPosition({ x: deltaX, y: deltaY });
-  }, [isDragging, isAnimating]);
+    
+    // Trigger haptic when crossing threshold for the first time
+    if (!thresholdCrossed && Math.abs(deltaX) > threshold) {
+      setThresholdCrossed(true);
+      triggerHaptic('medium');
+    }
+  }, [isDragging, isAnimating, thresholdCrossed, threshold]);
 
   const handleEnd = useCallback(() => {
     if (!isDragging || isAnimating) return;
@@ -58,7 +66,7 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
       const exitX = position.x > 0 ? 600 : -600;
       
       // Haptic feedback for valid swipe
-      triggerHaptic(direction === 'right' ? 'success' : 'light');
+      triggerHaptic(direction === 'right' ? 'success' : 'medium');
       
       setPosition({ x: exitX, y: position.y });
       
@@ -68,7 +76,8 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
         setIsAnimating(false);
       }, 300);
     } else {
-      // Spring back to center
+      // Spring back to center - light haptic for cancelled swipe
+      triggerHaptic('light');
       setPosition({ x: 0, y: 0 });
     }
   }, [isDragging, isAnimating, position, threshold, onSwipe]);
@@ -80,7 +89,7 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
     const exitX = direction === 'right' ? 600 : -600;
     
     // Haptic feedback for programmatic swipe
-    triggerHaptic(direction === 'right' ? 'success' : 'light');
+    triggerHaptic(direction === 'right' ? 'success' : 'medium');
     
     setPosition({ x: exitX, y: 0 });
     

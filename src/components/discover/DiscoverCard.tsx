@@ -169,7 +169,10 @@ const DiscoverCard = ({ profile, onSwipe }: DiscoverCardProps) => {
             size="lg"
             variant="outline"
             className="rounded-full w-16 h-16 p-0 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
-            onClick={() => animateSwipe('left')}
+            onClick={() => {
+              triggerHaptic('medium');
+              animateSwipe('left');
+            }}
             disabled={isLoading}
           >
             <X className="h-8 w-8" />
@@ -178,7 +181,10 @@ const DiscoverCard = ({ profile, onSwipe }: DiscoverCardProps) => {
           <Button
             size="lg"
             className="rounded-full w-20 h-20 p-0 bg-primary hover:bg-primary/90"
-            onClick={() => animateSwipe('right')}
+            onClick={() => {
+              triggerHaptic('success');
+              animateSwipe('right');
+            }}
             disabled={isLoading}
           >
             <Heart className="h-10 w-10 fill-current" />

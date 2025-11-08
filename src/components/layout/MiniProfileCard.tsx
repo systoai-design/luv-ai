@@ -75,7 +75,7 @@ export const MiniProfileCard = ({ show }: MiniProfileCardProps) => {
 
   return (
     <Card
-      className="absolute bottom-4 left-20 w-60 shadow-xl z-[60] animate-fade-in animate-scale-in cursor-pointer hover:shadow-glow transition-shadow"
+      className="fixed bottom-4 left-20 w-60 shadow-xl z-[60] animate-fade-in animate-scale-in cursor-pointer hover:shadow-glow transition-shadow"
       onClick={() => navigate('/profile')}
     >
       <CardContent className="p-4 space-y-3">

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useSidebarState } from "@/hooks/useSidebarState";
 import { CreateCompanionDialog } from "@/components/creator/CreateCompanionDialog";
-import { MiniProfileCard } from "./MiniProfileCard";
+
 import { useUnreadCounts } from "@/hooks/useUnreadCounts";
 import { Badge } from "@/components/ui/badge";
 
@@ -20,7 +20,6 @@ const LeftSidebar = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [canCreateCompanion, setCanCreateCompanion] = useState(false);
   const { unreadMessages } = useUnreadCounts();
-  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -103,20 +102,15 @@ const LeftSidebar = () => {
     return content;
   };
 
-  const shouldExpand = isCollapsed && isHovered;
-  const displayWidth = shouldExpand || !isCollapsed;
+  const displayWidth = !isCollapsed;
 
   return (
     <aside 
-      className={`hidden lg:flex flex-col border-r border-border/50 bg-card fixed left-0 top-16 bottom-0 transition-all duration-300 ease-in-out overscroll-contain overflow-y-hidden hover:overflow-y-auto ${
-        displayWidth ? 'w-64' : 'w-16'
-      } ${shouldExpand ? 'shadow-xl z-50' : 'z-40'} ${displayWidth ? 'p-4' : 'p-2'}`}
+      className={`hidden lg:flex flex-col border-r border-border/50 bg-card fixed left-0 top-16 bottom-0 transition-all duration-300 ease-in-out overflow-y-auto z-40 ${
+        displayWidth ? 'w-64 p-4' : 'w-16 p-2'
+      }`}
       style={{ willChange: 'width' }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Mini Profile Card - show on hover when collapsed */}
-      <MiniProfileCard show={isCollapsed && isHovered} />
 
       {/* User Profile Section */}
       {profile && displayWidth && (

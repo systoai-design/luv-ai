@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Bell, MessageCircle, User, Menu, Wallet } from "lucide-react";
+import { Bell, MessageCircle, User, Menu, Wallet, PanelLeft } from "lucide-react";
 import logo from "@/assets/logo.svg";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -30,7 +30,7 @@ const TopNav = () => {
   const { publicKey } = useWallet();
   const navigate = useNavigate();
   const { handleDisconnect } = useWalletAuth();
-  const { toggleMobile } = useSidebarState();
+  const { toggleMobile, toggleCollapsed } = useSidebarState();
   const { unreadNotifications, unreadMessages } = useUnreadCounts();
   const [displayName, setDisplayName] = useState<string>("");
   const [isAdmin, setIsAdmin] = useState(false);
@@ -74,8 +74,8 @@ const TopNav = () => {
     <>
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-card/95 backdrop-blur-lg">
         <div className="flex items-center justify-between h-16 px-4">
-          {/* Left: Logo + Menu (Mobile) */}
-          <div className="flex items-center gap-4">
+          {/* Left: Logo + Menu */}
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="icon"
@@ -83,6 +83,14 @@ const TopNav = () => {
               onClick={toggleMobile}
             >
               <Menu className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden lg:flex"
+              onClick={toggleCollapsed}
+            >
+              <PanelLeft className="h-5 w-5" />
             </Button>
             <button onClick={() => navigate("/home")} className="flex items-center">
               <img src={logo} alt="LUVAI" className="h-10 w-auto" />

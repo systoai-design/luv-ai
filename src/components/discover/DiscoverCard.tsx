@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +32,7 @@ const DiscoverCard = ({ profile, onSwipe }: DiscoverCardProps) => {
   const { swipe, isLoading } = useSwipe();
   const { remaining: superLikesRemaining } = useSuperLikes();
   const { canvasRef, trigger: triggerParticles } = useParticles();
+  const [isEntering, setIsEntering] = useState(true);
 
   const handleSwipeAction = async (action: 'like' | 'pass' | 'super_like') => {
     const result = await swipe(profile.user_id, action);
@@ -53,7 +55,10 @@ const DiscoverCard = ({ profile, onSwipe }: DiscoverCardProps) => {
     position,
     rotation,
     opacity: cardOpacity,
+    scale,
+    velocity,
     isDragging,
+    isAnimating,
     handleStart,
     animateSwipe,
     cardRef,
@@ -62,52 +67,86 @@ const DiscoverCard = ({ profile, onSwipe }: DiscoverCardProps) => {
       const action = direction === 'right' ? 'like' : 'pass';
       handleSwipeAction(action);
     },
-    threshold: 150,
+    threshold: 120,
   });
+
+  // Card entry animation
+  useEffect(() => {
+    setIsEntering(true);
+    const timer = setTimeout(() => setIsEntering(false), 400);
+    return () => clearTimeout(timer);
+  }, [profile.id]);
 
   const isSharedInterest = (interest: string) => 
     profile.sharedInterests?.includes(interest);
 
-  // Calculate swipe indicators
-  const swipeLeftOpacity = Math.min(Math.abs(Math.min(position.x, 0)) / 100, 1);
-  const swipeRightOpacity = Math.min(Math.max(position.x, 0) / 100, 1);
+  // Enhanced swipe indicators with exponential curve
+  const indicatorLeftOpacity = position.x < 0 ? Math.pow(Math.abs(position.x) / 150, 1.5) : 0;
+  const indicatorRightOpacity = position.x > 0 ? Math.pow(position.x / 150, 1.5) : 0;
+  const iconScale = 1 + (Math.abs(position.x) / 300);
 
   return (
     <Card 
       ref={cardRef}
-      className="bg-card border-border overflow-hidden select-none cursor-grab active:cursor-grabbing transition-opacity relative"
+      className="bg-card border-border overflow-hidden select-none cursor-grab active:cursor-grabbing relative"
       style={{
-        transform: `translateX(${position.x}px) translateY(${position.y}px) rotate(${rotation}deg)`,
-        opacity: cardOpacity,
-        transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease-out',
+        transform: isEntering 
+          ? 'translate3d(0, 20px, 0) scale(0.9)' 
+          : `translate3d(${position.x}px, ${position.y}px, 0) scale(${scale}) rotate(${rotation}deg)`,
+        opacity: isEntering ? 0 : cardOpacity,
+        transition: isEntering 
+          ? 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)' 
+          : isDragging 
+            ? 'none' 
+            : isAnimating 
+              ? 'all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1)' 
+              : 'all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55)',
+        willChange: isDragging ? 'transform, opacity' : 'auto',
       }}
       onMouseDown={handleStart}
       onTouchStart={handleStart}
     >
       <ParticleCanvas ref={canvasRef} />
-      {/* Swipe Left Indicator (X) */}
-      {position.x < -50 && (
-        <div
-          className="absolute inset-0 z-10 flex items-center justify-center bg-destructive/20 pointer-events-none"
-          style={{ opacity: swipeLeftOpacity }}
+      
+      {/* Pass Indicator - Enhanced */}
+      <div
+        className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none"
+        style={{
+          opacity: indicatorLeftOpacity,
+          backdropFilter: position.x < 0 ? `blur(${indicatorLeftOpacity * 8}px)` : 'none',
+        }}
+      >
+        <div 
+          className={`bg-destructive/90 text-destructive-foreground px-8 py-4 rounded-2xl border-4 border-destructive transform rotate-12 ${
+            position.x < -120 ? 'animate-pulse' : ''
+          }`}
+          style={{
+            transform: `rotate(12deg) scale(${iconScale})`,
+          }}
         >
-          <div className="rounded-full bg-destructive p-8">
-            <X className="h-20 w-20 text-destructive-foreground" strokeWidth={3} />
-          </div>
+          <X className="w-16 h-16" strokeWidth={3} />
         </div>
-      )}
+      </div>
 
-      {/* Swipe Right Indicator (Heart) */}
-      {position.x > 50 && (
-        <div
-          className="absolute inset-0 z-10 flex items-center justify-center bg-primary/20 pointer-events-none"
-          style={{ opacity: swipeRightOpacity }}
+      {/* Like Indicator - Enhanced */}
+      <div
+        className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none"
+        style={{
+          opacity: indicatorRightOpacity,
+          backdropFilter: position.x > 0 ? `blur(${indicatorRightOpacity * 8}px)` : 'none',
+        }}
+      >
+        <div 
+          className={`bg-primary/90 text-primary-foreground px-8 py-4 rounded-2xl border-4 border-primary transform -rotate-12 ${
+            position.x > 120 ? 'animate-pulse' : ''
+          }`}
+          style={{
+            transform: `rotate(-12deg) scale(${iconScale})`,
+          }}
         >
-          <div className="rounded-full bg-primary p-8">
-            <Heart className="h-20 w-20 text-primary-foreground fill-current" strokeWidth={3} />
-          </div>
+          <Heart className="w-16 h-16 fill-current" strokeWidth={3} />
         </div>
-      )}
+      </div>
 
       <div className="relative h-96 bg-gradient-to-b from-background/50 to-background">
         <Avatar className="w-full h-full rounded-none">

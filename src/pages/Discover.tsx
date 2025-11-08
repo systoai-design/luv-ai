@@ -351,17 +351,33 @@ const Discover = () => {
       </div>
 
       <div className="relative">
-        {/* Next card (background) - shown behind with depth effect */}
-        {nextProfile && (
+        {/* Card 3 - Further behind */}
+        {profiles[currentIndex + 2] && (
           <div 
             className="absolute inset-0 pointer-events-none"
             style={{
-              transform: 'scale(0.95) translateY(10px)',
-              opacity: 0.5,
-              zIndex: 1,
+              transform: 'translate3d(0, 16px, 0) scale(0.90)',
+              opacity: 0.3,
+              zIndex: 0,
+              transition: 'all 0.3s ease-out',
             }}
           >
-            <DiscoverCard profile={nextProfile} onSwipe={() => {}} />
+            <Card className="w-full h-full bg-card/30 backdrop-blur-sm border-border/20" />
+          </div>
+        )}
+        
+        {/* Card 2 - Behind current */}
+        {profiles[currentIndex + 1] && (
+          <div 
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              transform: 'translate3d(0, 8px, 0) scale(0.95)',
+              opacity: 0.5,
+              zIndex: 1,
+              transition: 'all 0.3s ease-out',
+            }}
+          >
+            <Card className="w-full h-full bg-card/50 backdrop-blur-sm border-border/30" />
           </div>
         )}
         
@@ -369,8 +385,7 @@ const Discover = () => {
         {currentProfile && (
           <div 
             key={currentProfile.id}
-            style={{ position: 'relative', zIndex: 2 }}
-            className="animate-scale-in"
+            style={{ position: 'relative', zIndex: 10 }}
           >
             <DiscoverCard profile={currentProfile} onSwipe={handleSwipe} />
           </div>

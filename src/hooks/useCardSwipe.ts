@@ -17,11 +17,16 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
   const [isDragging, setIsDragging] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [thresholdCrossed, setThresholdCrossed] = useState(false);
+  const [velocity, setVelocity] = useState(0);
   const startPos = useRef<Position>({ x: 0, y: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
+  const lastMoveTime = useRef(Date.now());
+  const lastPosition = useRef(0);
 
-  const rotation = (position.x / 20) * -1;
-  const opacity = Math.max(0.5, 1 - Math.abs(position.x) / 400);
+  // Enhanced transforms with velocity influence
+  const scale = Math.max(0.95, 1 - Math.abs(position.x) / 2000);
+  const rotation = (position.x / 15) * (1 + Math.abs(velocity) / 100) * -1;
+  const opacity = Math.max(0.7, 1 - Math.abs(position.x) / 600);
 
   const getEventPosition = (e: React.TouchEvent | React.MouseEvent | TouchEvent | MouseEvent): Position => {
     if ('touches' in e) {
@@ -47,6 +52,16 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
     const deltaX = currentPos.x - startPos.current.x;
     const deltaY = currentPos.y - startPos.current.y;
     
+    // Calculate velocity for momentum
+    const now = Date.now();
+    const dt = now - lastMoveTime.current;
+    if (dt > 0) {
+      const vel = (deltaX - lastPosition.current) / dt;
+      setVelocity(vel);
+    }
+    lastMoveTime.current = now;
+    lastPosition.current = deltaX;
+    
     setPosition({ x: deltaX, y: deltaY });
     
     // Trigger haptic and sound when crossing threshold for the first time
@@ -62,11 +77,16 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
     
     setIsDragging(false);
     
-    if (Math.abs(position.x) > threshold) {
-      // Valid swipe - animate off screen
+    // Momentum-based swipe detection
+    const momentumSwipe = Math.abs(velocity) > 0.5 && Math.abs(position.x) > 50;
+    const thresholdSwipe = Math.abs(position.x) > threshold;
+    
+    if (thresholdSwipe || momentumSwipe) {
+      // Valid swipe - animate off screen with velocity-based duration
       setIsAnimating(true);
       const direction = position.x > 0 ? 'right' : 'left';
       const exitX = position.x > 0 ? 600 : -600;
+      const exitDuration = Math.max(150, 250 - Math.abs(velocity) * 50);
       
       // Haptic and sound feedback for valid swipe
       triggerHaptic(direction === 'right' ? 'success' : 'medium');
@@ -77,15 +97,17 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
       setTimeout(() => {
         onSwipe(direction);
         setPosition({ x: 0, y: 0 });
+        setVelocity(0);
         setIsAnimating(false);
-      }, 300);
+      }, exitDuration);
     } else {
       // Spring back to center - light haptic and sound for cancelled swipe
       triggerHaptic('light');
       playSound('cancel');
       setPosition({ x: 0, y: 0 });
+      setVelocity(0);
     }
-  }, [isDragging, isAnimating, position, threshold, onSwipe]);
+  }, [isDragging, isAnimating, position, velocity, threshold, onSwipe]);
 
   const animateSwipe = useCallback((direction: 'left' | 'right') => {
     if (isAnimating) return;
@@ -102,8 +124,9 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
     setTimeout(() => {
       onSwipe(direction);
       setPosition({ x: 0, y: 0 });
+      setVelocity(0);
       setIsAnimating(false);
-    }, 300);
+    }, 200);
   }, [isAnimating, onSwipe]);
 
   // Prevent body scroll during drag
@@ -151,6 +174,8 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
     position,
     rotation,
     opacity,
+    scale,
+    velocity,
     isDragging,
     isAnimating,
     handleStart,

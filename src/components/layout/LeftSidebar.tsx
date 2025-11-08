@@ -68,15 +68,15 @@ const LeftSidebar = () => {
     const content = (
       <NavLink
         to={item.path}
-        className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-muted/50 transition-colors text-foreground"
+        className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-muted/50 transition-all duration-200 text-foreground group"
         activeClassName="bg-muted text-primary font-medium"
       >
-        <item.icon className="h-5 w-5 flex-shrink-0" />
+        <item.icon className="h-5 w-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110" />
         {displayWidth && (
           <>
-            <span className="animate-fade-in flex-1">{item.label}</span>
+            <span className="animate-fade-in flex-1 transition-opacity duration-300">{item.label}</span>
             {showBadge && (
-              <Badge variant="destructive" className="ml-auto">
+              <Badge variant="destructive" className="ml-auto animate-scale-in">
                 {unreadMessages > 99 ? '99+' : unreadMessages}
               </Badge>
             )}
@@ -106,7 +106,7 @@ const LeftSidebar = () => {
 
   return (
     <aside 
-      className={`hidden lg:flex flex-col border-r border-border/50 bg-card fixed left-0 top-16 bottom-0 transition-all duration-300 ease-in-out overflow-y-auto z-40 ${
+      className={`hidden lg:flex flex-col border-r border-border/50 bg-card fixed left-0 top-16 bottom-0 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-y-auto z-40 ${
         displayWidth ? 'w-64 p-4' : 'w-16 p-2'
       }`}
       style={{ willChange: 'width' }}
@@ -117,16 +117,16 @@ const LeftSidebar = () => {
         <>
           <NavLink 
             to="/profile" 
-            className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors mb-4"
+            className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-all duration-200 mb-4 animate-fade-in group"
             activeClassName="bg-muted"
           >
-            <Avatar className="h-10 w-10">
+            <Avatar className="h-10 w-10 transition-transform duration-200 group-hover:scale-105">
               <AvatarImage src={profile.avatar_url} />
               <AvatarFallback className="bg-primary/20 text-primary">
                 {profile.display_name?.[0]?.toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 animate-fade-in">
               <p className="text-sm font-medium truncate">{profile.display_name || profile.username}</p>
               <p className="text-xs text-muted-foreground truncate">View Profile</p>
             </div>
@@ -143,7 +143,7 @@ const LeftSidebar = () => {
               <TooltipTrigger asChild>
                 <NavLink 
                   to="/profile" 
-                  className="flex items-center justify-center p-2 rounded-lg hover:bg-muted/50 transition-colors mb-4"
+                  className="flex items-center justify-center p-2 rounded-lg hover:bg-muted/50 transition-all duration-200 mb-4 hover:scale-110"
                   activeClassName="bg-muted"
                 >
                   <Avatar className="h-8 w-8">
@@ -250,32 +250,32 @@ const LeftSidebar = () => {
           <>
             <NavLink
               to="/purchases"
-              className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-muted/50 transition-colors text-foreground"
+              className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-muted/50 transition-all duration-200 text-foreground animate-fade-in group"
               activeClassName="bg-muted text-primary font-medium"
             >
-              <Package className="h-5 w-5" />
-              <span>My Purchases</span>
+              <Package className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" />
+              <span className="transition-opacity duration-300">My Purchases</span>
             </NavLink>
 
             {canCreateCompanion && (
               <NavLink
                 to="/creator"
-                className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-muted/50 transition-colors text-foreground"
+                className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-muted/50 transition-all duration-200 text-foreground animate-fade-in group"
                 activeClassName="bg-muted text-primary font-medium"
               >
-                <LayoutDashboard className="h-5 w-5" />
-                <span>Creator Dashboard</span>
+                <LayoutDashboard className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" />
+                <span className="transition-opacity duration-300">Creator Dashboard</span>
               </NavLink>
             )}
 
             {isAdmin && (
               <NavLink
                 to="/admin"
-                className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-muted/50 transition-colors text-foreground"
+                className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-muted/50 transition-all duration-200 text-foreground animate-fade-in group"
                 activeClassName="bg-muted text-primary font-medium"
               >
-                <Shield className="h-5 w-5" />
-                <span>Admin Dashboard</span>
+                <Shield className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" />
+                <span className="transition-opacity duration-300">Admin Dashboard</span>
               </NavLink>
             )}
           </>

@@ -87,10 +87,10 @@ const TopNav = () => {
             <Button
               variant="ghost"
               size="icon"
-              className="hidden lg:flex"
+              className="hidden lg:flex group"
               onClick={toggleCollapsed}
             >
-              <PanelLeft className="h-5 w-5" />
+              <PanelLeft className="h-5 w-5 transition-transform duration-300 group-hover:scale-110 group-active:rotate-180" />
             </Button>
             <button onClick={() => navigate("/home")} className="flex items-center">
               <img src={logo} alt="LUVAI" className="h-10 w-auto" />

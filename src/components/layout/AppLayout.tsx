@@ -25,7 +25,7 @@ const AppLayout = () => {
         
         {/* Main Content Area */}
         <main 
-          className={`flex-1 min-w-0 transition-all duration-300 pt-16 ${
+          className={`flex-1 min-w-0 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] pt-16 ${
             isCollapsed ? 'lg:ml-16' : 'lg:ml-64'
           } xl:mr-80`}
         >

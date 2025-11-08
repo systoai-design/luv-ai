@@ -9,6 +9,8 @@ import { triggerHaptic } from '@/lib/haptics';
 import { playSound } from '@/lib/sounds';
 import { toast } from 'sonner';
 import { useSuperLikes } from '@/hooks/useSuperLikes';
+import { useParticles } from '@/hooks/useParticles';
+import { ParticleCanvas } from './ParticleCanvas';
 
 interface DiscoverCardProps {
   profile: {
@@ -28,6 +30,7 @@ interface DiscoverCardProps {
 const DiscoverCard = ({ profile, onSwipe }: DiscoverCardProps) => {
   const { swipe, isLoading } = useSwipe();
   const { remaining: superLikesRemaining } = useSuperLikes();
+  const { canvasRef, trigger: triggerParticles } = useParticles();
 
   const handleSwipeAction = async (action: 'like' | 'pass' | 'super_like') => {
     const result = await swipe(profile.user_id, action);
@@ -35,7 +38,12 @@ const DiscoverCard = ({ profile, onSwipe }: DiscoverCardProps) => {
     if (result?.match) {
       triggerHaptic('heavy');
       playSound('match');
+      triggerParticles('match');
       toast.success("It's a match! 🎉");
+    }
+    
+    if (action === 'super_like') {
+      triggerParticles('superlike');
     }
     
     onSwipe(result || { match: null, swipeId: '' }, action);
@@ -67,7 +75,7 @@ const DiscoverCard = ({ profile, onSwipe }: DiscoverCardProps) => {
   return (
     <Card 
       ref={cardRef}
-      className="bg-card border-border overflow-hidden select-none cursor-grab active:cursor-grabbing transition-opacity"
+      className="bg-card border-border overflow-hidden select-none cursor-grab active:cursor-grabbing transition-opacity relative"
       style={{
         transform: `translateX(${position.x}px) translateY(${position.y}px) rotate(${rotation}deg)`,
         opacity: cardOpacity,
@@ -76,6 +84,7 @@ const DiscoverCard = ({ profile, onSwipe }: DiscoverCardProps) => {
       onMouseDown={handleStart}
       onTouchStart={handleStart}
     >
+      <ParticleCanvas ref={canvasRef} />
       {/* Swipe Left Indicator (X) */}
       {position.x < -50 && (
         <div

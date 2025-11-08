@@ -153,9 +153,9 @@ const Discover = () => {
         .not('interests', 'is', null)
         .limit(50);
 
-      // Only add the NOT IN clause if there are IDs to exclude, with proper UUID quoting
+      // Only add the NOT IN clause if there are IDs to exclude
       const { data, error } = swipedIds.length > 0
-        ? await baseQuery.not('user_id', 'in', `(${swipedIds.map(id => `'${id}'`).join(',')})`)
+        ? await baseQuery.not('user_id', 'in', `(${swipedIds.join(',')})`)
         : await baseQuery;
 
       if (error) throw error;

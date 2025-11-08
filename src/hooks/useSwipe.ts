@@ -41,22 +41,56 @@ export const useSwipe = () => {
           });
       }
 
-      // Record the swipe
-      const { data: swipeData, error: swipeError } = await supabase
+      // Check if swipe already exists
+      const { data: existingSwipe } = await supabase
         .from('swipes')
-        .insert({
-          user_id: user.id,
-          target_user_id: targetUserId,
-          action,
-        })
-        .select()
-        .single();
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('target_user_id', targetUserId)
+        .maybeSingle();
 
-      if (swipeError) {
-        console.error('Swipe error:', swipeError);
-        toast.error(`Failed to record swipe: ${swipeError.message || 'Unknown error'}`);
-        setIsLoading(false);
-        return null;
+      let swipeData;
+      
+      if (existingSwipe) {
+        // If same action, treat as idempotent (continue to match check)
+        if (existingSwipe.action === action) {
+          swipeData = existingSwipe;
+        } else {
+          // Different action, update the existing swipe
+          const { data: updatedSwipe, error: updateError } = await supabase
+            .from('swipes')
+            .update({ action })
+            .eq('id', existingSwipe.id)
+            .select()
+            .single();
+
+          if (updateError) {
+            console.error('Swipe update error:', updateError);
+            toast.error('Failed to update swipe');
+            setIsLoading(false);
+            return null;
+          }
+          swipeData = updatedSwipe;
+        }
+      } else {
+        // Insert new swipe
+        const { data: newSwipe, error: swipeError } = await supabase
+          .from('swipes')
+          .insert({
+            user_id: user.id,
+            target_user_id: targetUserId,
+            action,
+          })
+          .select()
+          .single();
+
+        if (swipeError) {
+          console.error('Swipe error:', swipeError);
+          toast.error('Failed to record swipe. Moving to next profile...');
+          setIsLoading(false);
+          return null;
+        }
+        swipeData = newSwipe;
       }
 
       // Check if this creates a match using OR filter for both orderings

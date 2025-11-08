@@ -12,7 +12,7 @@ export const EmptyInterestsState = ({ variant = "feed", userId }: EmptyInterests
   const navigate = useNavigate();
 
   const handleAddInterests = () => {
-    navigate(`/profile/${userId}`);
+    navigate('/profile');
   };
 
   if (variant === "sidebar") {

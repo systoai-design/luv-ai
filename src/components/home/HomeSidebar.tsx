@@ -86,8 +86,12 @@ export const HomeSidebar = ({ currentUserInterests, userId }: HomeSidebarProps) 
     }
   };
 
-  const handleUserClick = (userIdToView: string) => {
-    navigate(`/profile/${userIdToView}`);
+  const handleUserClick = (username: string) => {
+    if (!username) {
+      console.warn("Username not available for navigation");
+      return;
+    }
+    navigate(`/profile/${username}`);
   };
 
   if (currentUserInterests.length === 0) {
@@ -147,7 +151,7 @@ export const HomeSidebar = ({ currentUserInterests, userId }: HomeSidebarProps) 
               {suggestedUsers.map(({ profile, sharedInterests, matchScore }) => (
                 <div
                   key={profile.user_id}
-                  onClick={() => handleUserClick(profile.user_id)}
+                  onClick={() => handleUserClick(profile.username)}
                   className="flex items-start gap-3 p-2 rounded-lg hover:bg-accent/50 cursor-pointer transition-all duration-200 hover:scale-[1.02]"
                 >
                   <Avatar className="h-10 w-10">

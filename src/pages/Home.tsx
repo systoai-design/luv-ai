@@ -6,6 +6,8 @@ import { PostComposer } from "@/components/posts/PostComposer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2 } from "lucide-react";
 import { calculateMatchScore } from "@/lib/interests";
+import { HomeSidebar } from "@/components/home/HomeSidebar";
+import { EmptyInterestsState } from "@/components/home/EmptyInterestsState";
 
 const POSTS_PER_PAGE = 10;
 
@@ -186,50 +188,68 @@ const Home = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl relative">
+    <div className="container mx-auto px-4 py-8 relative">
       {/* Gradient overlay for depth */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent pointer-events-none" />
       
-      <div className="space-y-6 relative z-10 animate-fade-in">
-        {profile && (
-          <PostComposer
-            userId={user!.id}
-            avatarUrl={profile.avatar_url}
-            displayName={profile.display_name}
-            onPostCreated={() => loadPosts()}
-          />
-        )}
+      <div className="flex gap-8 relative z-10">
+        {/* Main Feed */}
+        <div className="flex-1 max-w-2xl mx-auto space-y-6 animate-fade-in">
+          {/* Empty state when no interests */}
+          {currentUserInterests.length === 0 && (
+            <EmptyInterestsState userId={user!.id} />
+          )}
 
-        {posts.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground bg-card/30 backdrop-blur-sm rounded-lg border border-border/50 shadow-card">
-            <p className="text-lg font-medium mb-2">No posts yet</p>
-            <p className="text-sm">Start following users to see their posts!</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {posts.map((post: any) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                profile={post.profiles}
-                currentUserId={user!.id}
-                userLiked={userLikes.has(post.id)}
-                sharedInterests={post.sharedInterests || []}
-                onDelete={() => loadPosts()}
-                onLikeToggle={() => loadPosts()}
-              />
-            ))}
-          </div>
-        )}
+          {profile && (
+            <PostComposer
+              userId={user!.id}
+              avatarUrl={profile.avatar_url}
+              displayName={profile.display_name}
+              onPostCreated={() => loadPosts()}
+            />
+          )}
 
-        {/* Infinite scroll trigger */}
-        {hasMore && (
-          <div ref={observerTarget} className="flex justify-center py-4">
-            {loadingMore && (
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            )}
-          </div>
-        )}
+          {posts.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground bg-card/30 backdrop-blur-sm rounded-lg border border-border/50 shadow-card">
+              <p className="text-lg font-medium mb-2">No posts yet</p>
+              <p className="text-sm">
+                {currentUserInterests.length === 0 
+                  ? "Add interests to see personalized content!"
+                  : "Start following users to see their posts!"}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {posts.map((post: any) => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  profile={post.profiles}
+                  currentUserId={user!.id}
+                  userLiked={userLikes.has(post.id)}
+                  sharedInterests={post.sharedInterests || []}
+                  onDelete={() => loadPosts()}
+                  onLikeToggle={() => loadPosts()}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Infinite scroll trigger */}
+          {hasMore && (
+            <div ref={observerTarget} className="flex justify-center py-4">
+              {loadingMore && (
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Right Sidebar */}
+        <HomeSidebar 
+          currentUserInterests={currentUserInterests}
+          userId={user!.id}
+        />
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { Home, Users, MessageCircle, ShoppingBag, Bell, User, Shield, LayoutDashboard, Package, ChevronLeft, ChevronRight, Heart, Plus } from "lucide-react";
+import { Home, Users, MessageCircle, ShoppingBag, Bell, User, Shield, LayoutDashboard, Package, Heart, Plus } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
@@ -15,13 +15,12 @@ import { Badge } from "@/components/ui/badge";
 
 const LeftSidebar = () => {
   const { user } = useAuth();
-  const { isCollapsed, toggleCollapsed } = useSidebarState();
+  const { isCollapsed } = useSidebarState();
   const [profile, setProfile] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [canCreateCompanion, setCanCreateCompanion] = useState(false);
   const { unreadMessages } = useUnreadCounts();
   const [isHovered, setIsHovered] = useState(false);
-  const [hoverDisabled, setHoverDisabled] = useState(false);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -104,7 +103,7 @@ const LeftSidebar = () => {
     return content;
   };
 
-  const shouldExpand = isCollapsed && isHovered && !hoverDisabled;
+  const shouldExpand = isCollapsed && isHovered;
   const displayWidth = shouldExpand || !isCollapsed;
 
   return (
@@ -114,32 +113,10 @@ const LeftSidebar = () => {
       } ${shouldExpand ? 'shadow-xl z-50' : 'z-40'} ${displayWidth ? 'p-4' : 'p-2'}`}
       style={{ willChange: 'width' }}
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        setHoverDisabled(false);
-      }}
+      onMouseLeave={() => setIsHovered(false)}
     >
       {/* Mini Profile Card - show on hover when collapsed */}
       <MiniProfileCard show={isCollapsed && isHovered} />
-      {/* Toggle Button */}
-      <div className={`flex ${displayWidth ? 'justify-end' : 'justify-center'} mb-4`}>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => {
-            toggleCollapsed();
-            setHoverDisabled(true);
-            setTimeout(() => setHoverDisabled(false), 500);
-          }}
-          className="h-8 w-8"
-        >
-          {isCollapsed ? (
-            <ChevronRight className="h-4 w-4" />
-          ) : (
-            <ChevronLeft className="h-4 w-4" />
-          )}
-        </Button>
-      </div>
 
       {/* User Profile Section */}
       {profile && displayWidth && (

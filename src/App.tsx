@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AppLayout from "@/components/layout/AppLayout";
+import { RouteTransition } from "@/components/RouteTransition";
 import Index from "./pages/Index";
 import Home from "./pages/Home";
 import Profile from "./pages/Profile";
@@ -43,10 +44,18 @@ const App = () => (
             <BrowserRouter>
             <Routes>
               {/* Landing Page (No Layout) */}
-              <Route path="/" element={<Index />} />
+              <Route path="/" element={
+                <RouteTransition>
+                  <Index />
+                </RouteTransition>
+              } />
               
               {/* Auth Page (No Layout) */}
-              <Route path="/auth" element={<Auth />} />
+              <Route path="/auth" element={
+                <RouteTransition>
+                  <Auth />
+                </RouteTransition>
+              } />
               
               {/* Web App Routes (With AppLayout) */}
               <Route element={<AppLayout />}>
@@ -139,7 +148,11 @@ const App = () => (
               </Route>
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
+              <Route path="*" element={
+                <RouteTransition>
+                  <NotFound />
+                </RouteTransition>
+              } />
             </Routes>
           </BrowserRouter>
         </AuthProvider>

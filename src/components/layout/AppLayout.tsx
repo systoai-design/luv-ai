@@ -3,6 +3,7 @@ import TopNav from "./TopNav";
 import LeftSidebar from "./LeftSidebar";
 import RightSidebar from "./RightSidebar";
 import MobileSidebar from "./MobileSidebar";
+import { RouteTransition } from "@/components/RouteTransition";
 import { useSidebarState } from "@/hooks/useSidebarState";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
@@ -36,7 +37,9 @@ const AppLayout = () => {
             isCollapsed ? 'lg:ml-16' : 'lg:ml-64'
           } xl:mr-80`}
         >
-          <Outlet />
+          <RouteTransition>
+            <Outlet />
+          </RouteTransition>
         </main>
         
         {/* Right Sidebar (Optional) */}

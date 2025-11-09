@@ -45,8 +45,8 @@ const Index = () => {
       <Hero onOpenAuthModal={handleOpenAuthModal} />
       <StatsSection />
       <DiscoverSection />
-      <MarketplaceSection />
       <ChatDemo />
+      <MarketplaceSection />
       <HowItWorks />
       <Footer />
       <ThemeToggle />

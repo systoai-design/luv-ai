@@ -13,10 +13,10 @@ interface Stat {
 }
 
 const stats: Stat[] = [
-  { icon: Users, value: 6, label: "Curated AI Companions" },
+  { icon: Users, value: 50000, label: "Active Users", suffix: "+" },
+  { icon: Heart, value: 10000, label: "Matches Made", suffix: "+" },
   { icon: MessageSquare, value: 30, label: "Messages Per Day" },
-  { icon: Heart, value: 100, label: "On-Chain Verified", suffix: "%" },
-  { icon: Star, value: 256, label: "AES-256 Encrypted", suffix: "-bit" },
+  { icon: Star, value: 100, label: "Encrypted Chats", suffix: "%" },
 ];
 
 const formatNumber = (num: number, suffix?: string): string => {
@@ -74,10 +74,10 @@ const StatsSection = () => {
           )}
         >
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            Experience <span className="text-gradient-pulse">Private, Secure Conversations</span>
+            Join Thousands Finding <span className="text-gradient-pulse">Real Connections</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            On-chain access control meets end-to-end encryption for complete privacy and trust
+            Our community is growing daily with verified users looking for meaningful relationships
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

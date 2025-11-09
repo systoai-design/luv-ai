@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Shield, Zap, Lock, Rocket } from "lucide-react";
+import { Shield, Heart, Lock, Rocket } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -43,22 +43,22 @@ const Hero = ({ onOpenAuthModal }: HeroProps) => {
         <div className="max-w-4xl mx-auto space-y-8 animate-slide-up">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card/50 border border-primary/30 backdrop-blur-sm">
             <Shield className="h-4 w-4 text-primary" />
-            <span className="text-sm">Wallet Sign-In • E2EE • x402 Micropayments • 30 msgs/day</span>
+            <span className="text-sm">Wallet Sign-In • E2EE • Smart Matching • Real Connections</span>
           </div>
           
           <h1 className="text-5xl md:text-7xl font-bold leading-tight">
             <span className="text-gradient-animated">
-              The Future of
+              The Future of Dating
             </span>
             <br />
             <span className="text-foreground">
-              Connection & Conversation
+              & Connection
             </span>
           </h1>
           
           <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
-            Buy access to unique AI companions and chat privately with on-chain gated access. 
-            All conversations are end-to-end encrypted.
+            Swipe, match, and chat with verified users near you. All conversations are end-to-end encrypted 
+            with on-chain verification. Plus, explore AI companions when you want something different.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -76,10 +76,10 @@ const Hero = ({ onOpenAuthModal }: HeroProps) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16 pt-16">
             <div className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-card/30 backdrop-blur-sm border border-border/50 hover:border-primary/50 transition-all">
               <div className="p-3 rounded-full bg-primary/10">
-                <Zap className="h-6 w-6 text-primary" />
+                <Heart className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="font-semibold text-lg">Instant Micropayments</h3>
-              <p className="text-sm text-muted-foreground">Pay per message or by time with x402 protocol</p>
+              <h3 className="font-semibold text-lg">Smart Matching</h3>
+              <p className="text-sm text-muted-foreground">AI-powered matching based on shared interests and location</p>
             </div>
 
             <div className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-card/30 backdrop-blur-sm border border-border/50 hover:border-secondary/50 transition-all">

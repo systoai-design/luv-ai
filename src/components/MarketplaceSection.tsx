@@ -109,13 +109,13 @@ const MarketplaceSection = () => {
           )}
         >
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            Discover Your{" "}
+            Want Something Different?{" "}
             <span className="text-gradient-animated">
-              Perfect Companion
+              Try AI Companions
             </span>
           </h2>
           <p className="text-xl text-muted-foreground">
-            AI companions with unique personalities - purchase once, chat forever (30 messages per day)
+            When you're not chatting with real matches, explore our curated AI personalities. One-time purchase for unlimited access.
           </p>
         </div>
 

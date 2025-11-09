@@ -39,7 +39,7 @@ const LandingHeader = ({ onOpenAuthModal }: LandingHeaderProps) => {
               activeSection === "discover" && "text-foreground after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-0.5 after:bg-primary"
             )}
           >
-            Discover
+            Find Matches
           </button>
           <button
             onClick={() => smoothScrollTo("marketplace")}
@@ -48,7 +48,7 @@ const LandingHeader = ({ onOpenAuthModal }: LandingHeaderProps) => {
               activeSection === "marketplace" && "text-foreground after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-0.5 after:bg-primary"
             )}
           >
-            Marketplace
+            AI Companions
           </button>
           <button
             onClick={() => smoothScrollTo("how-it-works")}

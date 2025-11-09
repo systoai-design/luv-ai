@@ -37,7 +37,7 @@ const ChatDemo = () => {
             & Private Chats
           </h2>
           <p className="text-xl text-muted-foreground">
-            End-to-end encrypted conversations with x402 micropayments
+            End-to-end encrypted conversations with real people. Optional micropayments for premium features.
           </p>
         </div>
 
@@ -127,7 +127,7 @@ const ChatDemo = () => {
               <CardContent>
                 <p className="text-muted-foreground">
                   All messages are encrypted on your device before being sent. 
-                  Only you and your chat partner can read them.
+                  Only you and your match can read them.
                 </p>
               </CardContent>
             </Card>
@@ -141,8 +141,7 @@ const ChatDemo = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  Pay only for what you use - per message for AI or by time for humans. 
-                  Instant payments via your connected wallet.
+                  Optional: Pay for premium features or tips. Chat with matches is always free.
                 </p>
               </CardContent>
             </Card>
@@ -157,7 +156,7 @@ const ChatDemo = () => {
               <CardContent>
                 <p className="text-muted-foreground">
                   Get verified with KYC to earn the red checkmark badge. 
-                  Build trust and unlock premium features.
+                  Build trust and unlock features.
                 </p>
               </CardContent>
             </Card>

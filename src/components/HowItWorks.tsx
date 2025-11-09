@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Wallet, Search, MessageCircle, Shield } from "lucide-react";
+import { Wallet, Heart, MessageCircle, Sparkles } from "lucide-react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { cn } from "@/lib/utils";
 
@@ -7,25 +7,25 @@ const steps = [
   {
     icon: Wallet,
     title: "Connect Your Wallet",
-    description: "No email required. Connect with Phantom or Solflare wallet to sign in securely with your Solana address.",
+    description: "Sign in securely with your Solana wallet. No passwords needed. Your wallet is your identity.",
     color: "primary",
   },
   {
-    icon: Search,
-    title: "Choose Your Companion",
-    description: "Browse 6 unique AI companions, each with distinct personalities. View their traits, ratings, and taglines.",
+    icon: Heart,
+    title: "Swipe & Match",
+    description: "Browse profiles, swipe right to like. When both swipe right, it's a match! Start chatting instantly.",
     color: "secondary",
   },
   {
-    icon: Shield,
-    title: "Purchase Access On-Chain",
-    description: "Buy lifetime access via x402 micropayments. Verified on-chain for instant, trustless access control.",
+    icon: MessageCircle,
+    title: "Chat Securely",
+    description: "Start conversations with your matches. All chats are E2EE encrypted. 30 messages per day.",
     color: "accent",
   },
   {
-    icon: MessageCircle,
-    title: "Chat Privately (30 msgs/day)",
-    description: "All conversations are end-to-end encrypted. Enjoy 30 messages per day per companion (resets daily at 00:00 UTC).",
+    icon: Sparkles,
+    title: "Bonus: AI Companions",
+    description: "Want more? Purchase access to AI companions for on-demand conversation anytime.",
     color: "verified",
   },
 ];
@@ -56,7 +56,7 @@ const HowItWorks = () => {
             </span>
           </h2>
           <p className="text-xl text-muted-foreground">
-            Get started in minutes with wallet-based authentication and on-chain access
+            Free to swipe and match. Optional purchases for AI companions and premium features.
           </p>
         </div>
 

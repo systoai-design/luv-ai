@@ -53,10 +53,6 @@ const DiscoverCard = ({ profile, onSwipe }: DiscoverCardProps) => {
 
   const {
     position,
-    rotation,
-    opacity: cardOpacity,
-    scale,
-    velocity,
     isDragging,
     isAnimating,
     handleStart,
@@ -92,16 +88,12 @@ const DiscoverCard = ({ profile, onSwipe }: DiscoverCardProps) => {
       style={{
         transform: isEntering 
           ? 'translate3d(0, 20px, 0) scale(0.9)' 
-          : `translate3d(${position.x}px, ${position.y}px, 0) scale(${scale}) rotate(${rotation}deg)`,
-        opacity: isEntering ? 0 : cardOpacity,
+          : 'translate3d(0, 0, 0)',
+        opacity: isEntering ? 0 : 1,
         transition: isEntering 
           ? 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)' 
-          : isDragging 
-            ? 'none' 
-            : isAnimating 
-              ? 'all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1)' 
-              : 'all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55)',
-        willChange: isDragging ? 'transform, opacity' : 'auto',
+          : 'none',
+        willChange: 'transform, opacity',
       }}
       onMouseDown={handleStart}
       onTouchStart={handleStart}

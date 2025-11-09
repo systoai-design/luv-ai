@@ -13,20 +13,33 @@ interface UseCardSwipeProps {
 }
 
 export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) => {
-  const [position, setPosition] = useState<Position>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [thresholdCrossed, setThresholdCrossed] = useState(false);
-  const [velocity, setVelocity] = useState(0);
+  
+  // Use refs for values that change frequently to avoid re-renders
+  const positionRef = useRef<Position>({ x: 0, y: 0 });
+  const velocityRef = useRef(0);
   const startPos = useRef<Position>({ x: 0, y: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
   const lastMoveTime = useRef(Date.now());
   const lastPosition = useRef(0);
+  const rafId = useRef<number>();
 
-  // Enhanced transforms with velocity influence
-  const scale = Math.max(0.95, 1 - Math.abs(position.x) / 2000);
-  const rotation = (position.x / 15) * (1 + Math.abs(velocity) / 100) * -1;
-  const opacity = Math.max(0.7, 1 - Math.abs(position.x) / 600);
+  const updateCardTransform = useCallback((x: number, y: number, immediate = false) => {
+    if (!cardRef.current) return;
+    
+    const rotation = (x / 15) * -1;
+    const scale = Math.max(0.95, 1 - Math.abs(x) / 2000);
+    const opacity = Math.max(0.7, 1 - Math.abs(x) / 600);
+    
+    cardRef.current.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${rotation}deg) scale(${scale})`;
+    cardRef.current.style.opacity = `${opacity}`;
+    
+    if (immediate) {
+      cardRef.current.style.transition = 'none';
+    }
+  }, []);
 
   const getEventPosition = (e: React.TouchEvent | React.MouseEvent | TouchEvent | MouseEvent): Position => {
     if ('touches' in e) {
@@ -41,6 +54,9 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
     setThresholdCrossed(false);
     const pos = getEventPosition(e);
     startPos.current = pos;
+    positionRef.current = { x: 0, y: 0 };
+    lastPosition.current = 0;
+    velocityRef.current = 0;
     triggerHaptic('light');
     playSound('tap');
   }, [isAnimating]);
@@ -48,86 +64,135 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
   const handleMove = useCallback((e: React.TouchEvent | React.MouseEvent | TouchEvent | MouseEvent) => {
     if (!isDragging || isAnimating) return;
     
-    const currentPos = getEventPosition(e);
-    const deltaX = currentPos.x - startPos.current.x;
-    const deltaY = currentPos.y - startPos.current.y;
-    
-    // Calculate velocity for momentum
-    const now = Date.now();
-    const dt = now - lastMoveTime.current;
-    if (dt > 0) {
-      const vel = (deltaX - lastPosition.current) / dt;
-      setVelocity(vel);
+    // Cancel any pending RAF
+    if (rafId.current) {
+      cancelAnimationFrame(rafId.current);
     }
-    lastMoveTime.current = now;
-    lastPosition.current = deltaX;
     
-    setPosition({ x: deltaX, y: deltaY });
-    
-    // Trigger haptic and sound when crossing threshold for the first time
-    if (!thresholdCrossed && Math.abs(deltaX) > threshold) {
-      setThresholdCrossed(true);
-      triggerHaptic('medium');
-      playSound('threshold');
-    }
-  }, [isDragging, isAnimating, thresholdCrossed, threshold]);
+    rafId.current = requestAnimationFrame(() => {
+      const currentPos = getEventPosition(e);
+      const deltaX = currentPos.x - startPos.current.x;
+      const deltaY = currentPos.y - startPos.current.y;
+      
+      // Calculate velocity for momentum
+      const now = Date.now();
+      const dt = now - lastMoveTime.current;
+      if (dt > 0) {
+        const vel = (deltaX - lastPosition.current) / dt;
+        velocityRef.current = vel;
+      }
+      lastMoveTime.current = now;
+      lastPosition.current = deltaX;
+      
+      positionRef.current = { x: deltaX, y: deltaY };
+      updateCardTransform(deltaX, deltaY, true);
+      
+      // Trigger haptic and sound when crossing threshold for the first time
+      if (!thresholdCrossed && Math.abs(deltaX) > threshold) {
+        setThresholdCrossed(true);
+        triggerHaptic('medium');
+        playSound('threshold');
+      }
+    });
+  }, [isDragging, isAnimating, thresholdCrossed, threshold, updateCardTransform]);
 
   const handleEnd = useCallback(() => {
     if (!isDragging || isAnimating) return;
     
     setIsDragging(false);
     
+    // Cancel any pending RAF
+    if (rafId.current) {
+      cancelAnimationFrame(rafId.current);
+    }
+    
+    const position = positionRef.current;
+    const velocity = velocityRef.current;
+    
     // Momentum-based swipe detection
     const momentumSwipe = Math.abs(velocity) > 0.5 && Math.abs(position.x) > 50;
     const thresholdSwipe = Math.abs(position.x) > threshold;
     
     if (thresholdSwipe || momentumSwipe) {
-      // Valid swipe - animate off screen with velocity-based duration
+      // Valid swipe - animate off screen
       setIsAnimating(true);
       const direction = position.x > 0 ? 'right' : 'left';
-      const exitX = position.x > 0 ? 600 : -600;
+      const exitX = position.x > 0 ? 800 : -800;
       const exitDuration = Math.max(150, 250 - Math.abs(velocity) * 50);
       
       // Haptic and sound feedback for valid swipe
       triggerHaptic(direction === 'right' ? 'success' : 'medium');
       playSound(direction === 'right' ? 'like' : 'pass');
       
-      setPosition({ x: exitX, y: position.y });
+      if (cardRef.current) {
+        cardRef.current.style.transition = `transform ${exitDuration}ms cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity ${exitDuration}ms ease-out`;
+      }
+      updateCardTransform(exitX, position.y);
       
       setTimeout(() => {
         onSwipe(direction);
-        setPosition({ x: 0, y: 0 });
-        setVelocity(0);
+        positionRef.current = { x: 0, y: 0 };
+        velocityRef.current = 0;
+        if (cardRef.current) {
+          cardRef.current.style.transition = '';
+        }
+        updateCardTransform(0, 0);
         setIsAnimating(false);
       }, exitDuration);
     } else {
-      // Spring back to center - light haptic and sound for cancelled swipe
+      // Spring back to center
       triggerHaptic('light');
       playSound('cancel');
-      setPosition({ x: 0, y: 0 });
-      setVelocity(0);
+      if (cardRef.current) {
+        cardRef.current.style.transition = 'transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 300ms ease-out';
+      }
+      updateCardTransform(0, 0);
+      positionRef.current = { x: 0, y: 0 };
+      velocityRef.current = 0;
+      
+      setTimeout(() => {
+        if (cardRef.current) {
+          cardRef.current.style.transition = '';
+        }
+      }, 300);
     }
-  }, [isDragging, isAnimating, position, velocity, threshold, onSwipe]);
+  }, [isDragging, isAnimating, threshold, onSwipe, updateCardTransform]);
 
   const animateSwipe = useCallback((direction: 'left' | 'right') => {
     if (isAnimating) return;
     
     setIsAnimating(true);
-    const exitX = direction === 'right' ? 600 : -600;
+    const exitX = direction === 'right' ? 800 : -800;
     
     // Haptic and sound feedback for programmatic swipe
     triggerHaptic(direction === 'right' ? 'success' : 'medium');
     playSound(direction === 'right' ? 'like' : 'pass');
     
-    setPosition({ x: exitX, y: 0 });
+    if (cardRef.current) {
+      cardRef.current.style.transition = 'transform 250ms cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 250ms ease-out';
+    }
+    updateCardTransform(exitX, 0);
     
     setTimeout(() => {
       onSwipe(direction);
-      setPosition({ x: 0, y: 0 });
-      setVelocity(0);
+      positionRef.current = { x: 0, y: 0 };
+      velocityRef.current = 0;
+      if (cardRef.current) {
+        cardRef.current.style.transition = '';
+      }
+      updateCardTransform(0, 0);
       setIsAnimating(false);
-    }, 200);
-  }, [isAnimating, onSwipe]);
+    }, 250);
+  }, [isAnimating, onSwipe, updateCardTransform]);
+
+  // Cleanup RAF on unmount
+  useEffect(() => {
+    return () => {
+      if (rafId.current) {
+        cancelAnimationFrame(rafId.current);
+      }
+    };
+  }, []);
 
   // Prevent body scroll during drag
   useEffect(() => {
@@ -171,11 +236,7 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
   }, [isDragging, handleMove, handleEnd]);
 
   return {
-    position,
-    rotation,
-    opacity,
-    scale,
-    velocity,
+    position: positionRef.current,
     isDragging,
     isAnimating,
     handleStart,

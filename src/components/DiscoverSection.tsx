@@ -54,8 +54,6 @@ const DiscoverSection = () => {
 
   const {
     position,
-    rotation,
-    opacity,
     isDragging,
     isAnimating,
     handleStart,
@@ -105,11 +103,8 @@ const DiscoverSection = () => {
             onTouchStart={handleStart}
             className="relative select-none"
             style={{
-              transform: `translateX(${position.x}px) translateY(${position.y}px) rotate(${rotation}deg)`,
-              opacity,
               cursor: isDragging ? 'grabbing' : 'grab',
-              transition: isDragging || isAnimating ? 'none' : 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-              willChange: 'transform',
+              willChange: 'transform, opacity',
             }}
           >
             <Card className="bg-card border-border shadow-card overflow-hidden card-gradient-hover">

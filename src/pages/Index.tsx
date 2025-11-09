@@ -27,6 +27,10 @@ const Index = () => {
   }, [location, user]);
 
   const handleOpenAuthModal = () => {
+    if (user) {
+      navigate("/home");
+      return;
+    }
     setAuthModalOpen(true);
   };
 

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletAuth } from "@/hooks/useWalletAuth";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 import { WalletConnectPanel } from "@/components/wallet/WalletConnectPanel";
 import { clearWalletStorage } from "@/lib/walletReset";
 import {
@@ -34,6 +36,7 @@ interface AuthModalProps {
 }
 
 export const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
+  const { user } = useAuth();
   const { connected, publicKey } = useWallet();
   const {
     authState,
@@ -184,6 +187,15 @@ export const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => 
             <div className="py-4">
               <WalletConnectPanel onConnected={async () => {
                 console.info('[auth] Wallet connected, checking if user exists...');
+                
+                // Check if already authenticated
+                if (user) {
+                  console.info('[auth] User already authenticated');
+                  toast.info("You're already logged in!");
+                  onOpenChange(false);
+                  onSuccess?.();
+                  return;
+                }
                 
                 if (!walletAddress) {
                   console.error('[auth] No wallet address available');

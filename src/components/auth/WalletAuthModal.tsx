@@ -106,16 +106,25 @@ export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthMod
     }
   }, [connected, step]);
 
-  const waitForConnected = async (maxMs = 15000): Promise<boolean> => {
+  const waitForConnected = async (maxMs = 20000): Promise<boolean> => {
     const start = Date.now();
+    let attempts = 0;
+    
     while (Date.now() - start < maxMs) {
+      attempts++;
       if (connected && publicKey) {
-        console.info('[wallet] Connection verified:', publicKey.toBase58());
+        console.info('[wallet] Connection verified after', attempts, 'attempts:', publicKey.toBase58());
         return true;
       }
+      
+      // Log every 2 seconds for debugging
+      if (attempts % 20 === 0) {
+        console.log('[wallet] Still waiting...', { connected, hasPublicKey: !!publicKey });
+      }
+      
       await new Promise(r => setTimeout(r, 100));
     }
-    console.error('[wallet] Connection verification timeout');
+    console.error('[wallet] Timeout after', attempts, 'attempts', { connected, hasPublicKey: !!publicKey });
     return false;
   };
 
@@ -141,6 +150,32 @@ export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthMod
       console.info('[wallet] Starting connection to:', walletName);
       setConnecting(true);
       setSelectedWallet(walletName);
+
+      // Check if already connected with this wallet
+      if (connected && publicKey) {
+        console.info('[wallet] Already connected, proceeding to auth check...');
+        setStep("checking");
+        
+        const address = publicKey.toBase58();
+        const result = await withTimeout(signInWithWallet(address), 8000);
+
+        if (result.isNewUser) {
+          console.info('[wallet] New user detected, showing registration');
+          setStep("register");
+        } else if (result.success) {
+          console.info('[wallet] Existing user signed in successfully');
+          toast.success("Welcome back! 💜");
+          onOpenChange(false);
+          onSuccess?.();
+        } else {
+          console.info('[wallet] Sign-in failed, falling back to registration', (result as any)?.error);
+          toast.error((result as any)?.error || "Sign-in failed. Please complete quick registration.");
+          setStep("register");
+        }
+        setConnecting(false);
+        setSelectedWallet(null);
+        return;
+      }
 
       // Select the wallet synchronously
       select(walletName);
@@ -169,9 +204,9 @@ export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthMod
       console.info('[wallet] connect() resolved');
 
       // Wait for connection state to update
-      const isConnected = await waitForConnected(15000);
+      const isConnected = await waitForConnected(20000);
       if (!isConnected) {
-        throw new Error("Connection state did not update");
+        throw new Error("Fallback connection state did not update");
       }
 
       // Optional: request a message signature if supported

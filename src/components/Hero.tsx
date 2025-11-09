@@ -21,7 +21,7 @@ const Hero = ({ onOpenAuthModal }: HeroProps) => {
       onOpenAuthModal();
     }
   };
-  return <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+  return <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 md:pt-24">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-hero">
         <img src={heroBg} alt="Hero background" className="w-full h-full object-cover opacity-20 mix-blend-overlay" />

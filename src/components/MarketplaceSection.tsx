@@ -9,6 +9,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useScrollAnimation } from "@/hooks/useScrollAnimation";
+import { cn } from "@/lib/utils";
 
 // Import companion avatars
 import lunaAvatar from "@/assets/companions/luna-avatar.jpg";
@@ -51,6 +53,7 @@ const MarketplaceSection = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { elementRef, isVisible } = useScrollAnimation();
   
   const handleStartChat = (companionId: string) => {
     if (!user) {
@@ -90,9 +93,21 @@ const MarketplaceSection = () => {
   };
 
   return (
-    <section id="marketplace" className="py-24 px-4 bg-gradient-to-b from-background to-background/50">
+    <section 
+      id="marketplace" 
+      ref={elementRef as React.RefObject<HTMLElement>}
+      className={cn(
+        "py-24 px-4 bg-gradient-to-b from-background to-background/50 transition-all duration-1000",
+        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+      )}
+    >
       <div className="container mx-auto max-w-7xl">
-        <div className="text-center mb-12">
+        <div 
+          className={cn(
+            "text-center mb-12 transition-all duration-700 delay-150",
+            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+          )}
+        >
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
             Discover Your{" "}
             <span className="text-gradient-animated">
@@ -105,7 +120,12 @@ const MarketplaceSection = () => {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div 
+            className={cn(
+              "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 transition-all duration-700 delay-300",
+              isVisible ? "opacity-100" : "opacity-0"
+            )}
+          >
             {[...Array(6)].map((_, i) => (
               <Card key={i} className="bg-card border-border">
                 <CardHeader>
@@ -120,8 +140,13 @@ const MarketplaceSection = () => {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {companions?.map((companion) => {
+          <div 
+            className={cn(
+              "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 transition-all duration-700 delay-300",
+              isVisible ? "opacity-100" : "opacity-0"
+            )}
+          >
+            {companions?.map((companion, index) => {
               const topTraits = [
                 { name: "romance", value: companion.romance },
                 { name: "intelligence", value: companion.intelligence },
@@ -135,7 +160,14 @@ const MarketplaceSection = () => {
               return (
                 <Card 
                   key={companion.id} 
-                  className="bg-card border-border hover:border-primary/50 transition-all shadow-card hover:shadow-glow group cursor-pointer card-gradient-hover"
+                  className={cn(
+                    "bg-card border-border hover:border-primary/50 transition-all shadow-card hover:shadow-glow group cursor-pointer card-gradient-hover",
+                    isVisible && `animate-fade-in`
+                  )}
+                  style={{
+                    animationDelay: isVisible ? `${index * 100 + 400}ms` : '0ms',
+                    animationFillMode: 'both'
+                  }}
                 >
                   <CardHeader className="text-center">
                     <div className="relative mx-auto mb-4">

@@ -3,6 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Lock, Shield, Send } from "lucide-react";
+import { useScrollAnimation } from "@/hooks/useScrollAnimation";
+import { cn } from "@/lib/utils";
 
 const messages = [
   { id: 1, sender: "other", text: "Hey! How's your day going?", time: "2:34 PM" },
@@ -11,10 +13,23 @@ const messages = [
 ];
 
 const ChatDemo = () => {
+  const { elementRef, isVisible } = useScrollAnimation();
+
   return (
-    <section className="py-24 px-4">
+    <section 
+      ref={elementRef as React.RefObject<HTMLElement>}
+      className={cn(
+        "py-24 px-4 transition-all duration-1000",
+        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+      )}
+    >
       <div className="container mx-auto max-w-6xl">
-        <div className="text-center mb-12">
+        <div 
+          className={cn(
+            "text-center mb-12 transition-all duration-700 delay-150",
+            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+          )}
+        >
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
             <span className="bg-gradient-accent bg-clip-text text-transparent">
               Secure
@@ -27,7 +42,12 @@ const ChatDemo = () => {
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 items-start">
-          <Card className="bg-card border-border shadow-card">
+          <Card 
+            className={cn(
+              "bg-card border-border shadow-card transition-all duration-700 delay-300",
+              isVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-10"
+            )}
+          >
             <CardHeader className="border-b border-border/50">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -91,7 +111,12 @@ const ChatDemo = () => {
             </CardContent>
           </Card>
 
-          <div className="space-y-6">
+          <div 
+            className={cn(
+              "space-y-6 transition-all duration-700 delay-500",
+              isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-10"
+            )}
+          >
             <Card className="bg-card/50 border-primary/30 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">

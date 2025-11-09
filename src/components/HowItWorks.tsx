@@ -1,5 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Wallet, Search, MessageCircle, Shield } from "lucide-react";
+import { useScrollAnimation } from "@/hooks/useScrollAnimation";
+import { cn } from "@/lib/utils";
 
 const steps = [
   {
@@ -29,10 +31,24 @@ const steps = [
 ];
 
 const HowItWorks = () => {
+  const { elementRef, isVisible } = useScrollAnimation();
+
   return (
-    <section id="how-it-works" className="py-24 px-4 bg-gradient-to-b from-background/50 to-background">
+    <section 
+      id="how-it-works" 
+      ref={elementRef as React.RefObject<HTMLElement>}
+      className={cn(
+        "py-24 px-4 bg-gradient-to-b from-background/50 to-background transition-all duration-1000",
+        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+      )}
+    >
       <div className="container mx-auto max-w-6xl">
-        <div className="text-center mb-16">
+        <div 
+          className={cn(
+            "text-center mb-16 transition-all duration-700 delay-150",
+            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+          )}
+        >
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
             How{" "}
             <span className="text-gradient-pulse">
@@ -50,7 +66,14 @@ const HowItWorks = () => {
             return (
               <Card
                 key={index}
-                className="bg-card border-border hover:border-primary/50 transition-all shadow-card relative overflow-hidden group card-gradient-hover"
+                className={cn(
+                  "bg-card border-border hover:border-primary/50 transition-all shadow-card relative overflow-hidden group card-gradient-hover",
+                  isVisible && "animate-fade-in"
+                )}
+                style={{
+                  animationDelay: isVisible ? `${index * 150 + 300}ms` : '0ms',
+                  animationFillMode: 'both'
+                }}
               >
                 <div className={`absolute top-0 left-0 w-full h-1 bg-${step.color}`} />
                 <CardContent className="pt-8 pb-6 px-6 space-y-4">

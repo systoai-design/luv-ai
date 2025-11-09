@@ -1,5 +1,5 @@
-const easeInOutCubic = (t: number): number => {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const easeInOutQuart = (t: number): number => {
+  return t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2;
 };
 
 export const smoothScrollTo = (targetId: string) => {
@@ -11,7 +11,7 @@ export const smoothScrollTo = (targetId: string) => {
   const targetPosition = element.getBoundingClientRect().top + window.scrollY - headerHeight - 20;
   const startPosition = window.scrollY;
   const distance = targetPosition - startPosition;
-  const duration = 800;
+  const duration = 1200; // Increased duration for smoother scroll
   let startTime: number | null = null;
   let animationFrame: number;
 
@@ -19,7 +19,7 @@ export const smoothScrollTo = (targetId: string) => {
     if (!startTime) startTime = currentTime;
     const elapsed = currentTime - startTime;
     const progress = Math.min(elapsed / duration, 1);
-    const ease = easeInOutCubic(progress);
+    const ease = easeInOutQuart(progress);
     
     window.scrollTo(0, startPosition + distance * ease);
 

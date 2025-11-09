@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Users, MessageSquare, Heart, Star } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useCountUp } from "@/hooks/useCountUp";
+import { useScrollAnimation } from "@/hooks/useScrollAnimation";
+import { cn } from "@/lib/utils";
 
 interface Stat {
   icon: typeof Users;
@@ -24,12 +26,21 @@ const formatNumber = (num: number, suffix?: string): string => {
   return `${num}${suffix || ""}`;
 };
 
-const StatCard = ({ stat, inView }: { stat: Stat; inView: boolean }) => {
+const StatCard = ({ stat, inView, index }: { stat: Stat; inView: boolean; index: number }) => {
   const count = useCountUp(stat.value, 2000, inView);
   const Icon = stat.icon;
 
   return (
-    <Card className="bg-background/40 backdrop-blur-lg border-border hover:border-primary/50 transition-all p-8 text-center group card-gradient-hover">
+    <Card 
+      className={cn(
+        "bg-background/40 backdrop-blur-lg border-border hover:border-primary/50 transition-all p-8 text-center group card-gradient-hover",
+        inView && "animate-fade-in"
+      )}
+      style={{
+        animationDelay: inView ? `${index * 150}ms` : '0ms',
+        animationFillMode: 'both'
+      }}
+    >
       <div className="flex flex-col items-center gap-4">
         <div className="p-4 rounded-full bg-gradient-primary/20 group-hover:bg-gradient-primary/30 transition-all">
           <Icon className="h-8 w-8 text-primary" />
@@ -44,34 +55,24 @@ const StatCard = ({ stat, inView }: { stat: Stat; inView: boolean }) => {
 };
 
 const StatsSection = () => {
-  const [inView, setInView] = useState(false);
-  const sectionRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setInView(true);
-        }
-      },
-      { threshold: 0.2 }
-    );
-
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
+  const { elementRef, isVisible } = useScrollAnimation({ threshold: 0.2 });
 
   return (
     <section
-      ref={sectionRef}
-      className="py-20 px-4 relative overflow-hidden bg-gradient-to-b from-background via-background/95 to-background"
+      ref={elementRef as React.RefObject<HTMLElement>}
+      className={cn(
+        "py-20 px-4 relative overflow-hidden bg-gradient-to-b from-background via-background/95 to-background transition-all duration-1000",
+        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+      )}
     >
       <div className="absolute inset-0 bg-gradient-accent opacity-5" />
       <div className="container mx-auto relative z-10">
-        <div className="text-center mb-12">
+        <div 
+          className={cn(
+            "text-center mb-12 transition-all duration-700 delay-150",
+            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+          )}
+        >
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
             Join Thousands of <span className="text-gradient-pulse">Happy Users</span>
           </h2>
@@ -81,7 +82,7 @@ const StatsSection = () => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map((stat, index) => (
-            <StatCard key={index} stat={stat} inView={inView} />
+            <StatCard key={index} stat={stat} inView={isVisible} index={index} />
           ))}
         </div>
       </div>

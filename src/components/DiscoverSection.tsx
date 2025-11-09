@@ -7,6 +7,8 @@ import profilePlaceholder from "@/assets/profile-placeholder.jpg";
 import alexAvatar from "@/assets/profiles/alex-avatar.jpg";
 import mayaAvatar from "@/assets/profiles/maya-avatar.jpg";
 import { useCardSwipe } from "@/hooks/useCardSwipe";
+import { useScrollAnimation } from "@/hooks/useScrollAnimation";
+import { cn } from "@/lib/utils";
 
 const profiles = [
   {
@@ -44,6 +46,7 @@ const profiles = [
 const DiscoverSection = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const currentProfile = profiles[currentIndex];
+  const { elementRef, isVisible } = useScrollAnimation();
 
   const handleNext = () => {
     setCurrentIndex((prev) => (prev + 1) % profiles.length);
@@ -64,9 +67,21 @@ const DiscoverSection = () => {
   });
 
   return (
-    <section id="discover" className="py-24 px-4">
+    <section 
+      id="discover" 
+      ref={elementRef as React.RefObject<HTMLElement>}
+      className={cn(
+        "py-24 px-4 transition-all duration-1000",
+        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+      )}
+    >
       <div className="container mx-auto max-w-6xl">
-        <div className="text-center mb-12">
+        <div 
+          className={cn(
+            "text-center mb-12 transition-all duration-700 delay-150",
+            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+          )}
+        >
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
             <span className="text-gradient-pulse">
               Discover
@@ -78,7 +93,12 @@ const DiscoverSection = () => {
           </p>
         </div>
 
-        <div className="max-w-md mx-auto">
+        <div 
+          className={cn(
+            "max-w-md mx-auto transition-all duration-700 delay-300",
+            isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
+          )}
+        >
           <div
             ref={cardRef}
             onMouseDown={handleStart}

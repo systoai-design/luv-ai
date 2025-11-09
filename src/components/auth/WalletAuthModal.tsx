@@ -98,7 +98,15 @@ export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthMod
     return () => clearTimeout(timer);
   }, [username, checkUsernameAvailable, step]);
 
-  const waitForConnected = async (maxMs = 7000): Promise<boolean> => {
+  // Monitor wallet connection during registration
+  useEffect(() => {
+    if (step === "register" && !connected) {
+      toast.warning("Wallet disconnected. Please reconnect to continue.");
+      setStep("connect");
+    }
+  }, [connected, step]);
+
+  const waitForConnected = async (maxMs = 15000): Promise<boolean> => {
     const start = Date.now();
     while (Date.now() - start < maxMs) {
       if (connected && publicKey) {
@@ -161,7 +169,7 @@ export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthMod
       console.info('[wallet] connect() resolved');
 
       // Wait for connection state to update
-      const isConnected = await waitForConnected(7000);
+      const isConnected = await waitForConnected(15000);
       if (!isConnected) {
         throw new Error("Connection state did not update");
       }
@@ -199,44 +207,6 @@ export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthMod
         toast.success("Welcome back! 💜");
         onOpenChange(false);
         onSuccess?.();
-      } else if ((result as any).needsPasswordReset) {
-        // Orphaned profile - exists in DB but auth credentials are wrong
-        console.info('[wallet] Orphaned profile detected, signing in directly with profile data');
-        const profile = (result as any).profile;
-        
-        // Create new auth entry for this wallet
-        try {
-          const email = `${address}@wallet.luvai.app`;
-          const password = `wallet_luvai_${address}`;
-          
-          // Try to reset/recreate the auth account
-          await supabase.auth.admin.deleteUser(profile.user_id).catch(() => ({ error: null }));
-          
-          // Sign up fresh
-          const { data: authData, error: signUpError } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-              data: {
-                wallet_address: address,
-                existing_profile_id: profile.id
-              }
-            }
-          });
-          
-          if (!signUpError && authData?.user) {
-            console.info('[wallet] Auth recreated for existing profile');
-            toast.success(`Welcome back, ${profile.username}! 💜`);
-            onOpenChange(false);
-            onSuccess?.();
-          } else {
-            throw signUpError || new Error("Failed to recreate auth");
-          }
-        } catch (resetError) {
-          console.error('[wallet] Failed to reset auth:', resetError);
-          toast.error("Account recovery failed. Please contact support.");
-          setStep("connect");
-        }
       } else {
         console.info('[wallet] Sign-in failed, falling back to registration', (result as any)?.error);
         toast.error((result as any)?.error || "Sign-in failed. Please complete quick registration.");
@@ -253,7 +223,17 @@ export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthMod
   };
 
   const handleRegister = async () => {
-    if (!walletAddress || !username || !displayName) return;
+    // Explicit wallet connection check
+    if (!walletAddress) {
+      toast.error("Wallet disconnected! Please reconnect your wallet and try again.");
+      setStep("connect");
+      return;
+    }
+
+    if (!username || !displayName) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
 
     const validationError = validateUsername(username);
     if (validationError || usernameError) {

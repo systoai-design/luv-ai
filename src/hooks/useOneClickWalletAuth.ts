@@ -3,22 +3,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
-// Deterministic email and password from wallet address
-const emailFor = (address: string) => `${address}@wallet.luvai.app`;
-const createWalletPassword = (address: string) => `wallet_luvai_${address}`;
+// Deterministic email and password from wallet address (normalized)
+const emailFor = (address: string) => `${address.toLowerCase()}@wallet.luvai.app`;
+const createWalletPassword = (address: string) => `wallet_luvai_${address.toLowerCase()}`;
 
 export const useOneClickWalletAuth = () => {
   const navigate = useNavigate();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   const checkIfNewUser = async (walletAddress: string) => {
-    const normalizedAddress = walletAddress.toLowerCase();
-    
-    // Check if profile exists with this wallet address
+    // Check if profile exists with this wallet address (case-insensitive)
     const { data: profile } = await supabase
       .from("profiles")
       .select("id")
-      .eq("wallet_address", normalizedAddress)
+      .ilike("wallet_address", walletAddress)
       .maybeSingle();
 
     return !profile;

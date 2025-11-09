@@ -13,7 +13,7 @@ interface WalletAuthState {
 
 // Helper function to create consistent deterministic password from wallet address
 const createWalletPassword = (walletAddress: string): string => {
-  return `wallet_luvai_${walletAddress}`;
+  return `wallet_luvai_${walletAddress.toLowerCase()}`;
 };
 
 export const useWalletAuth = () => {
@@ -31,7 +31,7 @@ export const useWalletAuth = () => {
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
-        .eq("wallet_address", walletAddress)
+        .ilike("wallet_address", walletAddress)
         .maybeSingle();
 
       if (error) throw error;
@@ -75,9 +75,10 @@ export const useWalletAuth = () => {
 
       setAuthState({ isChecking: true, isNewUser: false, error: null });
 
-      // Create deterministic email and password from wallet address
-      const email = `${walletAddress}@wallet.luvai.app`;
-      const password = createWalletPassword(walletAddress);
+      // Create deterministic email and password from wallet address (normalized)
+      const normalizedAddress = walletAddress.toLowerCase();
+      const email = `${normalizedAddress}@wallet.luvai.app`;
+      const password = createWalletPassword(normalizedAddress);
 
       console.log('Step 2: Creating auth account...', { email });
 
@@ -92,7 +93,7 @@ export const useWalletAuth = () => {
         password,
         options: {
           data: {
-            wallet_address: walletAddress,
+            wallet_address: normalizedAddress,
             username,
             display_name: displayName,
           },
@@ -134,37 +135,54 @@ export const useWalletAuth = () => {
     try {
       setAuthState({ isChecking: true, isNewUser: false, error: null });
 
-      // Check if profile exists
+      // Check if profile exists (case-insensitive)
       const profile = await checkWalletExists(walletAddress);
       if (!profile) {
         setAuthState({ isChecking: false, isNewUser: true, error: null });
         return { isNewUser: true };
       }
 
-      // Profile exists, try to sign in
-      const email = `${walletAddress}@wallet.luvai.app`;
-      const password = createWalletPassword(walletAddress);
+      // Profile exists, try to sign in with normalized credentials
+      const normalizedAddress = walletAddress.toLowerCase();
+      const email = `${normalizedAddress}@wallet.luvai.app`;
+      const password = createWalletPassword(normalizedAddress);
 
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      // If login fails but profile exists, it's an orphaned profile (password mismatch)
-      if (error) {
-        console.warn('[auth] Profile exists but login failed - orphaned account detected');
+      // If login succeeds with normalized credentials
+      if (!error) {
+        toast.success("Welcome back! 💜");
         setAuthState({ isChecking: false, isNewUser: false, error: null });
-        return { 
-          success: false, 
-          isNewUser: false,
-          needsPasswordReset: true,
-          profile 
-        };
+        return { success: true, isNewUser: false };
       }
 
-      toast.success("Welcome back! 💜");
-      setAuthState({ isChecking: false, isNewUser: false, error: null });
-      return { success: true, isNewUser: false };
+      // Fallback: try with raw-case credentials (for legacy accounts)
+      const rawEmail = `${walletAddress}@wallet.luvai.app`;
+      const rawPassword = `wallet_luvai_${walletAddress}`;
+      
+      const { error: fallbackError } = await supabase.auth.signInWithPassword({
+        email: rawEmail,
+        password: rawPassword,
+      });
+
+      if (!fallbackError) {
+        console.info('[auth] Signed in with legacy credentials');
+        toast.success("Welcome back! 💜");
+        setAuthState({ isChecking: false, isNewUser: false, error: null });
+        return { success: true, isNewUser: false };
+      }
+
+      // Both attempts failed - treat as new user
+      console.warn('[auth] Profile exists but both login attempts failed');
+      setAuthState({ isChecking: false, isNewUser: true, error: null });
+      return { 
+        success: false, 
+        isNewUser: true,
+        error: "Please complete registration to access your account"
+      };
     } catch (error: any) {
       const errorMessage = error.message || "Sign in failed";
       setAuthState({ isChecking: false, isNewUser: false, error: errorMessage });

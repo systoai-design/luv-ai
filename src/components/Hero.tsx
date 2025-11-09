@@ -57,7 +57,7 @@ const Hero = ({ onOpenAuthModal }: HeroProps) => {
           </h1>
           
           <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
-            Swipe, match, and chat with verified users near you. All conversations are end-to-end encrypted 
+            Swipe, match, and chat with users all around the world. All conversations are end-to-end encrypted 
             with on-chain verification. Plus, explore AI companions when you want something different.
           </p>
 
@@ -94,8 +94,8 @@ const Hero = ({ onOpenAuthModal }: HeroProps) => {
               <div className="p-3 rounded-full bg-accent/10">
                 <Shield className="h-6 w-6 text-accent" />
               </div>
-              <h3 className="font-semibold text-lg">Verified Identities</h3>
-              <p className="text-sm text-muted-foreground">KYC verification with red checkmark badges</p>
+              <h3 className="font-semibold text-lg">True Encryption</h3>
+              <p className="text-sm text-muted-foreground">Bank-level encryption protects every conversation across the globe</p>
             </div>
           </div>
         </div>

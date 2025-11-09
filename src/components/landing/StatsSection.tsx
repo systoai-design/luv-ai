@@ -77,7 +77,7 @@ const StatsSection = () => {
             Join Thousands Finding <span className="text-gradient-pulse">Real Connections</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Our community is growing daily with verified users looking for meaningful relationships
+            Our community is growing daily with users from around the world looking for meaningful relationships
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

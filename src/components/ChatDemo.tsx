@@ -150,13 +150,13 @@ const ChatDemo = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Shield className="h-5 w-5 text-secondary" />
-                  Verified Users
+                  Global Connections
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  Get verified with KYC to earn the red checkmark badge. 
-                  Build trust and unlock features.
+                  Connect with users anywhere in the world. 
+                  Military-grade encryption ensures your privacy across all borders.
                 </p>
               </CardContent>
             </Card>

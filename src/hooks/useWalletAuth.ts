@@ -25,6 +25,31 @@ export const useWalletAuth = () => {
     error: null,
   });
 
+  // Ensure wallet address is linked to profile (for legacy accounts)
+  const ensureProfileWalletLink = async (walletAddress: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const normalizedAddress = walletAddress.toLowerCase();
+      
+      // Only update if wallet_address is null (don't overwrite existing)
+      const { error } = await supabase
+        .from("profiles")
+        .update({ wallet_address: normalizedAddress })
+        .eq("user_id", user.id)
+        .is("wallet_address", null);
+
+      if (error) {
+        console.warn('[auth] Could not link wallet address:', error);
+      } else {
+        console.info('[auth] Wallet address linked to profile');
+      }
+    } catch (error) {
+      console.warn('[auth] Error linking wallet:', error);
+    }
+  };
+
   // Check if wallet exists in database
   const checkWalletExists = async (walletAddress: string) => {
     try {
@@ -135,72 +160,74 @@ export const useWalletAuth = () => {
     try {
       setAuthState({ isChecking: true, isNewUser: false, error: null });
 
-      // Check if profile exists (case-insensitive)
-      const profile = await checkWalletExists(walletAddress);
-      if (!profile) {
-        setAuthState({ isChecking: false, isNewUser: true, error: null });
-        return { isNewUser: true };
-      }
-
-      // Profile exists, try to sign in with normalized credentials
+      // Try to sign in first (login-first approach)
       const normalizedAddress = walletAddress.toLowerCase();
       const email = `${normalizedAddress}@wallet.luvai.app`;
       const password = createWalletPassword(normalizedAddress);
 
-      const { error } = await supabase.auth.signInWithPassword({
+      // Attempt 1: Normalized credentials
+      const { error: normalizedError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      // If login succeeds with normalized credentials
-      if (!error) {
+      if (!normalizedError) {
+        console.info('[auth] Signed in with normalized credentials');
+        // Link wallet address to profile if not already linked (for legacy accounts)
+        await ensureProfileWalletLink(normalizedAddress);
         toast.success("Welcome back! 💜");
         setAuthState({ isChecking: false, isNewUser: false, error: null });
         return { success: true, isNewUser: false };
       }
 
-      // Fallback: try with raw-case credentials (for legacy accounts)
+      // Attempt 2: Legacy raw-case credentials
       const rawEmail = `${walletAddress}@wallet.luvai.app`;
       const rawPassword = `wallet_luvai_${walletAddress}`;
       
-      const { error: fallbackError } = await supabase.auth.signInWithPassword({
+      const { error: legacyError } = await supabase.auth.signInWithPassword({
         email: rawEmail,
         password: rawPassword,
       });
 
-      if (!fallbackError) {
+      if (!legacyError) {
         console.info('[auth] Signed in with legacy credentials');
+        // Link wallet address to profile if not already linked
+        await ensureProfileWalletLink(normalizedAddress);
         toast.success("Welcome back! 💜");
         setAuthState({ isChecking: false, isNewUser: false, error: null });
         return { success: true, isNewUser: false };
       }
 
-      // Both attempts failed - treat as new user
+      // Both login attempts failed - check if profile exists
+      const profile = await checkWalletExists(walletAddress);
+      
+      if (!profile) {
+        // Truly a new user
+        console.info('[auth] New wallet user, showing registration');
+        setAuthState({ isChecking: false, isNewUser: true, error: null });
+        return { isNewUser: true };
+      }
+
+      // Profile exists but login failed - show helpful error
       console.warn('[auth] Profile exists but both login attempts failed');
-      setAuthState({ isChecking: false, isNewUser: true, error: null });
+      const errorMessage = "We found your wallet account but couldn't sign you in. Please tap 'Reset Wallet Cache' below and reconnect.";
+      setAuthState({ isChecking: false, isNewUser: false, error: errorMessage });
+      toast.error(errorMessage);
       return { 
         success: false, 
-        isNewUser: true,
-        error: "Please complete registration to access your account"
+        isNewUser: false,
+        error: errorMessage
       };
     } catch (error: any) {
       const errorMessage = error.message || "Sign in failed";
       setAuthState({ isChecking: false, isNewUser: false, error: errorMessage });
+      toast.error(errorMessage);
       return { success: false, error: errorMessage };
     }
   };
 
-  // Handle wallet connection
-  useEffect(() => {
-    if (connected && publicKey) {
-      const walletAddress = publicKey.toBase58();
-      checkWalletExists(walletAddress).then((profile) => {
-        if (!profile) {
-          setAuthState({ isChecking: false, isNewUser: true, error: null });
-        }
-      });
-    }
-  }, [connected, publicKey]);
+  // Handle wallet connection - removed premature profile check
+  // Let signInWithWallet handle the logic instead
 
   // Handle wallet disconnection
   const handleDisconnect = async () => {

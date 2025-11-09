@@ -10,9 +10,10 @@ interface Position {
 interface UseCardSwipeProps {
   onSwipe: (direction: 'left' | 'right') => void;
   threshold?: number;
+  onThresholdCrossed?: (velocity: number) => void;
 }
 
-export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) => {
+export const useCardSwipe = ({ onSwipe, threshold = 150, onThresholdCrossed }: UseCardSwipeProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [thresholdCrossed, setThresholdCrossed] = useState(false);
@@ -152,6 +153,7 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
         setThresholdCrossed(true);
         triggerHaptic('medium');
         playSound('threshold', Math.abs(velocityRef.current));
+        onThresholdCrossed?.(Math.abs(velocityRef.current));
       }
     });
   }, [isDragging, isAnimating, thresholdCrossed, threshold, updateCardTransform]);

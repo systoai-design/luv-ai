@@ -65,6 +65,14 @@ const DiscoverCard = ({ profile, onSwipe, isInteractive = true }: DiscoverCardPr
       handleSwipeAction(action);
     },
     threshold: 120,
+    onThresholdCrossed: (velocity) => {
+      // Trigger confetti with velocity-based intensity
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const intensity = Math.max(1, Math.min(velocity * 2, 3));
+        triggerParticles('confetti', { x: canvas.width / 2, y: canvas.height / 2 }, intensity);
+      }
+    },
   });
 
   // Card entry animation - only for interactive cards

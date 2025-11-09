@@ -123,18 +123,45 @@ export const HomeSidebar = ({
       [targetUserId]: true
     }));
     try {
-      const {
-        error
-      } = await supabase.from("followers").insert({
-        follower_id: userId,
-        following_id: targetUserId
-      });
-      if (error) throw error;
+      // Create a LIKE swipe
+      const { error: swipeError } = await supabase
+        .from("swipes")
+        .insert({
+          user_id: userId,
+          target_user_id: targetUserId,
+          action: 'like'
+        });
+      
+      if (swipeError) throw swipeError;
+
+      // Check if they liked us back (mutual like = match)
+      const { data: reciprocalSwipe } = await supabase
+        .from("swipes")
+        .select("*")
+        .eq("user_id", targetUserId)
+        .eq("target_user_id", userId)
+        .in("action", ["like", "super_like"])
+        .maybeSingle();
+
+      if (reciprocalSwipe) {
+        // Create match
+        const user_id_1 = userId < targetUserId ? userId : targetUserId;
+        const user_id_2 = userId > targetUserId ? userId : targetUserId;
+        
+        await supabase.from("matches").insert({
+          user_id_1,
+          user_id_2
+        });
+        
+        toast.success(`🎉 It's a Match with @${username}!`);
+      } else {
+        toast.success(`Liked @${username}`);
+      }
+
       setFollowingStates(prev => ({
         ...prev,
         [targetUserId]: true
       }));
-      toast.success(`Connected with @${username}`);
 
       // Remove from suggested users after 1 second
       setTimeout(() => {
@@ -146,8 +173,8 @@ export const HomeSidebar = ({
         check_user_id: targetUserId
       });
     } catch (error) {
-      console.error("Error connecting:", error);
-      toast.error("Failed to connect");
+      console.error("Error liking user:", error);
+      toast.error("Failed to like user");
     } finally {
       setLoadingStates(prev => ({
         ...prev,

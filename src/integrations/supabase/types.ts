@@ -432,7 +432,22 @@ export type Database = {
           user_id_1?: string
           user_id_2?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "matches_user_id_1_profiles_fkey"
+            columns: ["user_id_1"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "matches_user_id_2_profiles_fkey"
+            columns: ["user_id_2"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       posts: {
         Row: {

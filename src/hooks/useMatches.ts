@@ -32,8 +32,8 @@ export const useMatches = () => {
           .from('matches')
           .select(`
             *,
-            profile_1:profiles!matches_user_id_1_fkey(*),
-            profile_2:profiles!matches_user_id_2_fkey(*)
+            profile_1:profiles!matches_user_id_1_profiles_fkey(*),
+            profile_2:profiles!matches_user_id_2_profiles_fkey(*)
           `)
           .or(`user_id_1.eq.${user.id},user_id_2.eq.${user.id}`)
           .order('last_message_at', { ascending: false, nullsFirst: false });

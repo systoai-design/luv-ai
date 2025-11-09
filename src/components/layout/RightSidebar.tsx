@@ -153,17 +153,42 @@ const RightSidebar = () => {
     setLoadingStates(prev => ({ ...prev, [targetUserId]: true }));
     
     try {
-      const { error } = await supabase
-        .from("followers")
+      // Create a LIKE swipe
+      const { error: swipeError } = await supabase
+        .from("swipes")
         .insert({
-          follower_id: user.id,
-          following_id: targetUserId,
+          user_id: user.id,
+          target_user_id: targetUserId,
+          action: 'like'
         });
 
-      if (error) throw error;
+      if (swipeError) throw swipeError;
+
+      // Check if they liked us back (mutual like = match)
+      const { data: reciprocalSwipe } = await supabase
+        .from("swipes")
+        .select("*")
+        .eq("user_id", targetUserId)
+        .eq("target_user_id", user.id)
+        .in("action", ["like", "super_like"])
+        .maybeSingle();
+
+      if (reciprocalSwipe) {
+        // Create match
+        const user_id_1 = user.id < targetUserId ? user.id : targetUserId;
+        const user_id_2 = user.id > targetUserId ? user.id : targetUserId;
+        
+        await supabase.from("matches").insert({
+          user_id_1,
+          user_id_2
+        });
+        
+        toast.success(`🎉 It's a Match with @${username}!`);
+      } else {
+        toast.success(`Liked @${username}`);
+      }
 
       setFollowingStates(prev => ({ ...prev, [targetUserId]: true }));
-      toast.success(`Connected with @${username}`);
       
       // Remove from suggestions after 1 second
       setTimeout(() => {
@@ -178,8 +203,8 @@ const RightSidebar = () => {
       });
       
     } catch (error) {
-      console.error("Error connecting:", error);
-      toast.error("Failed to connect");
+      console.error("Error liking user:", error);
+      toast.error("Failed to like user");
     } finally {
       setLoadingStates(prev => ({ ...prev, [targetUserId]: false }));
     }
@@ -381,13 +406,13 @@ const RightSidebar = () => {
             {scoredUsers.map(({ profile, sharedInterests, matchScore }) => (
               <div
                 key={profile.user_id}
-                className="flex items-start gap-2 p-2 rounded-lg hover:bg-muted/50 transition-all"
+                className="flex items-start gap-2.5 p-2.5 rounded-lg hover:bg-muted/50 transition-all group"
               >
                 <div 
                   onClick={() => navigate(`/profile/${profile.username}`)}
-                  className="cursor-pointer"
+                  className="cursor-pointer shrink-0"
                 >
-                  <Avatar className="h-9 w-9">
+                  <Avatar className="h-10 w-10">
                     <AvatarImage src={profile.avatar_url} />
                     <AvatarFallback className="bg-primary/20 text-primary text-xs">
                       {profile.display_name?.[0] || "U"}
@@ -397,28 +422,30 @@ const RightSidebar = () => {
                 
                 <div 
                   onClick={() => navigate(`/profile/${profile.username}`)}
-                  className="flex-1 min-w-0 cursor-pointer"
+                  className="flex-1 min-w-0 cursor-pointer space-y-1"
                 >
                   <p className="text-sm font-medium truncate">{profile.display_name}</p>
-                  <p className="text-xs text-muted-foreground truncate mb-1">
+                  <p className="text-xs text-muted-foreground truncate">
                     @{profile.username}
                   </p>
                   
-                  <Badge variant="secondary" className="text-xs mb-1">
-                    🎯 {matchScore} shared
-                  </Badge>
-                  
-                  <div className="flex flex-wrap gap-1">
-                    {sharedInterests.slice(0, 2).map((interest, idx) => (
-                      <Badge key={idx} variant="outline" className="text-xs">
-                        {interest}
-                      </Badge>
-                    ))}
-                    {sharedInterests.length > 2 && (
-                      <Badge variant="outline" className="text-xs">
-                        +{sharedInterests.length - 2}
-                      </Badge>
-                    )}
+                  <div className="space-y-1">
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                      🎯 {matchScore} shared
+                    </Badge>
+                    
+                    <div className="flex flex-wrap gap-1">
+                      {sharedInterests.slice(0, 2).map((interest, idx) => (
+                        <Badge key={idx} variant="outline" className="text-[10px] px-1.5 py-0">
+                          {interest}
+                        </Badge>
+                      ))}
+                      {sharedInterests.length > 2 && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                          +{sharedInterests.length - 2}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
                 
@@ -427,17 +454,17 @@ const RightSidebar = () => {
                   variant="outline"
                   onClick={(e) => handleConnect(profile.user_id, profile.username, e)}
                   disabled={loadingStates[profile.user_id] || followingStates[profile.user_id]}
-                  className="shrink-0 h-8 text-xs"
+                  className="shrink-0 h-7 px-2 text-[11px] opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                   {followingStates[profile.user_id] ? (
                     <>
                       <Check className="h-3 w-3 mr-1" />
-                      Connected
+                      Liked
                     </>
                   ) : (
                     <>
                       <UserPlus className="h-3 w-3 mr-1" />
-                      Connect
+                      Like
                     </>
                   )}
                 </Button>

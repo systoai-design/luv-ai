@@ -14,9 +14,9 @@ const WalletContext = createContext({});
 export const useWalletContext = () => useContext(WalletContext);
 
 export const WalletContextProvider = ({ children }: { children: ReactNode }) => {
-  // Support cluster override via env (default to Devnet)
+  // Support cluster override via env (default to Mainnet)
   const networkEnv = import.meta.env.VITE_SOLANA_CLUSTER as WalletAdapterNetwork | undefined;
-  const network = networkEnv || WalletAdapterNetwork.Devnet;
+  const network = networkEnv || WalletAdapterNetwork.Mainnet;
   const endpoint = useMemo(() => clusterApiUrl(network), [network]);
   
   // Use explicit wallet adapters for better reliability

@@ -32,16 +32,21 @@ export const useOneClickWalletAuth = () => {
       const email = emailFor(normalizedAddress);
       const password = createWalletPassword(normalizedAddress);
 
+      console.log('[OneClick] Attempting sign in for:', normalizedAddress);
+
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (!signInError) {
+        console.log('[OneClick] Sign in successful');
         toast.success("Welcome back! 💜");
         navigate("/home");
         return { success: true };
       }
+
+      console.error('[OneClick] Sign in error:', signInError.message);
 
       // Check for rate limiting
       if (signInError.message.includes("rate limit") || signInError.message.includes("too many")) {
@@ -51,9 +56,16 @@ export const useOneClickWalletAuth = () => {
         return { success: false, error: "rate_limit" };
       }
 
+      // If invalid credentials, user might need to register
+      if (signInError.message.includes("Invalid login credentials")) {
+        console.log('[OneClick] Invalid credentials - user may need to register');
+        return { success: false, error: "invalid_credentials" };
+      }
+
       toast.error("Sign in failed. Please try again.");
       return { success: false, error: signInError.message };
     } catch (error: any) {
+      console.error('[OneClick] Exception:', error);
       toast.error(error.message || "Authentication failed");
       return { success: false, error: error.message };
     } finally {

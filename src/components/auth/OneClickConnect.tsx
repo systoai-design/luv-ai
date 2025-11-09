@@ -4,6 +4,7 @@ import { useOneClickWalletAuth } from "@/hooks/useOneClickWalletAuth";
 import { useAuth } from "@/contexts/AuthContext";
 import { WalletAuthModal } from "./WalletAuthModal";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 interface OneClickConnectProps {
   className?: string;
@@ -30,16 +31,27 @@ const OneClickConnect = ({ className, onNewUser }: OneClickConnectProps) => {
         
         attemptedWalletRef.current = walletAddress;
 
+        console.log('[OneClickConnect] Wallet connected:', walletAddress);
+
         // Check if this is a new user
         const isNew = await checkIfNewUser(walletAddress);
         
         if (isNew) {
+          console.log('[OneClickConnect] New user detected, opening registration modal');
           // New user - open WalletAuthModal for registration
           setShowWalletModal(true);
           onNewUser?.();
         } else {
+          console.log('[OneClickConnect] Existing user, attempting auto sign-in');
           // Existing user - sign in directly
-          await signInExistingUser(walletAddress);
+          const result = await signInExistingUser(walletAddress);
+          
+          if (!result.success && result.error === "invalid_credentials") {
+            console.log('[OneClickConnect] Auto sign-in failed, opening registration modal');
+            toast.info("Please complete your profile setup");
+            setShowWalletModal(true);
+            onNewUser?.();
+          }
         }
       }
     };

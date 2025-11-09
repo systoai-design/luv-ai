@@ -19,7 +19,7 @@ const LeftSidebar = () => {
   const [profile, setProfile] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [canCreateCompanion, setCanCreateCompanion] = useState(false);
-  const { unreadMessages } = useUnreadCounts();
+  const { unreadMessages, unreadNotifications, unreadConnections, unreadFriends } = useUnreadCounts();
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -63,7 +63,16 @@ const LeftSidebar = () => {
   ];
 
   const NavItem = ({ item }: { item: typeof navItems[0] }) => {
-    const showBadge = item.path === '/messages' && unreadMessages > 0;
+    const getBadgeCount = () => {
+      if (item.path === '/messages') return unreadMessages;
+      if (item.path === '/notifications') return unreadNotifications;
+      if (item.path === '/connections') return unreadConnections;
+      if (item.path === '/friends') return unreadFriends;
+      return 0;
+    };
+
+    const badgeCount = getBadgeCount();
+    const showBadge = badgeCount > 0;
     
     const content = (
       <NavLink
@@ -77,7 +86,7 @@ const LeftSidebar = () => {
             <span className="animate-fade-in flex-1 transition-opacity duration-300">{item.label}</span>
             {showBadge && (
               <Badge variant="destructive" className="ml-auto animate-scale-in">
-                {unreadMessages > 99 ? '99+' : unreadMessages}
+                {badgeCount > 99 ? '99+' : badgeCount}
               </Badge>
             )}
           </>
@@ -92,7 +101,7 @@ const LeftSidebar = () => {
             <TooltipTrigger asChild>{content}</TooltipTrigger>
             <TooltipContent side="right">
               {item.label}
-              {showBadge && ` (${unreadMessages})`}
+              {showBadge && ` (${badgeCount})`}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

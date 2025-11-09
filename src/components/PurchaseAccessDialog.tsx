@@ -55,8 +55,8 @@ export const PurchaseAccessDialog = ({
     let signature: string | undefined;
 
     try {
-      // Use devnet for testing (matches WalletContext configuration)
-      const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
+      // Use Mainnet for production
+      const connection = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
       const lamports = companion.access_price * 1000000000; // Convert SOL to lamports
 
       // Check balance first
@@ -66,19 +66,7 @@ export const PurchaseAccessDialog = ({
       if (balance < requiredLamports) {
         toast({
           title: 'Insufficient balance',
-          description: (
-            <span>
-              You need more SOL to complete this purchase.{' '}
-              <a 
-                href="https://faucet.solana.com/" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="underline font-medium"
-              >
-                Get Devnet SOL
-              </a>
-            </span>
-          ),
+          description: 'You need more SOL to complete this purchase. Please add SOL to your wallet.',
           variant: 'destructive',
         });
         setIsProcessing(false);
@@ -144,7 +132,7 @@ export const PurchaseAccessDialog = ({
       }
 
       if (!confirmed) {
-        throw new Error(`Could not confirm transaction. Check status at: https://solscan.io/tx/${signature}?cluster=devnet`);
+        throw new Error(`Could not confirm transaction. Check status at: https://solscan.io/tx/${signature}`);
       }
 
       // Verify payment on backend
@@ -174,7 +162,7 @@ export const PurchaseAccessDialog = ({
       toast({
         title: 'Purchase failed',
         description: signature 
-          ? `${errorMessage}\n\nTransaction: ${signature}\nVerify at: https://solscan.io/tx/${signature}?cluster=devnet`
+          ? `${errorMessage}\n\nTransaction: ${signature}\nVerify at: https://solscan.io/tx/${signature}`
           : errorMessage,
         variant: 'destructive',
       });
@@ -219,7 +207,7 @@ export const PurchaseAccessDialog = ({
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Network:</span>
-              <span className="font-medium">Solana Devnet</span>
+              <span className="font-medium">Solana Mainnet</span>
             </div>
           </div>
 

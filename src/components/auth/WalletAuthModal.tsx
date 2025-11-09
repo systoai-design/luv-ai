@@ -278,12 +278,13 @@ export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthMod
 
     try {
       setIsRegistering(true);
-      console.info('[wallet] Registering new user:', { username, displayName });
+      console.info('[wallet] Registering new user:', { username, displayName, walletAddress });
 
       const result = await registerWithWallet(walletAddress, username, displayName);
 
       if (result.success) {
         console.info('[wallet] Registration successful');
+        toast.success("Welcome to LUVAI! 💜");
         onOpenChange(false);
         onSuccess?.();
       }

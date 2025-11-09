@@ -65,7 +65,7 @@ serve(async (req) => {
     const PLATFORM_WALLET = '5UD8QQ5WrJFXYcN7yy1iUkhvHoa6hyko4f9Wa3EDDeJ3';
     
     try {
-      const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
+      const connection = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
       const transaction = await connection.getTransaction(transactionSignature, {
         maxSupportedTransactionVersion: 0,
       });

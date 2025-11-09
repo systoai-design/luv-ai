@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Send, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
+import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 
 interface Message {
   id: string;
@@ -33,6 +34,9 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const { typingUsers, setTyping } = useTypingIndicator(matchId);
 
   useEffect(() => {
     if (!user) return;
@@ -85,11 +89,43 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
     }, 100);
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setNewMessage(value);
+
+    // Set typing indicator
+    if (value.length > 0) {
+      setTyping(true, otherUser.display_name || undefined);
+
+      // Clear previous timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+
+      // Stop typing after 3 seconds of inactivity
+      typingTimeoutRef.current = setTimeout(() => {
+        setTyping(false);
+      }, 3000);
+    } else {
+      setTyping(false);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    }
+  };
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !user || sending) return;
 
     setSending(true);
+    
+    // Stop typing indicator
+    setTyping(false);
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
     try {
       const { error } = await supabase.from('user_messages').insert({
         match_id: matchId,
@@ -123,8 +159,11 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
           <AvatarImage src={otherUser.avatar_url || ''} alt={otherUser.display_name || 'User'} />
           <AvatarFallback>{otherUser.display_name?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
         </Avatar>
-        <div>
+        <div className="flex-1">
           <h3 className="font-semibold">{otherUser.display_name || 'Anonymous'}</h3>
+          {typingUsers.length > 0 && (
+            <p className="text-xs text-muted-foreground animate-pulse">typing...</p>
+          )}
         </div>
       </div>
 
@@ -166,7 +205,7 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
         <div className="flex gap-2">
           <Input
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={handleInputChange}
             placeholder="Type a message..."
             className="flex-1"
             disabled={sending}

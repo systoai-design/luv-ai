@@ -7,6 +7,8 @@ export const useUnreadCounts = () => {
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [unreadLikes, setUnreadLikes] = useState(0);
+  const [unreadConnections, setUnreadConnections] = useState(0);
+  const [unreadFriends, setUnreadFriends] = useState(0);
 
   useEffect(() => {
     if (!user) return;
@@ -94,13 +96,37 @@ export const useUnreadCounts = () => {
         s => !swipedIds.has(s.user_id) && !matchedIds.has(s.user_id)
       ).length || 0;
 
-      setUnreadNotifications(0); // Placeholder for future notifications
+      // Get unread super like notifications
+      const { data: superLikes } = await supabase
+        .from('super_like_notifications')
+        .select('id')
+        .eq('recipient_id', user.id)
+        .eq('viewed', false);
+
+      // Get pending chat requests
+      const { data: chatRequests } = await supabase
+        .from('chat_requests')
+        .select('id')
+        .eq('receiver_id', user.id)
+        .eq('status', 'pending');
+
+      const unreadNotificationsCount = (superLikes?.length || 0) + (chatRequests?.length || 0);
+
+      setUnreadNotifications(unreadNotificationsCount);
       setUnreadMessages(totalUnreadMessages);
       setUnreadLikes(unreadLikesCount);
+      setUnreadConnections(unreadLikesCount); // Connections shows unread likes
+      setUnreadFriends(0); // Placeholder for friend requests
     } catch (error) {
       console.error('Error loading unread counts:', error);
     }
   };
 
-  return { unreadNotifications, unreadMessages, unreadLikes };
+  return { 
+    unreadNotifications, 
+    unreadMessages, 
+    unreadLikes, 
+    unreadConnections, 
+    unreadFriends 
+  };
 };

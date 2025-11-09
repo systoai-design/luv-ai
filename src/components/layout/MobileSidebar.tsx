@@ -1,4 +1,4 @@
-import { Home, Users, MessageCircle, ShoppingBag, Bell, User, Shield, LayoutDashboard, Package } from "lucide-react";
+import { Home, Users, MessageCircle, ShoppingBag, Bell, User, Shield, LayoutDashboard, Package, Heart } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
@@ -7,6 +7,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useSidebarState } from "@/hooks/useSidebarState";
+import { useUnreadCounts } from "@/hooks/useUnreadCounts";
+import { Badge } from "@/components/ui/badge";
 
 const MobileSidebar = () => {
   const { user } = useAuth();
@@ -14,6 +16,7 @@ const MobileSidebar = () => {
   const [profile, setProfile] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [canCreateCompanion, setCanCreateCompanion] = useState(false);
+  const { unreadMessages, unreadNotifications, unreadConnections, unreadFriends } = useUnreadCounts();
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -50,10 +53,19 @@ const MobileSidebar = () => {
   const navItems = [
     { icon: Home, label: "Home", path: "/home" },
     { icon: Users, label: "Friends", path: "/friends" },
+    { icon: Heart, label: "Connections", path: "/connections" },
     { icon: MessageCircle, label: "Messages", path: "/messages" },
     { icon: ShoppingBag, label: "Marketplace", path: "/marketplace" },
     { icon: Bell, label: "Notifications", path: "/notifications" },
   ];
+
+  const getBadgeCount = (path: string) => {
+    if (path === '/messages') return unreadMessages;
+    if (path === '/notifications') return unreadNotifications;
+    if (path === '/connections') return unreadConnections;
+    if (path === '/friends') return unreadFriends;
+    return 0;
+  };
 
   return (
     <Sheet open={isMobileOpen} onOpenChange={closeMobile}>
@@ -86,18 +98,28 @@ const MobileSidebar = () => {
 
           {/* Main Navigation */}
           <nav className="flex flex-col gap-1">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-muted/50 transition-colors text-foreground"
-                activeClassName="bg-muted text-primary font-medium"
-                onClick={closeMobile}
-              >
-                <item.icon className="h-5 w-5" />
-                <span>{item.label}</span>
-              </NavLink>
-            ))}
+            {navItems.map((item) => {
+              const badgeCount = getBadgeCount(item.path);
+              const showBadge = badgeCount > 0;
+
+              return (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-muted/50 transition-colors text-foreground"
+                  activeClassName="bg-muted text-primary font-medium"
+                  onClick={closeMobile}
+                >
+                  <item.icon className="h-5 w-5" />
+                  <span className="flex-1">{item.label}</span>
+                  {showBadge && (
+                    <Badge variant="destructive" className="ml-auto">
+                      {badgeCount > 99 ? '99+' : badgeCount}
+                    </Badge>
+                  )}
+                </NavLink>
+              );
+            })}
           </nav>
 
           <Separator className="my-4" />

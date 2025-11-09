@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import LandingHeader from "@/components/landing/LandingHeader";
 import Hero from "@/components/Hero";
-import DiscoverSection from "@/components/DiscoverSection";
+import SwipeDemo from "@/components/landing/SwipeDemo";
 import MarketplaceSection from "@/components/MarketplaceSection";
 import ChatDemo from "@/components/ChatDemo";
 import HowItWorks from "@/components/HowItWorks";
@@ -44,7 +44,22 @@ const Index = () => {
       <LandingHeader onOpenAuthModal={handleOpenAuthModal} />
       <Hero onOpenAuthModal={handleOpenAuthModal} />
       <StatsSection />
-      <DiscoverSection />
+      
+      {/* Interactive Swipe Demo */}
+      <section className="py-24 px-4">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+              <span className="text-gradient-pulse">Discover</span> Real Connections
+            </h2>
+            <p className="text-xl text-muted-foreground">
+              Swipe, match, and start meaningful conversations
+            </p>
+          </div>
+          <SwipeDemo />
+        </div>
+      </section>
+
       <ChatDemo />
       <MarketplaceSection />
       <HowItWorks />

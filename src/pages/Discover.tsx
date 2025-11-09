@@ -339,7 +339,17 @@ const Discover = () => {
   }
 
   const currentProfile = profiles[currentIndex];
-  const nextProfile = profiles[currentIndex + 1];
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  const handleSwipeWithTransition = (swipeData: { match: any; swipeId: string }, action: 'like' | 'pass' | 'super_like') => {
+    setIsTransitioning(true);
+    
+    // Call original handler after a brief delay for smooth animation
+    setTimeout(() => {
+      handleSwipe(swipeData, action);
+      setIsTransitioning(false);
+    }, 100);
+  };
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
@@ -350,36 +360,52 @@ const Discover = () => {
         </p>
       </div>
 
-      <div className="relative card-stack-container">
-        {/* Card 3 - Further behind with dynamic animation */}
+      <div className="relative card-stack-container" style={{ minHeight: '600px' }}>
+        {/* Card 3 - Further behind */}
         {profiles[currentIndex + 2] && (
           <div 
             className="absolute inset-0 pointer-events-none card-stack-layer"
             style={{
-              transform: 'translate3d(0, 16px, 0) scale(0.90)',
-              opacity: 0.3,
-              zIndex: 0,
-              transition: 'all 0.4s cubic-bezier(0.25, 1, 0.5, 1)',
+              transform: isTransitioning 
+                ? 'translate3d(0, 8px, 0) scale(0.95)' 
+                : 'translate3d(0, 16px, 0) scale(0.90)',
+              opacity: isTransitioning ? 0.5 : 0.3,
+              zIndex: 1,
+              transition: 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              transitionDelay: '100ms',
               willChange: 'transform, opacity',
             }}
           >
-            <Card className="w-full h-full bg-card/30 backdrop-blur-sm border-border/20" />
+            <div style={{ opacity: 0.6, pointerEvents: 'none' }}>
+              <DiscoverCard 
+                profile={profiles[currentIndex + 2]} 
+                onSwipe={() => {}} 
+              />
+            </div>
           </div>
         )}
         
-        {/* Card 2 - Behind current with dynamic animation */}
+        {/* Card 2 - Behind current */}
         {profiles[currentIndex + 1] && (
           <div 
             className="absolute inset-0 pointer-events-none card-stack-layer"
             style={{
-              transform: 'translate3d(0, 8px, 0) scale(0.95)',
-              opacity: 0.5,
-              zIndex: 1,
-              transition: 'all 0.4s cubic-bezier(0.25, 1, 0.5, 1)',
+              transform: isTransitioning 
+                ? 'translate3d(0, 0, 0) scale(1)' 
+                : 'translate3d(0, 8px, 0) scale(0.95)',
+              opacity: isTransitioning ? 0.9 : 0.6,
+              zIndex: 5,
+              transition: 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              transitionDelay: '50ms',
               willChange: 'transform, opacity',
             }}
           >
-            <Card className="w-full h-full bg-card/50 backdrop-blur-sm border-border/30" />
+            <div style={{ opacity: 0.8, pointerEvents: 'none' }}>
+              <DiscoverCard 
+                profile={profiles[currentIndex + 1]} 
+                onSwipe={() => {}} 
+              />
+            </div>
           </div>
         )}
         
@@ -393,7 +419,7 @@ const Discover = () => {
               transform: 'translate3d(0, 0, 0)',
             }}
           >
-            <DiscoverCard profile={currentProfile} onSwipe={handleSwipe} />
+            <DiscoverCard profile={currentProfile} onSwipe={handleSwipeWithTransition} />
           </div>
         )}
       </div>

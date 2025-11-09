@@ -26,9 +26,10 @@ interface DiscoverCardProps {
     sharedInterests?: string[];
   };
   onSwipe: (swipeData: { match: any; swipeId: string }, action: 'like' | 'pass' | 'super_like') => void;
+  isInteractive?: boolean;
 }
 
-const DiscoverCard = ({ profile, onSwipe }: DiscoverCardProps) => {
+const DiscoverCard = ({ profile, onSwipe, isInteractive = true }: DiscoverCardProps) => {
   const { swipe, isLoading } = useSwipe();
   const { remaining: superLikesRemaining } = useSuperLikes();
   const { canvasRef, trigger: triggerParticles } = useParticles();
@@ -66,12 +67,16 @@ const DiscoverCard = ({ profile, onSwipe }: DiscoverCardProps) => {
     threshold: 120,
   });
 
-  // Card entry animation
+  // Card entry animation - only for interactive cards
   useEffect(() => {
+    if (!isInteractive) {
+      setIsEntering(false);
+      return;
+    }
     setIsEntering(true);
-    const timer = setTimeout(() => setIsEntering(false), 400);
+    const timer = setTimeout(() => setIsEntering(false), 500);
     return () => clearTimeout(timer);
-  }, [profile.id]);
+  }, [profile.id, isInteractive]);
 
   const isSharedInterest = (interest: string) => 
     profile.sharedInterests?.includes(interest);
@@ -84,21 +89,23 @@ const DiscoverCard = ({ profile, onSwipe }: DiscoverCardProps) => {
 
   return (
     <Card 
-      ref={cardRef}
-      className="bg-card border-border overflow-hidden select-none cursor-grab active:cursor-grabbing relative swipe-card"
+      ref={isInteractive ? cardRef : undefined}
+      className={`bg-card border-border overflow-hidden select-none relative swipe-card ${
+        isInteractive ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none'
+      }`}
       style={{
         transform: isEntering 
-          ? 'translate3d(0, 20px, 0) scale(0.95)' 
+          ? 'translate3d(0, 30px, -50px) scale(0.90)' 
           : 'translate3d(0, 0, 0)',
         opacity: isEntering ? 0 : 1,
         transition: isEntering 
-          ? 'all 0.5s cubic-bezier(0.25, 1.2, 0.4, 1)' 
+          ? 'all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)' 
           : 'none',
         willChange: 'transform, opacity',
         contain: 'layout style paint',
       }}
-      onMouseDown={handleStart}
-      onTouchStart={handleStart}
+      onMouseDown={isInteractive ? handleStart : undefined}
+      onTouchStart={isInteractive ? handleStart : undefined}
     >
       <ParticleCanvas ref={canvasRef} />
       

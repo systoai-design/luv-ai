@@ -64,7 +64,7 @@ const MarketplaceSection = () => {
       });
       return;
     }
-    navigate(`/chat/${companionId}`);
+    navigate(`/chat/${companionId}?purchase=1`);
   };
   
   const { data: companions, isLoading } = useQuery({

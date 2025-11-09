@@ -26,7 +26,7 @@ interface PurchaseAccessDialogProps {
   onGrantAccess: (signature: string, amount: number) => Promise<boolean>;
 }
 
-const PLATFORM_WALLET = 'DzrB51hp4RoR8ctsbKeuyJHe4KXr24cGewyTucBZezrF';
+const PLATFORM_WALLET = '5UD8QQ5WrJFXYcN7yy1iUkhvHoa6hyko4f9Wa3EDDeJ3';
 
 export const PurchaseAccessDialog = ({
   open,
@@ -58,6 +58,32 @@ export const PurchaseAccessDialog = ({
       // Use devnet for testing (matches WalletContext configuration)
       const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
       const lamports = companion.access_price * 1000000000; // Convert SOL to lamports
+
+      // Check balance first
+      const balance = await connection.getBalance(publicKey);
+      const requiredLamports = lamports + 5000; // Add buffer for transaction fee
+      
+      if (balance < requiredLamports) {
+        toast({
+          title: 'Insufficient balance',
+          description: (
+            <span>
+              You need more SOL to complete this purchase.{' '}
+              <a 
+                href="https://faucet.solana.com/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="underline font-medium"
+              >
+                Get Devnet SOL
+              </a>
+            </span>
+          ),
+          variant: 'destructive',
+        });
+        setIsProcessing(false);
+        return;
+      }
 
       const transaction = new Transaction().add(
         SystemProgram.transfer({
@@ -189,7 +215,11 @@ export const PurchaseAccessDialog = ({
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Messages:</span>
-              <span className="font-medium">Unlimited</span>
+              <span className="font-medium">30/day</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Network:</span>
+              <span className="font-medium">Solana Devnet</span>
             </div>
           </div>
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChat } from '@/hooks/useChat';
 import { useCompanionAccess } from '@/hooks/useCompanionAccess';
@@ -12,16 +12,21 @@ import { Send, Loader2, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PurchaseAccessDialog } from '@/components/PurchaseAccessDialog';
 import { ChatLimitBadge } from '@/components/chat/ChatLimitBadge';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { WalletAuthModal } from '@/components/auth/WalletAuthModal';
 
 const Chat = () => {
   const { companionId } = useParams<{ companionId: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { connected } = useWallet();
   const [chatId, setChatId] = useState<string | null>(null);
   const [companion, setCompanion] = useState<any>(null);
   const [input, setInput] = useState('');
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { messages, isLoading, sendMessage, loadMessages } = useChat(chatId || '', companionId || '');
@@ -108,6 +113,17 @@ const Chat = () => {
     }
   }, [chatId, hasAccess, loadMessages]);
 
+  // Handle ?purchase=1 query param
+  useEffect(() => {
+    if (searchParams.get('purchase') === '1' && companion && !hasAccess) {
+      if (!connected) {
+        setShowWalletModal(true);
+      } else {
+        setShowPurchaseDialog(true);
+      }
+    }
+  }, [searchParams, companion, hasAccess, connected]);
+
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -152,8 +168,12 @@ const Chat = () => {
                 Purchase one-time access to chat with {companion.name}
               </p>
               <div className="text-4xl font-bold">{accessPrice} SOL</div>
-              <Button onClick={() => setShowPurchaseDialog(true)} size="lg" className="w-full">
-                Purchase Access
+              <Button 
+                onClick={() => connected ? setShowPurchaseDialog(true) : setShowWalletModal(true)} 
+                size="lg" 
+                className="w-full"
+              >
+                {connected ? 'Purchase Access' : 'Connect Wallet to Purchase'}
               </Button>
             </div>
             <Button variant="ghost" onClick={() => navigate('/marketplace')}>
@@ -172,6 +192,14 @@ const Chat = () => {
           }}
           onSuccess={() => window.location.reload()}
           onGrantAccess={grantAccess}
+        />
+        <WalletAuthModal
+          open={showWalletModal}
+          onOpenChange={setShowWalletModal}
+          onSuccess={() => {
+            setShowWalletModal(false);
+            setShowPurchaseDialog(true);
+          }}
         />
       </>
     );

@@ -1,25 +1,18 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { useNavigate } from "react-router-dom";
-import { Heart, MessageCircle, Sparkles, Star } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CreateCompanionDialog } from "@/components/creator/CreateCompanionDialog";
 import { useAuth } from "@/contexts/AuthContext";
+import MarketplaceSection from "@/components/MarketplaceSection";
 
 const Marketplace = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
-  const [companions, setCompanions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [canCreate, setCanCreate] = useState(false);
 
   useEffect(() => {
-    loadCompanions();
     checkCreatorStatus();
+    setLoading(false);
   }, []);
 
   const checkCreatorStatus = async () => {
@@ -32,45 +25,11 @@ const Marketplace = () => {
     setCanCreate(data?.can_create_companion || false);
   };
 
-  const loadCompanions = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('ai_companions')
-        .select(`
-          *,
-          profiles:creator_id (
-            display_name,
-            username,
-            avatar_url
-          )
-        `)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setCompanions(data || []);
-    } catch (error) {
-      console.error('Error loading companions:', error);
-    } finally {
-      setLoading(false);
-    }
+  const handleCompanionCreated = () => {
+    // Trigger reload of MarketplaceSection via key change
+    setLoading(true);
+    setTimeout(() => setLoading(false), 100);
   };
-
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="mb-8">
-          <Skeleton className="h-10 w-64 mb-2" />
-          <Skeleton className="h-6 w-96" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Skeleton key={i} className="h-96 w-full" />
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="h-screen overflow-y-auto">
@@ -84,67 +43,17 @@ const Marketplace = () => {
               Discover and connect with unique AI companions
             </p>
           </div>
-          {canCreate && <CreateCompanionDialog onSuccess={loadCompanions} />}
+          {canCreate && <CreateCompanionDialog onSuccess={handleCompanionCreated} />}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-8">
-          {companions.map((companion) => (
-          <Card key={companion.id} className="overflow-hidden hover:shadow-glow transition-all duration-300 bg-card/50 border-border/50">
-            <CardHeader className="p-0">
-              <div className="relative h-48 bg-gradient-primary">
-                <Avatar className="absolute bottom-4 left-4 h-24 w-24 border-4 border-card">
-                  <AvatarImage src={companion.avatar_url} />
-                  <AvatarFallback className="bg-primary/20 text-primary text-2xl">
-                    {companion.name[0]}
-                  </AvatarFallback>
-                </Avatar>
-                {companion.featured && (
-                  <Badge className="absolute top-4 right-4 bg-verified">
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    Featured
-                  </Badge>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="pt-6 pb-4">
-              <h3 className="text-xl font-bold mb-2">{companion.name}</h3>
-              <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                {companion.tagline}
-              </p>
-              <div className="flex items-center gap-3 text-sm mb-3">
-                {companion.average_rating > 0 && (
-                  <Badge variant="outline" className="border-verified text-verified">
-                    <Star className="h-3 w-3 mr-1 fill-current" />
-                    {companion.average_rating.toFixed(1)}
-                  </Badge>
-                )}
-                <span className="flex items-center gap-1 text-muted-foreground">
-                  <MessageCircle className="h-4 w-4" />
-                  {companion.total_chats || 0}
-                </span>
-              </div>
-              {companion.access_price > 0 && (
-                <Badge variant="outline" className="border-primary text-primary">
-                  {companion.access_price} SOL
-                </Badge>
-              )}
-            </CardContent>
-            <CardFooter className="pb-4">
-              <Button
-                className="w-full bg-gradient-primary hover:opacity-90"
-                onClick={() => navigate(`/chat/${companion.id}`)}
-              >
-                Chat Now
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
-
-        {companions.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No AI companions available yet.</p>
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <Skeleton key={i} className="h-96 w-full" />
+            ))}
           </div>
+        ) : (
+          <MarketplaceSection key={loading ? 'loading' : 'loaded'} />
         )}
       </div>
     </div>

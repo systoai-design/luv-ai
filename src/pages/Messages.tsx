@@ -88,15 +88,20 @@ const Messages = () => {
                         }`}
                         onClick={() => setSelectedMatch(match.id)}
                       >
-                        <Avatar>
-                          <AvatarImage
-                            src={match.profile.avatar_url || ''}
-                            alt={match.profile.display_name || 'User'}
-                          />
-                          <AvatarFallback>
-                            {match.profile.display_name?.[0]?.toUpperCase() || 'U'}
-                          </AvatarFallback>
-                        </Avatar>
+                        <div className="relative">
+                          <Avatar>
+                            <AvatarImage
+                              src={match.profile.avatar_url || ''}
+                              alt={match.profile.display_name || 'User'}
+                            />
+                            <AvatarFallback>
+                              {match.profile.display_name?.[0]?.toUpperCase() || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                          {presenceMap[match.profile.id]?.online && (
+                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-card" />
+                          )}
+                        </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <p className="font-medium truncate text-sm">

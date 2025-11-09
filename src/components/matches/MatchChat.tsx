@@ -9,6 +9,7 @@ import { Send, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { useTypingIndicator } from '@/hooks/useTypingIndicator';
+import { usePresenceDisplay } from '@/hooks/usePresenceDisplay';
 
 interface Message {
   id: string;
@@ -37,6 +38,8 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const { typingUsers, setTyping } = useTypingIndicator(matchId);
+  const presenceMap = usePresenceDisplay([otherUser.id]);
+  const isOnline = presenceMap[otherUser.id]?.online;
 
   useEffect(() => {
     if (!user) return;
@@ -176,10 +179,15 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
     <Card className="bg-card border-border flex flex-col h-[600px]">
       {/* Header */}
       <div className="p-4 border-b border-border flex items-center gap-3">
-        <Avatar>
-          <AvatarImage src={otherUser.avatar_url || ''} alt={otherUser.display_name || 'User'} />
-          <AvatarFallback>{otherUser.display_name?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
-        </Avatar>
+        <div className="relative">
+          <Avatar>
+            <AvatarImage src={otherUser.avatar_url || ''} alt={otherUser.display_name || 'User'} />
+            <AvatarFallback>{otherUser.display_name?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
+          </Avatar>
+          {isOnline && (
+            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-card" />
+          )}
+        </div>
         <div className="flex-1">
           <h3 className="font-semibold">{otherUser.display_name || 'Anonymous'}</h3>
           {typingUsers.length > 0 && (

@@ -4,6 +4,7 @@ import heroBg from "@/assets/hero-bg.jpg";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import ParticleBackground from "@/components/landing/ParticleBackground";
+import { smoothScrollTo } from "@/lib/smoothScroll";
 
 const Hero = () => {
   const { user } = useAuth();
@@ -78,7 +79,12 @@ const Hero = () => {
                 Sign In
               </Button>
             )}
-            <Button size="lg" variant="outline" className="border-primary/50 hover:bg-primary/10 text-lg px-8">
+            <Button 
+              size="lg" 
+              variant="outline" 
+              onClick={() => smoothScrollTo("how-it-works")}
+              className="border-primary/50 hover:bg-primary/10 text-lg px-8"
+            >
               Learn More
             </Button>
           </div>

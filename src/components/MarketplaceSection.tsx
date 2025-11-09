@@ -115,7 +115,7 @@ const MarketplaceSection = () => {
             </span>
           </h2>
           <p className="text-xl text-muted-foreground">
-            AI companions with unique personalities, powered by advanced AI
+            AI companions with unique personalities - purchase once, chat forever (30 messages per day)
           </p>
         </div>
 
@@ -225,14 +225,21 @@ const MarketplaceSection = () => {
                       </div>
                     </div>
 
-                    {/* Stats */}
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <MessageCircle className="h-4 w-4" />
-                        <span>{companion.total_chats?.toLocaleString() || 0} chats</span>
+                    {/* Stats & Pricing */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <MessageCircle className="h-4 w-4" />
+                          <span>{companion.total_chats?.toLocaleString() || 0} chats</span>
+                        </div>
                       </div>
-                      <div className="font-semibold text-primary">
-                        {companion.access_price} {companion.currency} one-time
+                      <div className="bg-primary/10 rounded-lg p-3 text-center">
+                        <div className="text-2xl font-bold text-primary">
+                          {companion.access_price} {companion.currency}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          One-time purchase • On-chain verified
+                        </div>
                       </div>
                     </div>
 
@@ -240,7 +247,7 @@ const MarketplaceSection = () => {
                       className="w-full bg-gradient-primary hover:opacity-90 transition-opacity"
                       onClick={() => handleStartChat(companion.id)}
                     >
-                      Start Chat
+                      Purchase & Start Chat
                     </Button>
                   </CardContent>
                 </Card>

@@ -7,25 +7,25 @@ const steps = [
   {
     icon: Wallet,
     title: "Connect Your Wallet",
-    description: "No email required. Connect with Phantom or any Solana wallet to get started instantly.",
+    description: "No email required. Connect with Phantom or Solflare wallet to sign in securely with your Solana address.",
     color: "primary",
   },
   {
     icon: Search,
-    title: "Discover & Match",
-    description: "Browse AI bots and verified humans. Swipe on dating profiles or explore the marketplace.",
+    title: "Choose Your Companion",
+    description: "Browse 6 unique AI companions, each with distinct personalities. View their traits, ratings, and taglines.",
     color: "secondary",
   },
   {
-    icon: MessageCircle,
-    title: "Start Chatting",
-    description: "Pay per message for AI or book timed sessions with humans. All chats are E2EE encrypted.",
+    icon: Shield,
+    title: "Purchase Access On-Chain",
+    description: "Buy lifetime access via x402 micropayments. Verified on-chain for instant, trustless access control.",
     color: "accent",
   },
   {
-    icon: Shield,
-    title: "Get Verified",
-    description: "Complete KYC verification to earn your red checkmark badge and unlock premium features.",
+    icon: MessageCircle,
+    title: "Chat Privately (30 msgs/day)",
+    description: "All conversations are end-to-end encrypted. Enjoy 30 messages per day per companion (resets daily at 00:00 UTC).",
     color: "verified",
   },
 ];
@@ -56,7 +56,7 @@ const HowItWorks = () => {
             </span>
           </h2>
           <p className="text-xl text-muted-foreground">
-            Get started in minutes with wallet-based authentication
+            Get started in minutes with wallet-based authentication and on-chain access
           </p>
         </div>
 

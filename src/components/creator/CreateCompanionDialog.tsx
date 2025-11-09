@@ -22,7 +22,7 @@ export const CreateCompanionDialog = ({ onSuccess }: { onSuccess?: () => void })
     description: '',
     avatar_url: '',
     companion_type: 'ai',
-    access_price: 0.5,
+    access_price: 0.0005,
     currency: 'SOL',
     system_prompt: '',
     voice_tone: 'friendly',
@@ -80,7 +80,7 @@ export const CreateCompanionDialog = ({ onSuccess }: { onSuccess?: () => void })
         description: '',
         avatar_url: '',
         companion_type: 'ai',
-        access_price: 0.5,
+        access_price: 0.0005,
         currency: 'SOL',
         system_prompt: '',
         voice_tone: 'friendly',
@@ -173,7 +173,7 @@ export const CreateCompanionDialog = ({ onSuccess }: { onSuccess?: () => void })
               <Input
                 id="access_price"
                 type="number"
-                step="0.1"
+                step="0.0001"
                 min="0"
                 required
                 value={formData.access_price}

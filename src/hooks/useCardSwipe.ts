@@ -16,9 +16,9 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
   const [isDragging, setIsDragging] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [thresholdCrossed, setThresholdCrossed] = useState(false);
+  const [position, setPosition] = useState<Position>({ x: 0, y: 0 });
   
   // Use refs for values that change frequently to avoid re-renders
-  const positionRef = useRef<Position>({ x: 0, y: 0 });
   const velocityRef = useRef(0);
   const startPos = useRef<Position>({ x: 0, y: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
@@ -108,7 +108,7 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
     setThresholdCrossed(false);
     const pos = getEventPosition(e);
     startPos.current = pos;
-    positionRef.current = { x: 0, y: 0 };
+    setPosition({ x: 0, y: 0 });
     lastPosition.current = 0;
     velocityRef.current = 0;
     
@@ -144,7 +144,7 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
       lastMoveTime.current = now;
       lastPosition.current = deltaX;
       
-      positionRef.current = { x: deltaX, y: deltaY };
+      setPosition({ x: deltaX, y: deltaY });
       updateCardTransform(deltaX, deltaY, true, velocityRef.current);
       
       // Trigger haptic and sound when crossing threshold for the first time
@@ -166,7 +166,6 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
       cancelAnimationFrame(rafId.current);
     }
     
-    const position = positionRef.current;
     const velocity = velocityRef.current;
     
     // Momentum-based swipe detection
@@ -217,7 +216,7 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
       
       setTimeout(() => {
       onSwipe(direction);
-      positionRef.current = { x: 0, y: 0 };
+      setPosition({ x: 0, y: 0 });
       velocityRef.current = 0;
       
       // Clear trails and effects
@@ -241,7 +240,7 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
         cardRef.current.style.transition = 'transform 400ms cubic-bezier(0.25, 1.2, 0.4, 1), opacity 300ms ease-out';
       }
       updateCardTransform(0, 0, false, 0);
-      positionRef.current = { x: 0, y: 0 };
+      setPosition({ x: 0, y: 0 });
       velocityRef.current = 0;
       
       // Clear trails
@@ -296,7 +295,7 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
     
     setTimeout(() => {
       onSwipe(direction);
-      positionRef.current = { x: 0, y: 0 };
+      setPosition({ x: 0, y: 0 });
       velocityRef.current = 0;
       
       // Clear trails and effects
@@ -372,7 +371,7 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
   }, [isDragging, handleMove, handleEnd]);
 
   return {
-    position: positionRef.current,
+    position,
     isDragging,
     isAnimating,
     handleStart,

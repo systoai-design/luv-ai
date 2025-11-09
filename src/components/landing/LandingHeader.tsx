@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Rocket } from "lucide-react";
 import logo from "@/assets/logo.svg";
+import twitterLogo from "@/assets/twitter-x-logo.png";
+import pumpfunLogo from "@/assets/pumpfun-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { smoothScrollTo } from "@/lib/smoothScroll";
@@ -61,15 +63,35 @@ const LandingHeader = ({ onOpenAuthModal }: LandingHeaderProps) => {
           </button>
         </nav>
 
-        <Button
-          onClick={handleLaunchApp}
-          size="lg"
-          variant="gradient"
-          className="shadow-glow"
-        >
-          <Rocket className="h-5 w-5 mr-2" />
-          LAUNCH APP
-        </Button>
+        <div className="flex items-center gap-3">
+          {/* Social Media Icons */}
+          <a 
+            href="https://twitter.com/YourHandle" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center justify-center h-9 w-9 rounded-full hover:bg-accent/10 transition-colors"
+          >
+            <img src={twitterLogo} alt="Twitter" className="h-5 w-5 object-contain" />
+          </a>
+          <a 
+            href="https://pump.fun/YourProject" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center justify-center h-9 w-9 rounded-full hover:bg-accent/10 transition-colors"
+          >
+            <img src={pumpfunLogo} alt="Pump.fun" className="h-5 w-5 object-contain" />
+          </a>
+
+          <Button
+            onClick={handleLaunchApp}
+            size="lg"
+            variant="gradient"
+            className="shadow-glow"
+          >
+            <Rocket className="h-5 w-5 mr-2" />
+            LAUNCH APP
+          </Button>
+        </div>
       </div>
     </header>
   );

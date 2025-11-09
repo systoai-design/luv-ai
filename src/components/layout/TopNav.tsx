@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Bell, MessageCircle, User, Menu, Wallet, PanelLeft } from "lucide-react";
 import logo from "@/assets/logo.svg";
+import twitterLogo from "@/assets/twitter-x-logo.png";
+import pumpfunLogo from "@/assets/pumpfun-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import SearchBar from "./SearchBar";
@@ -145,6 +147,24 @@ const TopNav = () => {
                 </Badge>
               )}
             </Button>
+
+            {/* Social Media Icons */}
+            <a 
+              href="https://twitter.com/YourHandle" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hidden sm:flex items-center justify-center h-9 w-9 rounded-full hover:bg-accent/10 transition-colors"
+            >
+              <img src={twitterLogo} alt="Twitter" className="h-5 w-5 object-contain" />
+            </a>
+            <a 
+              href="https://pump.fun/YourProject" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hidden sm:flex items-center justify-center h-9 w-9 rounded-full hover:bg-accent/10 transition-colors"
+            >
+              <img src={pumpfunLogo} alt="Pump.fun" className="h-5 w-5 object-contain" />
+            </a>
 
             {/* Wallet */}
             {!publicKey ? (

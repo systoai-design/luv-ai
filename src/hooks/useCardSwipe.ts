@@ -117,26 +117,44 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
     const thresholdSwipe = Math.abs(position.x) > threshold;
     
     if (thresholdSwipe || momentumSwipe) {
-      // Valid swipe - animate off screen with enhanced exit
+      // Valid swipe - animate off screen with velocity-based enhancement
       setIsAnimating(true);
       const direction = position.x > 0 ? 'right' : 'left';
-      const exitX = position.x > 0 ? 1000 : -1000;
-      const exitY = position.y - 50; // Lift up as it exits
-      const exitDuration = Math.max(200, 300 - Math.abs(velocity) * 50);
       
-      // Haptic and sound feedback for valid swipe
-      triggerHaptic(direction === 'right' ? 'success' : 'medium');
+      // Velocity-based exit parameters
+      const velocityMultiplier = Math.min(Math.abs(velocity) * 2, 3); // Cap at 3x
+      const baseDistance = 1000;
+      const exitX = (position.x > 0 ? baseDistance : -baseDistance) * (1 + velocityMultiplier * 0.5);
+      
+      // More dramatic lift for faster swipes
+      const baseLift = 50;
+      const exitY = position.y - (baseLift + velocityMultiplier * 30);
+      
+      // Faster swipes = quicker animations
+      const baseDuration = 300;
+      const exitDuration = Math.max(150, baseDuration - Math.abs(velocity) * 100);
+      
+      // More rotation for faster swipes
+      const baseRotation = exitX / 10;
+      const exitRotation = baseRotation * (1 + velocityMultiplier * 0.3) * -1;
+      
+      // Haptic intensity based on velocity
+      triggerHaptic(velocityMultiplier > 1.5 ? 'heavy' : (direction === 'right' ? 'success' : 'medium'));
       playSound(direction === 'right' ? 'like' : 'pass');
       
       if (cardRef.current) {
-        // Enhanced exit with more dramatic rotation and lift
-        cardRef.current.style.transition = `transform ${exitDuration}ms cubic-bezier(0.34, 1.15, 0.64, 1), opacity ${exitDuration}ms ease-out`;
+        // Use different easing for fast vs slow swipes
+        const easing = velocityMultiplier > 1 
+          ? 'cubic-bezier(0.22, 1, 0.36, 1)' // Faster easing for velocity swipes
+          : 'cubic-bezier(0.34, 1.15, 0.64, 1)'; // Elastic for normal swipes
+        
+        cardRef.current.style.transition = `transform ${exitDuration}ms ${easing}, opacity ${exitDuration}ms ease-out`;
       }
       
-      // Apply exit transform with increased rotation
-      const exitRotation = (exitX / 10) * -1;
+      // Apply velocity-enhanced exit transform
       if (cardRef.current) {
-        cardRef.current.style.transform = `translate3d(${exitX}px, ${exitY}px, 0) rotate(${exitRotation}deg) scale(0.8)`;
+        const exitScale = Math.max(0.7, 0.8 - velocityMultiplier * 0.05);
+        cardRef.current.style.transform = `translate3d(${exitX}px, ${exitY}px, 0) rotate(${exitRotation}deg) scale(${exitScale})`;
         cardRef.current.style.opacity = '0';
       }
       
@@ -169,22 +187,38 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
     }
   }, [isDragging, isAnimating, threshold, onSwipe, updateCardTransform]);
 
-  const animateSwipe = useCallback((direction: 'left' | 'right') => {
+  const animateSwipe = useCallback((direction: 'left' | 'right', forcedVelocity?: number) => {
     if (isAnimating) return;
     
     setIsAnimating(true);
-    const exitX = direction === 'right' ? 1000 : -1000;
-    const exitY = -50; // Lift up as it exits
+    
+    // Use forced velocity for programmatic swipes or default to medium velocity
+    const velocity = forcedVelocity ?? 1.5;
+    const velocityMultiplier = Math.min(velocity * 2, 3);
+    
+    const baseDistance = 1000;
+    const exitX = (direction === 'right' ? baseDistance : -baseDistance) * (1 + velocityMultiplier * 0.5);
+    const exitY = -(50 + velocityMultiplier * 30);
+    
+    const baseDuration = 300;
+    const exitDuration = Math.max(150, baseDuration - velocity * 100);
+    
+    const baseRotation = exitX / 10;
+    const exitRotation = baseRotation * (1 + velocityMultiplier * 0.3) * -1;
     
     // Haptic and sound feedback for programmatic swipe
-    triggerHaptic(direction === 'right' ? 'success' : 'medium');
+    triggerHaptic(velocityMultiplier > 1.5 ? 'heavy' : (direction === 'right' ? 'success' : 'medium'));
     playSound(direction === 'right' ? 'like' : 'pass');
     
     if (cardRef.current) {
-      cardRef.current.style.transition = 'transform 300ms cubic-bezier(0.34, 1.15, 0.64, 1), opacity 300ms ease-out';
+      const easing = velocityMultiplier > 1 
+        ? 'cubic-bezier(0.22, 1, 0.36, 1)'
+        : 'cubic-bezier(0.34, 1.15, 0.64, 1)';
       
-      const exitRotation = (exitX / 10) * -1;
-      cardRef.current.style.transform = `translate3d(${exitX}px, ${exitY}px, 0) rotate(${exitRotation}deg) scale(0.8)`;
+      cardRef.current.style.transition = `transform ${exitDuration}ms ${easing}, opacity ${exitDuration}ms ease-out`;
+      
+      const exitScale = Math.max(0.7, 0.8 - velocityMultiplier * 0.05);
+      cardRef.current.style.transform = `translate3d(${exitX}px, ${exitY}px, 0) rotate(${exitRotation}deg) scale(${exitScale})`;
       cardRef.current.style.opacity = '0';
     }
     
@@ -197,7 +231,7 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
       }
       updateCardTransform(0, 0);
       setIsAnimating(false);
-    }, 300);
+    }, exitDuration);
   }, [isAnimating, onSwipe, updateCardTransform]);
 
   // Cleanup RAF on unmount

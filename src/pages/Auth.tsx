@@ -1,18 +1,20 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Loader2, Mail } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { Heart, Loader2, Wallet as WalletIcon, Mail, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
-import OneClickConnect from "@/components/auth/OneClickConnect";
-import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/contexts/AuthContext";
 import { useWallet } from "@solana/wallet-adapter-react";
+import { WalletName } from "@solana/wallet-adapter-base";
+import { WalletAuthModal } from "@/components/auth/WalletAuthModal";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const emailSchema = z.string().email("Invalid email address");
@@ -21,16 +23,16 @@ const passwordSchema = z.string().min(6, "Password must be at least 6 characters
 const Auth = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { select, wallets, connect, connected } = useWallet();
-  const [loading, setLoading] = useState(false);
+  const { wallets, select } = useWallet();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [showConfirmation, setShowConfirmation] = useState(false);
-  const [confirmationEmail, setConfirmationEmail] = useState("");
+  const [loading, setLoading] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [showResetConfirmation, setShowResetConfirmation] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false);
+  const [emailExpanded, setEmailExpanded] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -69,33 +71,20 @@ const Auth = () => {
         email,
         password,
         options: {
-          emailRedirectTo: redirectUrl,
           data: {
             display_name: displayName,
+            username: `user_${email.split('@')[0]}_${Date.now()}`,
           },
-        },
+          emailRedirectTo: redirectUrl
+        }
       });
 
-      if (error) {
-        if (error.message.includes("rate limit") || error.message.includes("too many")) {
-          toast.error("Too many registration attempts. Please wait 60 seconds before trying again.", {
-            duration: 8000,
-          });
-        } else if (error.message.includes("already registered")) {
-          toast.error("This email is already registered. Please sign in instead.");
-        } else {
-          toast.error(error.message);
-        }
-        return;
-      }
+      if (error) throw error;
 
-      setConfirmationEmail(email);
-      setShowConfirmation(true);
-      setEmail("");
-      setPassword("");
-      setDisplayName("");
-    } catch (error) {
-      toast.error("An unexpected error occurred");
+      toast.success("Account created! Welcome to LUVAI! 💜");
+      navigate("/home");
+    } catch (error: any) {
+      toast.error(error.message);
     } finally {
       setLoading(false);
     }
@@ -147,55 +136,37 @@ const Auth = () => {
         password,
       });
 
-      if (error) {
-        if (error.message.includes("rate limit") || error.message.includes("too many")) {
-          toast.error("Too many login attempts. Please wait 60 seconds before trying again.", {
-            duration: 8000,
-          });
-        } else if (error.message.includes("Invalid login credentials")) {
-          toast.error("Invalid email or password");
-        } else if (error.message.includes("Email not confirmed")) {
-          toast.error("Please confirm your email before signing in. Check your inbox.");
-        } else {
-          toast.error(error.message);
-        }
-        return;
-      }
+      if (error) throw error;
 
-      // Auto-connect wallet after successful email login
-      if (!connected && wallets.length > 0) {
-        try {
-          const wallet = wallets[0];
-          select(wallet.adapter.name);
-          await connect();
-          toast.success("Welcome back! Wallet connected.");
-        } catch (walletError) {
-          console.error("Wallet auto-connect failed:", walletError);
-          toast.success("Welcome back!");
-        }
-      } else {
-        toast.success("Welcome back!");
-      }
-      
+      toast.success("Welcome back! 💜");
       navigate("/home");
-    } catch (error) {
-      toast.error("An unexpected error occurred");
+    } catch (error: any) {
+      toast.error(error.message);
     } finally {
       setLoading(false);
     }
   };
 
+  // Wallet connection handlers
+  const handleWalletConnect = (walletName: WalletName) => {
+    select(walletName);
+    setShowWalletModal(true);
+  };
+
+  const availableWallets = wallets.filter(w => w.readyState === "Installed" || w.readyState === "Loadable");
+  const phantomWallet = availableWallets.find(w => w.adapter.name === "Phantom");
+  const solflareWallet = availableWallets.find(w => w.adapter.name === "Solflare");
+
+  // Reset password confirmation screen
   if (showResetConfirmation) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-hero p-4">
-        <Card className="w-full max-w-md bg-card/95 backdrop-blur-sm border-primary/30">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+        <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <div className="flex justify-center mb-4">
-              <Mail className="h-12 w-12 text-primary animate-pulse" />
+              <Mail className="h-12 w-12 text-primary" />
             </div>
-            <CardTitle className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Reset Link Sent
-            </CardTitle>
+            <CardTitle>Reset Link Sent</CardTitle>
             <CardDescription>
               Check your email for the password reset link
             </CardDescription>
@@ -208,79 +179,33 @@ const Auth = () => {
                 Click the link in the email to create a new password.
               </AlertDescription>
             </Alert>
-            <div className="text-center space-y-2">
-              <p className="text-sm text-muted-foreground">
-                Didn't receive the email? Check your spam folder.
-              </p>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowResetConfirmation(false);
-                  setResetEmail("");
-                }}
-                className="w-full"
-              >
-                Back to Sign In
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowResetConfirmation(false);
+                setResetEmail("");
+              }}
+              className="w-full"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Sign In
+            </Button>
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  if (showConfirmation) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-hero p-4">
-        <Card className="w-full max-w-md bg-card/95 backdrop-blur-sm border-primary/30">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <Mail className="h-12 w-12 text-primary animate-pulse" />
-            </div>
-            <CardTitle className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Check Your Email
-            </CardTitle>
-            <CardDescription>
-              We've sent a confirmation link to your email
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Alert>
-              <Mail className="h-4 w-4" />
-              <AlertDescription>
-                A confirmation email has been sent to <strong>{confirmationEmail}</strong>. 
-                Please check your inbox and click the link to verify your account.
-              </AlertDescription>
-            </Alert>
-            <div className="text-center space-y-2">
-              <p className="text-sm text-muted-foreground">
-                Didn't receive the email? Check your spam folder.
-              </p>
-              <Button
-                variant="outline"
-                onClick={() => setShowConfirmation(false)}
-                className="w-full"
-              >
-                Back to Sign In
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
+  // Reset password form
   if (showResetPassword) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-hero p-4">
-        <Card className="w-full max-w-md bg-card/95 backdrop-blur-sm border-primary/30">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+        <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <div className="flex justify-center mb-4">
-              <Heart className="h-12 w-12 text-primary fill-primary animate-glow" />
+              <Heart className="h-12 w-12 text-primary fill-primary" />
             </div>
-            <CardTitle className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Reset Password
-            </CardTitle>
+            <CardTitle>Reset Password</CardTitle>
             <CardDescription>
               Enter your email to receive a password reset link
             </CardDescription>
@@ -301,7 +226,7 @@ const Auth = () => {
               <div className="space-y-2">
                 <Button
                   type="submit"
-                  className="w-full bg-gradient-primary"
+                  className="w-full"
                   disabled={loading}
                 >
                   {loading ? (
@@ -322,6 +247,7 @@ const Auth = () => {
                     setResetEmail("");
                   }}
                 >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
                   Back to Sign In
                 </Button>
               </div>
@@ -332,147 +258,197 @@ const Auth = () => {
     );
   }
 
+  // Main auth screen with wallet-first UI
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-hero p-4">
-      <Card className="w-full max-w-md bg-card/95 backdrop-blur-sm border-primary/30">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <Heart className="h-12 w-12 text-primary fill-primary animate-glow" />
-          </div>
-          <CardTitle className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            Welcome to LUVAI
-          </CardTitle>
-          <CardDescription>
-            Connect, chat, and discover meaningful relationships
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-6">
-            <OneClickConnect className="!w-full !bg-gradient-to-r !from-primary !via-purple-500 !to-pink-500 hover:!shadow-glow !text-primary-foreground !py-3 !rounded-lg !transition-all !duration-300 !font-medium" />
-            
-            <div className="relative my-6">
-              <Separator />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="bg-card px-2 text-xs text-muted-foreground">
-                  Or continue with email
-                </span>
-              </div>
+    <>
+      <WalletAuthModal 
+        open={showWalletModal} 
+        onOpenChange={setShowWalletModal}
+        onSuccess={() => navigate("/home")}
+      />
+      
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center space-y-2">
+            <div className="flex justify-center mb-2">
+              <Heart className="h-12 w-12 text-primary fill-primary" />
             </div>
-          </div>
+            <CardTitle className="text-3xl font-bold">Welcome to LUVAI</CardTitle>
+            <CardDescription>
+              Connect your wallet to get started
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent className="space-y-6">
+            {/* PRIMARY: Wallet Connection */}
+            <div className="space-y-3">
+              {phantomWallet && (
+                <Button
+                  onClick={() => handleWalletConnect("Phantom" as WalletName)}
+                  className="w-full h-14 text-base font-medium"
+                  size="lg"
+                >
+                  <img src={phantomWallet.adapter.icon} alt="Phantom" className="mr-2 h-6 w-6" />
+                  Connect with Phantom
+                </Button>
+              )}
+              
+              {solflareWallet && (
+                <Button
+                  onClick={() => handleWalletConnect("Solflare" as WalletName)}
+                  variant="outline"
+                  className="w-full h-14 text-base font-medium"
+                  size="lg"
+                >
+                  <img src={solflareWallet.adapter.icon} alt="Solflare" className="mr-2 h-6 w-6" />
+                  Connect with Solflare
+                </Button>
+              )}
 
-          <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="signin">
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signin-email">Email</Label>
-                  <Input
-                    id="signin-email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signin-password">Password</Label>
-                  <Input
-                    id="signin-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
+              {availableWallets.length === 0 && (
                 <Button
-                  type="submit"
-                  className="w-full bg-gradient-primary"
-                  disabled={loading}
+                  onClick={() => setShowWalletModal(true)}
+                  className="w-full h-14 text-base font-medium"
+                  size="lg"
                 >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Signing in...
-                    </>
-                  ) : (
-                    "Sign In"
-                  )}
+                  <WalletIcon className="mr-2 h-5 w-5" />
+                  Connect Wallet
                 </Button>
-                <Button
-                  type="button"
-                  variant="link"
-                  className="w-full text-xs text-muted-foreground hover:text-primary"
-                  onClick={() => setShowResetPassword(true)}
-                >
-                  Forgot password?
-                </Button>
-              </form>
-            </TabsContent>
-            
-            <TabsContent value="signup">
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-name">Display Name</Label>
-                  <Input
-                    id="signup-name"
-                    type="text"
-                    placeholder="Your name"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Must be at least 6 characters
-                  </p>
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full bg-gradient-primary"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating account...
-                    </>
-                  ) : (
-                    "Create Account"
-                  )}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-    </div>
+              )}
+            </div>
+
+            {/* SECONDARY: Email Option (Collapsible) */}
+            <Collapsible open={emailExpanded} onOpenChange={setEmailExpanded}>
+              <div className="relative">
+                <Separator />
+                <CollapsibleTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-3 text-xs"
+                  >
+                    Or continue with email
+                  </Button>
+                </CollapsibleTrigger>
+              </div>
+
+              <CollapsibleContent className="pt-6">
+                <Tabs defaultValue="signin" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="signin">Sign In</TabsTrigger>
+                    <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="signin">
+                    <form onSubmit={handleSignIn} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="signin-email">Email</Label>
+                        <Input
+                          id="signin-email"
+                          type="email"
+                          placeholder="you@example.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="signin-password">Password</Label>
+                        <Input
+                          id="signin-password"
+                          type="password"
+                          placeholder="••••••••"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={loading}
+                      >
+                        {loading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Signing in...
+                          </>
+                        ) : (
+                          "Sign In"
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="link"
+                        className="w-full text-xs"
+                        onClick={() => setShowResetPassword(true)}
+                      >
+                        Forgot password?
+                      </Button>
+                    </form>
+                  </TabsContent>
+                  
+                  <TabsContent value="signup">
+                    <form onSubmit={handleSignUp} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-name">Display Name</Label>
+                        <Input
+                          id="signup-name"
+                          type="text"
+                          placeholder="Your name"
+                          value={displayName}
+                          onChange={(e) => setDisplayName(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-email">Email</Label>
+                        <Input
+                          id="signup-email"
+                          type="email"
+                          placeholder="you@example.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-password">Password</Label>
+                        <Input
+                          id="signup-password"
+                          type="password"
+                          placeholder="••••••••"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Must be at least 6 characters
+                        </p>
+                      </div>
+                      <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={loading}
+                      >
+                        {loading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Creating account...
+                          </>
+                        ) : (
+                          "Create Account"
+                        )}
+                      </Button>
+                    </form>
+                  </TabsContent>
+                </Tabs>
+              </CollapsibleContent>
+            </Collapsible>
+          </CardContent>
+        </Card>
+      </div>
+    </>
   );
 };
 

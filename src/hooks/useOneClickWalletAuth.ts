@@ -11,19 +11,29 @@ export const useOneClickWalletAuth = () => {
   const navigate = useNavigate();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
-  const signInOrSignUp = async (walletAddress: string) => {
-    if (isAuthenticating) return;
+  const checkIfNewUser = async (walletAddress: string) => {
+    const normalizedAddress = walletAddress.toLowerCase();
+    
+    // Check if profile exists with this wallet address
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("wallet_address", normalizedAddress)
+      .maybeSingle();
+
+    return !profile;
+  };
+
+  const signInExistingUser = async (walletAddress: string) => {
+    if (isAuthenticating) return { success: false };
     
     setIsAuthenticating(true);
     
     try {
-      // Normalize to lowercase for consistency
       const normalizedAddress = walletAddress.toLowerCase();
-      
       const email = emailFor(normalizedAddress);
       const password = createWalletPassword(normalizedAddress);
 
-      // Try to sign in first
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -43,57 +53,9 @@ export const useOneClickWalletAuth = () => {
         return { success: false, error: "rate_limit" };
       }
 
-      // If sign in fails, try to sign up
-      if (signInError.message.includes("Invalid login credentials")) {
-        const { error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              wallet_address: normalizedAddress,
-              username: `user_${normalizedAddress.slice(0, 6)}`,
-              display_name: `anon-${normalizedAddress.slice(0, 4)}`,
-            },
-            emailRedirectTo: `${window.location.origin}/`,
-          },
-        });
-
-        if (!signUpError) {
-          toast.success("Welcome to LUVAI! 💜");
-          navigate("/home");
-          return { success: true };
-        }
-
-        // Check for rate limiting on sign up
-        if (signUpError.message.includes("rate limit") || signUpError.message.includes("too many")) {
-          toast.error("Too many registration attempts. Please wait 60 seconds and try again.", {
-            duration: 8000,
-          });
-          return { success: false, error: "rate_limit" };
-        }
-
-        // If user already registered, this means the password doesn't match
-        // Don't retry - this prevents the authentication loop
-        if (signUpError.message.includes("User already registered")) {
-          toast.error("Account exists but authentication failed. Please disconnect and try again or use email login.", {
-            duration: 10000,
-          });
-          return { success: false, error: "password_mismatch" };
-        }
-
-        toast.error(signUpError.message);
-        return { success: false, error: signUpError.message };
-      }
-
-      toast.error(signInError.message);
+      toast.error("Sign in failed. Please try again.");
       return { success: false, error: signInError.message };
     } catch (error: any) {
-      if (error.message?.includes("rate limit") || error.message?.includes("too many")) {
-        toast.error("Too many attempts. Please wait 60 seconds and try again.", {
-          duration: 8000,
-        });
-        return { success: false, error: "rate_limit" };
-      }
       toast.error(error.message || "Authentication failed");
       return { success: false, error: error.message };
     } finally {
@@ -102,7 +64,8 @@ export const useOneClickWalletAuth = () => {
   };
 
   return {
-    signInOrSignUp,
+    checkIfNewUser,
+    signInExistingUser,
     isAuthenticating,
   };
 };

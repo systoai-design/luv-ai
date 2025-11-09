@@ -29,11 +29,14 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
   const updateCardTransform = useCallback((x: number, y: number, immediate = false) => {
     if (!cardRef.current) return;
     
-    const rotation = (x / 15) * -1;
+    const rotation = (x / 12) * -1; // Slightly more rotation
     const scale = Math.max(0.95, 1 - Math.abs(x) / 2000);
-    const opacity = Math.max(0.7, 1 - Math.abs(x) / 600);
+    const opacity = Math.max(0.8, 1 - Math.abs(x) / 500); // Better opacity curve
     
-    cardRef.current.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${rotation}deg) scale(${scale})`;
+    // Add slight lift effect during drag
+    const lift = Math.min(Math.abs(x) / 30, 10);
+    
+    cardRef.current.style.transform = `translate3d(${x}px, ${y - lift}px, 0) rotate(${rotation}deg) scale(${scale})`;
     cardRef.current.style.opacity = `${opacity}`;
     
     if (immediate) {
@@ -114,20 +117,28 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
     const thresholdSwipe = Math.abs(position.x) > threshold;
     
     if (thresholdSwipe || momentumSwipe) {
-      // Valid swipe - animate off screen
+      // Valid swipe - animate off screen with enhanced exit
       setIsAnimating(true);
       const direction = position.x > 0 ? 'right' : 'left';
-      const exitX = position.x > 0 ? 800 : -800;
-      const exitDuration = Math.max(150, 250 - Math.abs(velocity) * 50);
+      const exitX = position.x > 0 ? 1000 : -1000;
+      const exitY = position.y - 50; // Lift up as it exits
+      const exitDuration = Math.max(200, 300 - Math.abs(velocity) * 50);
       
       // Haptic and sound feedback for valid swipe
       triggerHaptic(direction === 'right' ? 'success' : 'medium');
       playSound(direction === 'right' ? 'like' : 'pass');
       
       if (cardRef.current) {
-        cardRef.current.style.transition = `transform ${exitDuration}ms cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity ${exitDuration}ms ease-out`;
+        // Enhanced exit with more dramatic rotation and lift
+        cardRef.current.style.transition = `transform ${exitDuration}ms cubic-bezier(0.34, 1.15, 0.64, 1), opacity ${exitDuration}ms ease-out`;
       }
-      updateCardTransform(exitX, position.y);
+      
+      // Apply exit transform with increased rotation
+      const exitRotation = (exitX / 10) * -1;
+      if (cardRef.current) {
+        cardRef.current.style.transform = `translate3d(${exitX}px, ${exitY}px, 0) rotate(${exitRotation}deg) scale(0.8)`;
+        cardRef.current.style.opacity = '0';
+      }
       
       setTimeout(() => {
         onSwipe(direction);
@@ -140,11 +151,11 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
         setIsAnimating(false);
       }, exitDuration);
     } else {
-      // Spring back to center
+      // Enhanced spring back with elastic easing
       triggerHaptic('light');
       playSound('cancel');
       if (cardRef.current) {
-        cardRef.current.style.transition = 'transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 300ms ease-out';
+        cardRef.current.style.transition = 'transform 400ms cubic-bezier(0.25, 1.2, 0.4, 1), opacity 300ms ease-out';
       }
       updateCardTransform(0, 0);
       positionRef.current = { x: 0, y: 0 };
@@ -154,7 +165,7 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
         if (cardRef.current) {
           cardRef.current.style.transition = '';
         }
-      }, 300);
+      }, 400);
     }
   }, [isDragging, isAnimating, threshold, onSwipe, updateCardTransform]);
 
@@ -162,16 +173,20 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
     if (isAnimating) return;
     
     setIsAnimating(true);
-    const exitX = direction === 'right' ? 800 : -800;
+    const exitX = direction === 'right' ? 1000 : -1000;
+    const exitY = -50; // Lift up as it exits
     
     // Haptic and sound feedback for programmatic swipe
     triggerHaptic(direction === 'right' ? 'success' : 'medium');
     playSound(direction === 'right' ? 'like' : 'pass');
     
     if (cardRef.current) {
-      cardRef.current.style.transition = 'transform 250ms cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 250ms ease-out';
+      cardRef.current.style.transition = 'transform 300ms cubic-bezier(0.34, 1.15, 0.64, 1), opacity 300ms ease-out';
+      
+      const exitRotation = (exitX / 10) * -1;
+      cardRef.current.style.transform = `translate3d(${exitX}px, ${exitY}px, 0) rotate(${exitRotation}deg) scale(0.8)`;
+      cardRef.current.style.opacity = '0';
     }
-    updateCardTransform(exitX, 0);
     
     setTimeout(() => {
       onSwipe(direction);
@@ -182,7 +197,7 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
       }
       updateCardTransform(0, 0);
       setIsAnimating(false);
-    }, 250);
+    }, 300);
   }, [isAnimating, onSwipe, updateCardTransform]);
 
   // Cleanup RAF on unmount

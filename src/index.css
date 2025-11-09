@@ -403,3 +403,28 @@ All colors MUST be HSL.
   animation: rare-glow 3.5s ease-in-out infinite;
   background: var(--gradient-rare) !important;
 }
+
+/* Swipe Card Animations */
+.swipe-card {
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.swipe-indicator-pass {
+  @apply bg-destructive/90 text-destructive-foreground px-8 py-4 rounded-2xl border-4 border-destructive;
+}
+
+.swipe-indicator-like {
+  @apply bg-primary/90 text-primary-foreground px-8 py-4 rounded-2xl border-4 border-primary;
+}
+
+.card-stack-container {
+  perspective: 1000px;
+}
+
+.card-stack-layer {
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}

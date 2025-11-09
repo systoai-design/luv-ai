@@ -79,28 +79,30 @@ const DiscoverCard = ({ profile, onSwipe }: DiscoverCardProps) => {
   // Enhanced swipe indicators with exponential curve
   const indicatorLeftOpacity = position.x < 0 ? Math.pow(Math.abs(position.x) / 150, 1.5) : 0;
   const indicatorRightOpacity = position.x > 0 ? Math.pow(position.x / 150, 1.5) : 0;
-  const iconScale = 1 + (Math.abs(position.x) / 300);
+  const iconScale = 1 + (Math.abs(position.x) / 250);
+  const glowIntensity = Math.min(Math.abs(position.x) / 120, 1);
 
   return (
     <Card 
       ref={cardRef}
-      className="bg-card border-border overflow-hidden select-none cursor-grab active:cursor-grabbing relative"
+      className="bg-card border-border overflow-hidden select-none cursor-grab active:cursor-grabbing relative swipe-card"
       style={{
         transform: isEntering 
-          ? 'translate3d(0, 20px, 0) scale(0.9)' 
+          ? 'translate3d(0, 20px, 0) scale(0.95)' 
           : 'translate3d(0, 0, 0)',
         opacity: isEntering ? 0 : 1,
         transition: isEntering 
-          ? 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)' 
+          ? 'all 0.5s cubic-bezier(0.25, 1.2, 0.4, 1)' 
           : 'none',
         willChange: 'transform, opacity',
+        contain: 'layout style paint',
       }}
       onMouseDown={handleStart}
       onTouchStart={handleStart}
     >
       <ParticleCanvas ref={canvasRef} />
       
-      {/* Pass Indicator - Enhanced */}
+      {/* Pass Indicator - Enhanced with glow */}
       <div
         className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none"
         style={{
@@ -109,18 +111,20 @@ const DiscoverCard = ({ profile, onSwipe }: DiscoverCardProps) => {
         }}
       >
         <div 
-          className={`bg-destructive/90 text-destructive-foreground px-8 py-4 rounded-2xl border-4 border-destructive transform rotate-12 ${
-            position.x < -120 ? 'animate-pulse' : ''
-          }`}
+          className="swipe-indicator-pass"
           style={{
             transform: `rotate(12deg) scale(${iconScale})`,
+            boxShadow: position.x < -120 
+              ? `0 0 ${30 * glowIntensity}px hsl(0 84.2% 60.2% / ${0.6 * glowIntensity})` 
+              : 'none',
+            transition: 'box-shadow 0.2s ease-out',
           }}
         >
           <X className="w-16 h-16" strokeWidth={3} />
         </div>
       </div>
 
-      {/* Like Indicator - Enhanced */}
+      {/* Like Indicator - Enhanced with glow */}
       <div
         className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none"
         style={{
@@ -129,11 +133,13 @@ const DiscoverCard = ({ profile, onSwipe }: DiscoverCardProps) => {
         }}
       >
         <div 
-          className={`bg-primary/90 text-primary-foreground px-8 py-4 rounded-2xl border-4 border-primary transform -rotate-12 ${
-            position.x > 120 ? 'animate-pulse' : ''
-          }`}
+          className="swipe-indicator-like"
           style={{
             transform: `rotate(-12deg) scale(${iconScale})`,
+            boxShadow: position.x > 120 
+              ? `0 0 ${30 * glowIntensity}px hsl(280 70% 60% / ${0.6 * glowIntensity})` 
+              : 'none',
+            transition: 'box-shadow 0.2s ease-out',
           }}
         >
           <Heart className="w-16 h-16 fill-current" strokeWidth={3} />

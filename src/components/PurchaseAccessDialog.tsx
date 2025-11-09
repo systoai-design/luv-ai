@@ -35,15 +35,17 @@ export const PurchaseAccessDialog = ({
   onSuccess,
   onGrantAccess,
 }: PurchaseAccessDialogProps) => {
-  const { publicKey, sendTransaction } = useWallet();
+  const { publicKey, sendTransaction, connected, connecting } = useWallet();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handlePurchase = async () => {
-    if (!publicKey) {
+    console.log('Purchase attempt:', { publicKey: publicKey?.toBase58(), connected, connecting });
+    
+    if (!connected || !publicKey) {
       toast({
         title: 'Wallet not connected',
-        description: 'Please connect your wallet to continue',
+        description: 'Please connect your wallet first from the header menu',
         variant: 'destructive',
       });
       return;
@@ -134,7 +136,14 @@ export const PurchaseAccessDialog = ({
       }
     } catch (error) {
       console.error('Purchase error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Please try again';
+      let errorMessage = error instanceof Error ? error.message : 'Please try again';
+      
+      // Check for specific wallet errors
+      if (errorMessage.includes('User rejected') || errorMessage.includes('rejected the request')) {
+        errorMessage = 'Transaction was cancelled. Please try again and approve the transaction in your wallet.';
+      } else if (errorMessage.includes('not been authorized') || errorMessage.includes('Wallet not connected')) {
+        errorMessage = 'Please connect your wallet first using the wallet button in the header.';
+      }
       
       toast({
         title: 'Purchase failed',
@@ -186,7 +195,7 @@ export const PurchaseAccessDialog = ({
 
           <Button
             onClick={handlePurchase}
-            disabled={isProcessing || !publicKey}
+            disabled={isProcessing || !connected || connecting}
             className="w-full"
             size="lg"
           >
@@ -195,14 +204,25 @@ export const PurchaseAccessDialog = ({
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Processing...
               </>
+            ) : connecting ? (
+              'Connecting wallet...'
+            ) : !connected ? (
+              'Connect Wallet First'
             ) : (
               `Purchase for ${companion.access_price} SOL`
             )}
           </Button>
 
-          {!publicKey && (
-            <p className="text-sm text-muted-foreground">
-              Please connect your wallet to continue
+          {!connected && !connecting && (
+            <p className="text-sm text-muted-foreground text-center">
+              Please connect your wallet using the button in the header to continue
+            </p>
+          )}
+          
+          {connecting && (
+            <p className="text-sm text-muted-foreground text-center">
+              <Loader2 className="inline h-3 w-3 animate-spin mr-1" />
+              Connecting to your wallet...
             </p>
           )}
         </div>

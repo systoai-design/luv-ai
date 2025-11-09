@@ -7,6 +7,7 @@ import profilePlaceholder from "@/assets/profile-placeholder.jpg";
 import alexAvatar from "@/assets/profiles/alex-avatar.jpg";
 import mayaAvatar from "@/assets/profiles/maya-avatar.jpg";
 import { useCardSwipe } from "@/hooks/useCardSwipe";
+import { playSound } from "@/lib/sounds";
 
 const demoProfiles = [
   {
@@ -197,6 +198,7 @@ const SwipeDemo = () => {
                   onClick={() => {
                     setLastInteraction(Date.now());
                     setShowPrompt(false);
+                    playSound('swipe', 1.5); // Medium velocity for button clicks
                     animateSwipe('left');
                   }}
                   disabled={isAnimating}
@@ -210,6 +212,7 @@ const SwipeDemo = () => {
                   onClick={() => {
                     setLastInteraction(Date.now());
                     setShowPrompt(false);
+                    playSound('swipe', 1.5); // Medium velocity for button clicks
                     animateSwipe('right');
                   }}
                   disabled={isAnimating}

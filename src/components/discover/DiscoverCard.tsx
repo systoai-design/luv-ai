@@ -227,7 +227,7 @@ const DiscoverCard = ({ profile, onSwipe, isInteractive = true }: DiscoverCardPr
             className="rounded-full w-16 h-16 p-0 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
             onClick={() => {
               triggerHaptic('medium');
-              playSound('swipe');
+              playSound('swipe', 1.5); // Medium velocity for button clicks
               animateSwipe('left');
             }}
             disabled={isLoading}
@@ -240,7 +240,7 @@ const DiscoverCard = ({ profile, onSwipe, isInteractive = true }: DiscoverCardPr
             className="rounded-full w-20 h-20 p-0 bg-primary hover:bg-primary/90"
             onClick={() => {
               triggerHaptic('success');
-              playSound('swipe');
+              playSound('swipe', 1.5); // Medium velocity for button clicks
               animateSwipe('right');
             }}
             disabled={isLoading}

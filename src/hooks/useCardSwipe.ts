@@ -151,7 +151,7 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
       if (!thresholdCrossed && Math.abs(deltaX) > threshold) {
         setThresholdCrossed(true);
         triggerHaptic('medium');
-        playSound('threshold');
+        playSound('threshold', Math.abs(velocityRef.current));
       }
     });
   }, [isDragging, isAnimating, thresholdCrossed, threshold, updateCardTransform]);
@@ -197,7 +197,7 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
       
       // Haptic intensity based on velocity
       triggerHaptic(velocityMultiplier > 1.5 ? 'heavy' : (direction === 'right' ? 'success' : 'medium'));
-      playSound(direction === 'right' ? 'like' : 'pass');
+      playSound(direction === 'right' ? 'like' : 'pass', Math.abs(velocity));
       
       if (cardRef.current) {
         // Use different easing for fast vs slow swipes
@@ -236,7 +236,7 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
     } else {
       // Enhanced spring back with elastic easing
       triggerHaptic('light');
-      playSound('cancel');
+      playSound('cancel', Math.abs(velocity));
       if (cardRef.current) {
         cardRef.current.style.transition = 'transform 400ms cubic-bezier(0.25, 1.2, 0.4, 1), opacity 300ms ease-out';
       }
@@ -280,7 +280,7 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
     
     // Haptic and sound feedback for programmatic swipe
     triggerHaptic(velocityMultiplier > 1.5 ? 'heavy' : (direction === 'right' ? 'success' : 'medium'));
-    playSound(direction === 'right' ? 'like' : 'pass');
+    playSound(direction === 'right' ? 'like' : 'pass', velocity);
     
     if (cardRef.current) {
       const easing = velocityMultiplier > 1 

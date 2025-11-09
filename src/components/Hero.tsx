@@ -5,11 +5,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import ParticleBackground from "@/components/landing/ParticleBackground";
 import { smoothScrollTo } from "@/lib/smoothScroll";
-
 const Hero = () => {
-  const { user } = useAuth();
+  const {
+    user
+  } = useAuth();
   const navigate = useNavigate();
-
   const handleLaunchApp = () => {
     if (user) {
       navigate("/home");
@@ -17,23 +17,21 @@ const Hero = () => {
       navigate("/auth");
     }
   };
-
-  return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+  return <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-hero">
-        <img 
-          src={heroBg} 
-          alt="Hero background" 
-          className="w-full h-full object-cover opacity-20 mix-blend-overlay"
-        />
+        <img src={heroBg} alt="Hero background" className="w-full h-full object-cover opacity-20 mix-blend-overlay" />
         <ParticleBackground />
       </div>
       
       {/* Floating elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 2 }}>
+      <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{
+      zIndex: 2
+    }}>
         <div className="absolute top-20 left-10 w-72 h-72 bg-primary/20 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-secondary/20 rounded-full blur-3xl animate-float" style={{ animationDelay: "2s" }} />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-secondary/20 rounded-full blur-3xl animate-float" style={{
+        animationDelay: "2s"
+      }} />
       </div>
 
       {/* Content */}
@@ -60,31 +58,12 @@ const Hero = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button 
-              size="lg" 
-              onClick={handleLaunchApp}
-              variant="gradient"
-              className="shadow-glow text-lg px-8"
-            >
+            <Button size="lg" onClick={handleLaunchApp} variant="gradient" className="shadow-glow text-lg px-8">
               <Rocket className="mr-2 h-5 w-5" />
               LAUNCH APP
             </Button>
-            {!user && (
-              <Button 
-                size="lg" 
-                variant="outline" 
-                onClick={() => navigate("/auth")}
-                className="border-primary/50 hover:bg-primary/10 text-lg px-8"
-              >
-                Sign In
-              </Button>
-            )}
-            <Button 
-              size="lg" 
-              variant="outline" 
-              onClick={() => smoothScrollTo("how-it-works")}
-              className="border-primary/50 hover:bg-primary/10 text-lg px-8"
-            >
+            {!user}
+            <Button size="lg" variant="outline" onClick={() => smoothScrollTo("how-it-works")} className="border-primary/50 hover:bg-primary/10 text-lg px-8">
               Learn More
             </Button>
           </div>
@@ -117,8 +96,6 @@ const Hero = () => {
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default Hero;

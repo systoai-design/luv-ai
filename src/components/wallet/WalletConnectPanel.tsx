@@ -68,19 +68,28 @@ export const WalletConnectPanel = ({ onConnected }: WalletConnectPanelProps) => 
     }
   };
 
-  const showError = (error: any) => {
+  const showError = async (error: any, autoRetry = false) => {
     console.error('[wallet] Connection error:', error);
     
     const msg = String(error?.message || error);
     
+    // Auto-clear cache on specific errors
+    if (/timeout|timed out|selection_timeout|not found/i.test(msg) && autoRetry) {
+      console.info('[wallet] Auto-clearing cache due to connection error');
+      await clearWalletStorage();
+      toast.error("Connection failed. Cache cleared - please try again.");
+      return;
+    }
+    
     if (/timeout|timed out/i.test(msg)) {
-      toast.error("Connection timed out. Make sure your wallet extension is unlocked and try again.");
+      toast.error("Connection timed out. Try resetting the cache below.");
     } else if (/user rejected|rejected|4001/i.test(msg)) {
       toast.error("Connection rejected. Please approve the connection in your wallet.");
     } else if (/not found|not detected|not installed/i.test(msg)) {
       toast.error("Wallet not detected. Please install the wallet extension first.");
     } else if (/selection_timeout/i.test(msg)) {
-      toast.error("Could not select wallet. Try resetting the wallet cache.");
+      toast.error("Could not select wallet. Cache has been cleared - try again.");
+      await clearWalletStorage();
     } else {
       toast.error(`Failed to connect: ${error?.message || 'Unknown error'}`);
     }
@@ -187,10 +196,10 @@ export const WalletConnectPanel = ({ onConnected }: WalletConnectPanelProps) => 
           return;
         } catch (fallbackError: any) {
           console.error('[wallet] Fallback also failed:', fallbackError);
-          showError(fallbackError);
+          await showError(fallbackError, true); // Auto-retry enabled
         }
       } else {
-        showError(error);
+        await showError(error, true); // Auto-retry enabled
       }
     } finally {
       setConnecting(false);

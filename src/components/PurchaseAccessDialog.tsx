@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { Connection, PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
+import { PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
+import { sharedConnection } from '@/contexts/WalletContext';
 import {
   Dialog,
   DialogContent,
@@ -55,12 +56,38 @@ export const PurchaseAccessDialog = ({
     let signature: string | undefined;
 
     try {
-      // Use Mainnet for production
-      const connection = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
+      // Use shared connection to reduce RPC rate limiting
+      const connection = sharedConnection;
       const lamports = companion.access_price * 1000000000; // Convert SOL to lamports
 
-      // Check balance first
-      const balance = await connection.getBalance(publicKey);
+      // Check balance with retry logic for 403 errors
+      let balance: number;
+      let balanceRetries = 0;
+      const maxBalanceRetries = 3;
+      
+      while (balanceRetries < maxBalanceRetries) {
+        try {
+          balance = await connection.getBalance(publicKey);
+          break;
+        } catch (balanceError: any) {
+          balanceRetries++;
+          
+          // Check if it's a 403/rate limit error
+          if (balanceError?.message?.includes('403') || balanceError?.message?.includes('Too Many Requests')) {
+            if (balanceRetries >= maxBalanceRetries) {
+              throw new Error('RPC rate limit exceeded. Please wait a moment and try again, or configure a custom RPC endpoint.');
+            }
+            
+            // Exponential backoff: wait before retry
+            const delayMs = 1000 * Math.pow(2, balanceRetries - 1);
+            console.log(`RPC rate limit hit, retrying in ${delayMs}ms... (${balanceRetries}/${maxBalanceRetries})`);
+            await new Promise(resolve => setTimeout(resolve, delayMs));
+          } else {
+            throw balanceError;
+          }
+        }
+      }
+      
       const requiredLamports = lamports + 5000; // Add buffer for transaction fee
       
       if (balance < requiredLamports) {
@@ -157,6 +184,8 @@ export const PurchaseAccessDialog = ({
         errorMessage = 'Transaction was cancelled. Please try again and approve the transaction in your wallet.';
       } else if (errorMessage.includes('not been authorized') || errorMessage.includes('Wallet not connected')) {
         errorMessage = 'Please connect your wallet first using the wallet button in the header.';
+      } else if (errorMessage.includes('RPC rate limit') || errorMessage.includes('403') || errorMessage.includes('Too Many Requests')) {
+        errorMessage = 'Network is busy. Please wait a moment and try again. Consider using a custom RPC endpoint for better reliability.';
       }
       
       toast({

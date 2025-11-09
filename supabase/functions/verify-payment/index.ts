@@ -64,23 +64,69 @@ serve(async (req) => {
     console.log('Verifying transaction on Solana blockchain...');
     const PLATFORM_WALLET = '5UD8QQ5WrJFXYcN7yy1iUkhvHoa6hyko4f9Wa3EDDeJ3';
     
+    // RPC endpoints with Helius as primary
+    const heliusApiKey = Deno.env.get('HELIUS_API_KEY');
+    const RPC_ENDPOINTS = [
+      heliusApiKey ? `https://mainnet.helius-rpc.com/?api-key=${heliusApiKey}` : null,
+      'https://api.mainnet-beta.solana.com',
+      'https://solana-api.projectserum.com',
+    ].filter(Boolean) as string[];
+
+    console.log(`Using ${RPC_ENDPOINTS.length} RPC endpoints for verification`);
+    
+    // Try each RPC endpoint with retry logic
+    let transaction = null;
+    let lastError: Error | null = null;
+
+    for (const rpcUrl of RPC_ENDPOINTS) {
+      try {
+        console.log(`Attempting verification with RPC: ${rpcUrl.includes('helius') ? 'Helius' : 'Public'}`);
+        const connection = new Connection(rpcUrl, 'confirmed');
+        
+        // Retry logic for each endpoint
+        for (let attempt = 0; attempt < 3; attempt++) {
+          try {
+            transaction = await connection.getTransaction(transactionSignature, {
+              maxSupportedTransactionVersion: 0,
+            });
+            
+            if (transaction) {
+              console.log(`Transaction found on attempt ${attempt + 1} using ${rpcUrl.includes('helius') ? 'Helius' : 'Public RPC'}`);
+              break;
+            }
+          } catch (fetchError) {
+            console.warn(`Attempt ${attempt + 1}/3 failed for ${rpcUrl}:`, fetchError instanceof Error ? fetchError.message : fetchError);
+            if (attempt < 2) {
+              // Exponential backoff
+              await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+            }
+          }
+        }
+        
+        if (transaction) break; // Success, exit RPC loop
+      } catch (rpcError) {
+        lastError = rpcError instanceof Error ? rpcError : new Error(String(rpcError));
+        console.error(`RPC endpoint ${rpcUrl} failed:`, lastError.message);
+        continue; // Try next endpoint
+      }
+    }
+    
     try {
-      const connection = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
-      const transaction = await connection.getTransaction(transactionSignature, {
-        maxSupportedTransactionVersion: 0,
-      });
+      if (!transaction) {
+        throw new Error(`Transaction not found on blockchain after trying all RPC endpoints. Last error: ${lastError?.message || 'Unknown'}`);
+      }
 
       if (!transaction) {
         throw new Error('Transaction not found on blockchain');
       }
 
-      if (transaction.meta?.err) {
+      if (transaction?.meta?.err) {
         throw new Error('Transaction failed on blockchain');
       }
 
       // Verify the transaction has the correct recipient and amount
-      const accountKeys = transaction.transaction.message.getAccountKeys();
-      const instructions = transaction.transaction.message.compiledInstructions;
+      const accountKeys = transaction!.transaction.message.getAccountKeys();
+      const instructions = transaction!.transaction.message.compiledInstructions;
       
       // Check if this is a system program transfer
       let foundValidTransfer = false;
@@ -93,8 +139,8 @@ serve(async (req) => {
           
           if (toPubkey?.toBase58() === PLATFORM_WALLET) {
             // Verify amount from pre/post balances
-            const preBalances = transaction.meta?.preBalances || [];
-            const postBalances = transaction.meta?.postBalances || [];
+            const preBalances = transaction!.meta?.preBalances || [];
+            const postBalances = transaction!.meta?.postBalances || [];
             const recipientIndex = instruction.accountKeyIndexes[1];
             const transferredLamports = postBalances[recipientIndex] - preBalances[recipientIndex];
             const transferredSOL = transferredLamports / LAMPORTS_PER_SOL;

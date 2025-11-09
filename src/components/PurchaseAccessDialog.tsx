@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
 import { sharedConnection } from '@/contexts/WalletContext';
+import { executeWithRetry } from '@/lib/rpcManager';
 import {
   Dialog,
   DialogContent,
@@ -11,7 +12,8 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Sparkles } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Sparkles, Wifi, WifiOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface PurchaseAccessDialogProps {
@@ -39,9 +41,37 @@ export const PurchaseAccessDialog = ({
   const { publicKey, sendTransaction, connected, connecting } = useWallet();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [rpcStatus, setRpcStatus] = useState<'checking' | 'connected' | 'error'>('connected');
+  const [currentStep, setCurrentStep] = useState<string>('');
+
+  // Check RPC connection when dialog opens
+  useEffect(() => {
+    if (open && connected) {
+      checkRpcConnection();
+    }
+  }, [open, connected]);
+
+  const checkRpcConnection = async () => {
+    setRpcStatus('checking');
+    setCurrentStep('Testing network connection...');
+    
+    try {
+      await executeWithRetry(async (connection) => {
+        await connection.getLatestBlockhash();
+      }, 2);
+      
+      setRpcStatus('connected');
+      setCurrentStep('');
+      console.log('[Purchase] RPC connection verified');
+    } catch (error) {
+      console.error('[Purchase] RPC check failed:', error);
+      setRpcStatus('error');
+      setCurrentStep('Network connection unstable');
+    }
+  };
 
   const handlePurchase = async () => {
-    console.log('Purchase attempt:', { publicKey: publicKey?.toBase58(), connected, connecting });
+    console.log('[Purchase] Starting purchase:', { publicKey: publicKey?.toBase58(), connected, connecting });
     
     if (!connected || !publicKey) {
       toast({
@@ -53,40 +83,17 @@ export const PurchaseAccessDialog = ({
     }
 
     setIsProcessing(true);
+    setCurrentStep('Preparing transaction...');
     let signature: string | undefined;
 
     try {
-      // Use shared connection to reduce RPC rate limiting
-      const connection = sharedConnection;
       const lamports = companion.access_price * 1000000000; // Convert SOL to lamports
 
-      // Check balance with retry logic for 403 errors
-      let balance: number;
-      let balanceRetries = 0;
-      const maxBalanceRetries = 3;
-      
-      while (balanceRetries < maxBalanceRetries) {
-        try {
-          balance = await connection.getBalance(publicKey);
-          break;
-        } catch (balanceError: any) {
-          balanceRetries++;
-          
-          // Check if it's a 403/rate limit error
-          if (balanceError?.message?.includes('403') || balanceError?.message?.includes('Too Many Requests')) {
-            if (balanceRetries >= maxBalanceRetries) {
-              throw new Error('RPC rate limit exceeded. Please wait a moment and try again, or configure a custom RPC endpoint.');
-            }
-            
-            // Exponential backoff: wait before retry
-            const delayMs = 1000 * Math.pow(2, balanceRetries - 1);
-            console.log(`RPC rate limit hit, retrying in ${delayMs}ms... (${balanceRetries}/${maxBalanceRetries})`);
-            await new Promise(resolve => setTimeout(resolve, delayMs));
-          } else {
-            throw balanceError;
-          }
-        }
-      }
+      // Check balance with resilient connection
+      setCurrentStep('Checking wallet balance...');
+      const balance = await executeWithRetry(async (connection) => {
+        return await connection.getBalance(publicKey);
+      }, 5); // More aggressive retries
       
       const requiredLamports = lamports + 5000; // Add buffer for transaction fee
       
@@ -97,9 +104,12 @@ export const PurchaseAccessDialog = ({
           variant: 'destructive',
         });
         setIsProcessing(false);
+        setCurrentStep('');
         return;
       }
 
+      // Create transaction
+      setCurrentStep('Creating transaction...');
       const transaction = new Transaction().add(
         SystemProgram.transfer({
           fromPubkey: publicKey,
@@ -109,51 +119,61 @@ export const PurchaseAccessDialog = ({
       );
 
       // Send transaction
+      setCurrentStep('Waiting for wallet approval...');
       toast({
         title: 'Sending transaction...',
         description: 'Please approve the transaction in your wallet',
       });
 
+      // Use resilient connection for sending
+      const connection = sharedConnection;
       signature = await sendTransaction(transaction, connection);
-      console.log('Transaction sent:', signature);
+      console.log('[Purchase] Transaction sent:', signature);
 
+      setCurrentStep('Confirming on blockchain...');
       toast({
         title: 'Confirming transaction...',
-        description: 'This may take up to 60 seconds',
+        description: 'This may take up to 90 seconds',
       });
 
-      // Retry confirmation with exponential backoff
+      // Enhanced confirmation with more retries
       let confirmed = false;
-      const maxRetries = 5;
-      let retryDelay = 2000; // Start with 2 seconds
+      const maxRetries = 10; // Increased from 5
+      let retryDelay = 2000;
 
       for (let i = 0; i < maxRetries && !confirmed; i++) {
+        setCurrentStep(`Confirming transaction... (${i + 1}/${maxRetries})`);
+        
         try {
-          const confirmation = await connection.confirmTransaction(signature, 'confirmed');
+          const confirmation = await executeWithRetry(async (conn) => {
+            return await conn.confirmTransaction(signature!, 'confirmed');
+          }, 2);
           
           if (confirmation.value.err) {
             throw new Error('Transaction failed on-chain');
           }
 
           confirmed = true;
-          console.log(`Transaction confirmed after ${i + 1} attempts:`, signature);
+          console.log(`[Purchase] Transaction confirmed after ${i + 1} attempts:`, signature);
         } catch (confirmError) {
           if (i === maxRetries - 1) {
             // Last retry - check transaction status manually
-            console.log('Checking transaction status manually...');
-            const status = await connection.getSignatureStatus(signature);
+            console.log('[Purchase] Checking transaction status manually...');
+            const status = await executeWithRetry(async (conn) => {
+              return await conn.getSignatureStatus(signature!);
+            }, 2);
             
             if (status.value?.confirmationStatus === 'confirmed' || 
                 status.value?.confirmationStatus === 'finalized') {
               confirmed = true;
-              console.log('Transaction confirmed via status check:', signature);
+              console.log('[Purchase] Transaction confirmed via status check:', signature);
             } else {
-              throw new Error(`Transaction confirmation timeout. Signature: ${signature}`);
+              throw new Error(`Transaction confirmation timeout after ${maxRetries} attempts. Signature: ${signature}`);
             }
           } else {
-            console.log(`Retry ${i + 1}/${maxRetries} failed, waiting ${retryDelay}ms...`);
+            console.log(`[Purchase] Retry ${i + 1}/${maxRetries} waiting ${retryDelay}ms...`);
             await new Promise(resolve => setTimeout(resolve, retryDelay));
-            retryDelay *= 1.5; // Exponential backoff
+            retryDelay = Math.min(retryDelay * 1.3, 8000); // Cap at 8 seconds
           }
         }
       }
@@ -163,9 +183,11 @@ export const PurchaseAccessDialog = ({
       }
 
       // Verify payment on backend
+      setCurrentStep('Verifying payment...');
       const success = await onGrantAccess(signature, companion.access_price);
 
       if (success) {
+        setCurrentStep('Success!');
         toast({
           title: 'Access granted!',
           description: `You now have lifetime access to ${companion.name}`,
@@ -176,7 +198,8 @@ export const PurchaseAccessDialog = ({
         throw new Error('Payment verification failed on backend');
       }
     } catch (error) {
-      console.error('Purchase error:', error);
+      console.error('[Purchase] Error:', error);
+      setCurrentStep('');
       let errorMessage = error instanceof Error ? error.message : 'Please try again';
       
       // Check for specific wallet errors
@@ -184,8 +207,8 @@ export const PurchaseAccessDialog = ({
         errorMessage = 'Transaction was cancelled. Please try again and approve the transaction in your wallet.';
       } else if (errorMessage.includes('not been authorized') || errorMessage.includes('Wallet not connected')) {
         errorMessage = 'Please connect your wallet first using the wallet button in the header.';
-      } else if (errorMessage.includes('RPC rate limit') || errorMessage.includes('403') || errorMessage.includes('Too Many Requests')) {
-        errorMessage = 'Network is busy. Please wait a moment and try again. Consider using a custom RPC endpoint for better reliability.';
+      } else if (errorMessage.includes('RPC') || errorMessage.includes('403') || errorMessage.includes('Too Many Requests') || errorMessage.includes('rate limit')) {
+        errorMessage = 'Network connection issues detected. Our system will automatically retry with backup connections. Please try again.';
       }
       
       toast({
@@ -194,9 +217,11 @@ export const PurchaseAccessDialog = ({
           ? `${errorMessage}\n\nTransaction: ${signature}\nVerify at: https://solscan.io/tx/${signature}`
           : errorMessage,
         variant: 'destructive',
+        duration: 8000,
       });
     } finally {
       setIsProcessing(false);
+      setCurrentStep('');
     }
   };
 
@@ -225,6 +250,36 @@ export const PurchaseAccessDialog = ({
             <p className="mt-2 text-sm text-muted-foreground">One-time payment</p>
           </div>
 
+          {/* RPC Status Indicator */}
+          {connected && (
+            <div className="w-full flex items-center justify-center gap-2">
+              {rpcStatus === 'checking' && (
+                <Badge variant="outline" className="gap-2">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Checking network...
+                </Badge>
+              )}
+              {rpcStatus === 'connected' && (
+                <Badge variant="outline" className="gap-2 border-green-500 text-green-500">
+                  <Wifi className="h-3 w-3" />
+                  Network ready
+                </Badge>
+              )}
+              {rpcStatus === 'error' && (
+                <Badge variant="outline" className="gap-2 border-yellow-500 text-yellow-500">
+                  <WifiOff className="h-3 w-3" />
+                  Connection unstable (will auto-retry)
+                </Badge>
+              )}
+            </div>
+          )}
+
+          {currentStep && (
+            <p className="text-sm text-muted-foreground text-center animate-pulse">
+              {currentStep}
+            </p>
+          )}
+
           <div className="w-full space-y-2 rounded-lg bg-muted p-4">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Access type:</span>
@@ -237,6 +292,10 @@ export const PurchaseAccessDialog = ({
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Network:</span>
               <span className="font-medium">Solana Mainnet</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">RPC Provider:</span>
+              <span className="font-medium text-xs">Helius (Premium)</span>
             </div>
           </div>
 

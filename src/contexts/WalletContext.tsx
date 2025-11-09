@@ -16,19 +16,31 @@ export const useWalletContext = () => useContext(WalletContext);
 // Export shared connection instance to avoid creating multiple connections
 export let sharedConnection: Connection;
 
+// RPC endpoints with fallback support
+const RPC_ENDPOINTS = [
+  import.meta.env.VITE_SOLANA_RPC_URL, // Primary: Helius
+  'https://api.mainnet-beta.solana.com', // Fallback 1
+  'https://solana-api.projectserum.com', // Fallback 2
+].filter(Boolean);
+
 export const WalletContextProvider = ({ children }: { children: ReactNode }) => {
   // Support cluster override via env (default to Mainnet)
   const networkEnv = import.meta.env.VITE_SOLANA_CLUSTER as WalletAdapterNetwork | undefined;
   const network = networkEnv || WalletAdapterNetwork.Mainnet;
   
-  // Support custom RPC endpoint (use env variable or fallback to default)
-  const customRpcUrl = import.meta.env.VITE_SOLANA_RPC_URL;
+  // Use primary RPC endpoint with fallback chain
   const endpoint = useMemo(() => {
-    const rpcUrl = customRpcUrl || clusterApiUrl(network);
-    // Create shared connection instance
-    sharedConnection = new Connection(rpcUrl, 'confirmed');
+    const rpcUrl = RPC_ENDPOINTS[0] || clusterApiUrl(network);
+    console.log('[WalletContext] Using RPC endpoint:', rpcUrl);
+    
+    // Create shared connection instance with confirmed commitment
+    sharedConnection = new Connection(rpcUrl, {
+      commitment: 'confirmed',
+      confirmTransactionInitialTimeout: 60000, // 60 second timeout
+    });
+    
     return rpcUrl;
-  }, [network, customRpcUrl]);
+  }, [network]);
   
   // Use explicit wallet adapters for better reliability
   const wallets = useMemo(() => [

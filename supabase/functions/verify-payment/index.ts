@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { Connection, PublicKey, LAMPORTS_PER_SOL } from "https://esm.sh/@solana/web3.js@1.95.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -59,7 +60,69 @@ serve(async (req) => {
       throw new Error('Payment amount does not match required price');
     }
 
-    // Check if user already has access
+    // Verify transaction on-chain
+    console.log('Verifying transaction on Solana blockchain...');
+    const PLATFORM_WALLET = 'DzrB51hp4RoR8ctsbKeuyJHe4KXr24cGewyTucBZezrF';
+    
+    try {
+      const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
+      const transaction = await connection.getTransaction(transactionSignature, {
+        maxSupportedTransactionVersion: 0,
+      });
+
+      if (!transaction) {
+        throw new Error('Transaction not found on blockchain');
+      }
+
+      if (transaction.meta?.err) {
+        throw new Error('Transaction failed on blockchain');
+      }
+
+      // Verify the transaction has the correct recipient and amount
+      const accountKeys = transaction.transaction.message.getAccountKeys();
+      const instructions = transaction.transaction.message.compiledInstructions;
+      
+      // Check if this is a system program transfer
+      let foundValidTransfer = false;
+      for (const instruction of instructions) {
+        const programId = accountKeys.get(instruction.programIdIndex);
+        if (programId?.toBase58() === '11111111111111111111111111111111') {
+          // System program - decode transfer instruction
+          const fromPubkey = accountKeys.get(instruction.accountKeyIndexes[0]);
+          const toPubkey = accountKeys.get(instruction.accountKeyIndexes[1]);
+          
+          if (toPubkey?.toBase58() === PLATFORM_WALLET) {
+            // Verify amount from pre/post balances
+            const preBalances = transaction.meta?.preBalances || [];
+            const postBalances = transaction.meta?.postBalances || [];
+            const recipientIndex = instruction.accountKeyIndexes[1];
+            const transferredLamports = postBalances[recipientIndex] - preBalances[recipientIndex];
+            const transferredSOL = transferredLamports / LAMPORTS_PER_SOL;
+            
+            if (Math.abs(transferredSOL - Number(amount)) < 0.000001) {
+              foundValidTransfer = true;
+              console.log('Valid transfer verified:', {
+                from: fromPubkey?.toBase58(),
+                to: toPubkey.toBase58(),
+                amount: transferredSOL,
+              });
+              break;
+            }
+          }
+        }
+      }
+
+      if (!foundValidTransfer) {
+        throw new Error('No valid transfer found to platform wallet with correct amount');
+      }
+
+      console.log('On-chain verification successful');
+    } catch (verifyError) {
+      console.error('On-chain verification failed:', verifyError);
+      throw new Error(`Transaction verification failed: ${verifyError instanceof Error ? verifyError.message : 'Unknown error'}`);
+    }
+
+    // Check if user already has access (idempotency)
     const { data: existingAccess } = await supabase
       .from('companion_access')
       .select('id')

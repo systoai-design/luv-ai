@@ -50,10 +50,11 @@ export const PurchaseAccessDialog = ({
     }
 
     setIsProcessing(true);
+    let signature: string | undefined;
 
     try {
       // Use devnet for testing (matches WalletContext configuration)
-      const connection = new Connection('https://api.devnet.solana.com');
+      const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
       const lamports = companion.access_price * 1000000000; // Convert SOL to lamports
 
       const transaction = new Transaction().add(
@@ -64,10 +65,59 @@ export const PurchaseAccessDialog = ({
         })
       );
 
-      const signature = await sendTransaction(transaction, connection);
-      await connection.confirmTransaction(signature, 'confirmed');
+      // Send transaction
+      toast({
+        title: 'Sending transaction...',
+        description: 'Please approve the transaction in your wallet',
+      });
 
-      console.log('Transaction confirmed:', signature);
+      signature = await sendTransaction(transaction, connection);
+      console.log('Transaction sent:', signature);
+
+      toast({
+        title: 'Confirming transaction...',
+        description: 'This may take up to 60 seconds',
+      });
+
+      // Retry confirmation with exponential backoff
+      let confirmed = false;
+      const maxRetries = 5;
+      let retryDelay = 2000; // Start with 2 seconds
+
+      for (let i = 0; i < maxRetries && !confirmed; i++) {
+        try {
+          const confirmation = await connection.confirmTransaction(signature, 'confirmed');
+          
+          if (confirmation.value.err) {
+            throw new Error('Transaction failed on-chain');
+          }
+
+          confirmed = true;
+          console.log(`Transaction confirmed after ${i + 1} attempts:`, signature);
+        } catch (confirmError) {
+          if (i === maxRetries - 1) {
+            // Last retry - check transaction status manually
+            console.log('Checking transaction status manually...');
+            const status = await connection.getSignatureStatus(signature);
+            
+            if (status.value?.confirmationStatus === 'confirmed' || 
+                status.value?.confirmationStatus === 'finalized') {
+              confirmed = true;
+              console.log('Transaction confirmed via status check:', signature);
+            } else {
+              throw new Error(`Transaction confirmation timeout. Signature: ${signature}`);
+            }
+          } else {
+            console.log(`Retry ${i + 1}/${maxRetries} failed, waiting ${retryDelay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+            retryDelay *= 1.5; // Exponential backoff
+          }
+        }
+      }
+
+      if (!confirmed) {
+        throw new Error(`Could not confirm transaction. Check status at: https://solscan.io/tx/${signature}?cluster=devnet`);
+      }
 
       // Verify payment on backend
       const success = await onGrantAccess(signature, companion.access_price);
@@ -80,13 +130,17 @@ export const PurchaseAccessDialog = ({
         onSuccess();
         onOpenChange(false);
       } else {
-        throw new Error('Payment verification failed');
+        throw new Error('Payment verification failed on backend');
       }
     } catch (error) {
       console.error('Purchase error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Please try again';
+      
       toast({
         title: 'Purchase failed',
-        description: error instanceof Error ? error.message : 'Please try again',
+        description: signature 
+          ? `${errorMessage}\n\nTransaction: ${signature}\nVerify at: https://solscan.io/tx/${signature}?cluster=devnet`
+          : errorMessage,
         variant: 'destructive',
       });
     } finally {

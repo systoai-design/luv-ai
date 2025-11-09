@@ -11,6 +11,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Send, Loader2, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PurchaseAccessDialog } from '@/components/PurchaseAccessDialog';
+import { ChatLimitBadge } from '@/components/chat/ChatLimitBadge';
 
 const Chat = () => {
   const { companionId } = useParams<{ companionId: string }>();
@@ -192,6 +193,7 @@ const Chat = () => {
             <span className="text-xs text-primary">Lifetime Access</span>
           </div>
         </div>
+        <ChatLimitBadge />
       </div>
 
       {/* Messages */}

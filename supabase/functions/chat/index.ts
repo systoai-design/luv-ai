@@ -19,6 +19,51 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Get user from auth header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Authentication required" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Invalid authentication" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Server-side check of daily chat limit
+    const { data: limitCheck, error: limitError } = await supabase.rpc(
+      'check_daily_chat_limit',
+      { p_user_id: user.id }
+    );
+
+    if (limitError) {
+      console.error('Error checking chat limit:', limitError);
+      return new Response(JSON.stringify({ error: "Failed to check message limit" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (!limitCheck.allowed) {
+      return new Response(JSON.stringify({ 
+        error: `Daily limit reached. You've used all ${limitCheck.limit} messages today. Limit resets at midnight UTC.` 
+      }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    console.log(`Chat limit check passed. User ${user.id} has ${limitCheck.remaining} messages remaining.`);
+
     // Get companion details for system prompt - use actual schema columns
     const { data: companion } = await supabase
       .from('ai_companions')

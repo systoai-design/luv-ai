@@ -354,6 +354,33 @@ export type Database = {
           },
         ]
       }
+      daily_chat_usage: {
+        Row: {
+          created_at: string | null
+          id: string
+          message_count: number
+          updated_at: string | null
+          usage_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message_count?: number
+          updated_at?: string | null
+          usage_date?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message_count?: number
+          updated_at?: string | null
+          usage_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       followers: {
         Row: {
           created_at: string
@@ -789,6 +816,7 @@ export type Database = {
         Args: { check_user_id: string }
         Returns: undefined
       }
+      check_daily_chat_limit: { Args: { p_user_id: string }; Returns: Json }
       check_super_like_limit: { Args: { p_user_id: string }; Returns: Json }
       check_undo_limit: { Args: { p_user_id: string }; Returns: Json }
       has_role: {

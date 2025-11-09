@@ -38,6 +38,44 @@ export const useChat = (chatId: string, companionId: string) => {
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim()) return;
 
+    // Check daily chat limit
+    try {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) throw new Error('Not authenticated');
+
+      const { data: limitCheck, error: limitError } = await supabase.rpc(
+        'check_daily_chat_limit',
+        { p_user_id: user.user.id }
+      ) as { data: { allowed: boolean; remaining: number; used: number; limit: number } | null; error: any };
+
+      if (limitError) {
+        console.error('Error checking chat limit:', limitError);
+        toast({
+          title: "Error",
+          description: "Failed to check message limit",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (limitCheck && !limitCheck.allowed) {
+        toast({
+          title: "Daily limit reached",
+          description: `You've used all ${limitCheck.limit} messages today. Limit resets at midnight UTC.`,
+          variant: "destructive",
+        });
+        return;
+      }
+    } catch (error) {
+      console.error('Error checking chat limit:', error);
+      toast({
+        title: "Error",
+        description: "Failed to check message limit",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     
     // Add user message to UI immediately

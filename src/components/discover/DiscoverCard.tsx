@@ -103,6 +103,7 @@ const DiscoverCard = ({ profile, onSwipe, isInteractive = true }: DiscoverCardPr
           : 'none',
         willChange: 'transform, opacity',
         contain: 'layout style paint',
+        isolation: 'isolate', // Create stacking context for trails
       }}
       onMouseDown={isInteractive ? handleStart : undefined}
       onTouchStart={isInteractive ? handleStart : undefined}

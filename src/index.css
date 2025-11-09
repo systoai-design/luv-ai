@@ -428,3 +428,22 @@ All colors MUST be HSL.
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
+
+/* Velocity trails for fast swipes */
+.velocity-trail {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  transition: transform 0.1s ease-out, opacity 0.15s ease-out;
+  will-change: transform, opacity;
+  background: linear-gradient(
+    135deg,
+    hsl(var(--primary) / 0.1),
+    hsl(var(--primary) / 0.05)
+  );
+  border-radius: inherit;
+  filter: blur(4px);
+  border: 1px solid hsl(var(--primary) / 0.2);
+}

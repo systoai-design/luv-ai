@@ -137,6 +137,7 @@ const SwipeDemo = () => {
             cursor: isDragging ? 'grabbing' : 'grab',
             zIndex: 10,
             willChange: 'transform, opacity',
+            isolation: 'isolate', // Create stacking context for trails
           }}
         >
           <Card className="bg-card border-border shadow-xl overflow-hidden">

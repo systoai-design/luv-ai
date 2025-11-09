@@ -22,25 +22,76 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
   const velocityRef = useRef(0);
   const startPos = useRef<Position>({ x: 0, y: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
+  const trailsRef = useRef<HTMLDivElement[]>([]);
   const lastMoveTime = useRef(Date.now());
   const lastPosition = useRef(0);
   const rafId = useRef<number>();
 
-  const updateCardTransform = useCallback((x: number, y: number, immediate = false) => {
+  const updateCardTransform = useCallback((x: number, y: number, immediate = false, velocity = 0) => {
     if (!cardRef.current) return;
     
-    const rotation = (x / 12) * -1; // Slightly more rotation
+    const rotation = (x / 12) * -1;
     const scale = Math.max(0.95, 1 - Math.abs(x) / 2000);
-    const opacity = Math.max(0.8, 1 - Math.abs(x) / 500); // Better opacity curve
+    const opacity = Math.max(0.8, 1 - Math.abs(x) / 500);
     
     // Add slight lift effect during drag
     const lift = Math.min(Math.abs(x) / 30, 10);
+    
+    // Calculate motion blur based on velocity
+    const velocityMagnitude = Math.abs(velocity);
+    const blurAmount = Math.min(velocityMagnitude * 3, 8); // Cap at 8px blur
+    const blurDirection = x > 0 ? 'right' : 'left';
+    
+    // Apply motion blur for fast swipes
+    if (velocityMagnitude > 0.8 && isDragging) {
+      const blurX = blurAmount * (x > 0 ? 1 : -1);
+      cardRef.current.style.filter = `blur(${blurAmount * 0.3}px)`;
+      cardRef.current.style.boxShadow = `${blurX}px 0 ${blurAmount * 2}px rgba(0, 0, 0, 0.2)`;
+    } else {
+      cardRef.current.style.filter = 'none';
+      cardRef.current.style.boxShadow = '';
+    }
     
     cardRef.current.style.transform = `translate3d(${x}px, ${y - lift}px, 0) rotate(${rotation}deg) scale(${scale})`;
     cardRef.current.style.opacity = `${opacity}`;
     
     if (immediate) {
       cardRef.current.style.transition = 'none';
+    }
+    
+    // Update velocity trails
+    updateTrails(x, y, rotation, velocityMagnitude);
+  }, [isDragging]);
+
+  const updateTrails = useCallback((x: number, y: number, rotation: number, velocity: number) => {
+    if (!cardRef.current || velocity < 1.2) {
+      // Hide trails if velocity is too low
+      trailsRef.current.forEach(trail => {
+        if (trail) trail.style.opacity = '0';
+      });
+      return;
+    }
+    
+    const numTrails = Math.min(Math.floor(velocity * 2), 5); // Up to 5 trails
+    const lift = Math.min(Math.abs(x) / 30, 10);
+    
+    for (let i = 0; i < numTrails; i++) {
+      if (!trailsRef.current[i]) {
+        const trail = document.createElement('div');
+        trail.className = 'velocity-trail';
+        cardRef.current.parentElement?.appendChild(trail);
+        trailsRef.current[i] = trail;
+      }
+      
+      const trail = trailsRef.current[i];
+      const delay = (i + 1) * 30; // Stagger trails
+      const trailX = x * (1 - (i + 1) * 0.15);
+      const trailOpacity = Math.max(0, (velocity - 1) * 0.15 * (1 - i * 0.2));
+      const trailScale = 1 - (i + 1) * 0.03;
+      
+      trail.style.transform = `translate3d(${trailX}px, ${y - lift}px, 0) rotate(${rotation}deg) scale(${trailScale})`;
+      trail.style.opacity = `${trailOpacity}`;
+      trail.style.transitionDelay = `${delay}ms`;
     }
   }, []);
 
@@ -60,6 +111,12 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
     positionRef.current = { x: 0, y: 0 };
     lastPosition.current = 0;
     velocityRef.current = 0;
+    
+    // Clear any existing trails
+    trailsRef.current.forEach(trail => {
+      if (trail) trail.style.opacity = '0';
+    });
+    
     triggerHaptic('light');
     playSound('tap');
   }, [isAnimating]);
@@ -88,7 +145,7 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
       lastPosition.current = deltaX;
       
       positionRef.current = { x: deltaX, y: deltaY };
-      updateCardTransform(deltaX, deltaY, true);
+      updateCardTransform(deltaX, deltaY, true, velocityRef.current);
       
       // Trigger haptic and sound when crossing threshold for the first time
       if (!thresholdCrossed && Math.abs(deltaX) > threshold) {
@@ -159,15 +216,23 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
       }
       
       setTimeout(() => {
-        onSwipe(direction);
-        positionRef.current = { x: 0, y: 0 };
-        velocityRef.current = 0;
-        if (cardRef.current) {
-          cardRef.current.style.transition = '';
-        }
-        updateCardTransform(0, 0);
-        setIsAnimating(false);
-      }, exitDuration);
+      onSwipe(direction);
+      positionRef.current = { x: 0, y: 0 };
+      velocityRef.current = 0;
+      
+      // Clear trails and effects
+      trailsRef.current.forEach(trail => {
+        if (trail) trail.style.opacity = '0';
+      });
+      
+      if (cardRef.current) {
+        cardRef.current.style.transition = '';
+        cardRef.current.style.filter = 'none';
+        cardRef.current.style.boxShadow = '';
+      }
+      updateCardTransform(0, 0, false, 0);
+      setIsAnimating(false);
+    }, exitDuration);
     } else {
       // Enhanced spring back with elastic easing
       triggerHaptic('light');
@@ -175,13 +240,20 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
       if (cardRef.current) {
         cardRef.current.style.transition = 'transform 400ms cubic-bezier(0.25, 1.2, 0.4, 1), opacity 300ms ease-out';
       }
-      updateCardTransform(0, 0);
+      updateCardTransform(0, 0, false, 0);
       positionRef.current = { x: 0, y: 0 };
       velocityRef.current = 0;
+      
+      // Clear trails
+      trailsRef.current.forEach(trail => {
+        if (trail) trail.style.opacity = '0';
+      });
       
       setTimeout(() => {
         if (cardRef.current) {
           cardRef.current.style.transition = '';
+          cardRef.current.style.filter = 'none';
+          cardRef.current.style.boxShadow = '';
         }
       }, 400);
     }
@@ -226,20 +298,35 @@ export const useCardSwipe = ({ onSwipe, threshold = 150 }: UseCardSwipeProps) =>
       onSwipe(direction);
       positionRef.current = { x: 0, y: 0 };
       velocityRef.current = 0;
+      
+      // Clear trails and effects
+      trailsRef.current.forEach(trail => {
+        if (trail) trail.style.opacity = '0';
+      });
+      
       if (cardRef.current) {
         cardRef.current.style.transition = '';
+        cardRef.current.style.filter = 'none';
+        cardRef.current.style.boxShadow = '';
       }
-      updateCardTransform(0, 0);
+      updateCardTransform(0, 0, false, 0);
       setIsAnimating(false);
     }, exitDuration);
   }, [isAnimating, onSwipe, updateCardTransform]);
 
-  // Cleanup RAF on unmount
+  // Cleanup RAF and trails on unmount
   useEffect(() => {
     return () => {
       if (rafId.current) {
         cancelAnimationFrame(rafId.current);
       }
+      // Clean up trails
+      trailsRef.current.forEach(trail => {
+        if (trail && trail.parentElement) {
+          trail.parentElement.removeChild(trail);
+        }
+      });
+      trailsRef.current = [];
     };
   }, []);
 

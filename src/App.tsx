@@ -30,6 +30,7 @@ import LikesReceived from "./pages/LikesReceived";
 import Connections from "./pages/Connections";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +55,13 @@ const App = () => (
               <Route path="/auth" element={
                 <RouteTransition>
                   <Auth />
+                </RouteTransition>
+              } />
+              
+              {/* Reset Password Page (No Layout) */}
+              <Route path="/reset-password" element={
+                <RouteTransition>
+                  <ResetPassword />
                 </RouteTransition>
               } />
               

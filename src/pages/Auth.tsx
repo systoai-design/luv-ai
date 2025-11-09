@@ -28,6 +28,9 @@ const Auth = () => {
   const [displayName, setDisplayName] = useState("");
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmationEmail, setConfirmationEmail] = useState("");
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [showResetConfirmation, setShowResetConfirmation] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -98,6 +101,40 @@ const Auth = () => {
     }
   };
 
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      emailSchema.parse(resetEmail);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+      }
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const redirectUrl = `${window.location.origin}/reset-password`;
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: redirectUrl,
+      });
+
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+
+      setShowResetConfirmation(true);
+      setShowResetPassword(false);
+    } catch (error) {
+      toast.error("An unexpected error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -148,6 +185,50 @@ const Auth = () => {
     }
   };
 
+  if (showResetConfirmation) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-hero p-4">
+        <Card className="w-full max-w-md bg-card/95 backdrop-blur-sm border-primary/30">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <Mail className="h-12 w-12 text-primary animate-pulse" />
+            </div>
+            <CardTitle className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              Reset Link Sent
+            </CardTitle>
+            <CardDescription>
+              Check your email for the password reset link
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Alert>
+              <Mail className="h-4 w-4" />
+              <AlertDescription>
+                A password reset link has been sent to <strong>{resetEmail}</strong>. 
+                Click the link in the email to create a new password.
+              </AlertDescription>
+            </Alert>
+            <div className="text-center space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Didn't receive the email? Check your spam folder.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowResetConfirmation(false);
+                  setResetEmail("");
+                }}
+                className="w-full"
+              >
+                Back to Sign In
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (showConfirmation) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-hero p-4">
@@ -183,6 +264,68 @@ const Auth = () => {
                 Back to Sign In
               </Button>
             </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (showResetPassword) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-hero p-4">
+        <Card className="w-full max-w-md bg-card/95 backdrop-blur-sm border-primary/30">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <Heart className="h-12 w-12 text-primary fill-primary animate-glow" />
+            </div>
+            <CardTitle className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              Reset Password
+            </CardTitle>
+            <CardDescription>
+              Enter your email to receive a password reset link
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handlePasswordReset} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="reset-email">Email</Label>
+                <Input
+                  id="reset-email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Button
+                  type="submit"
+                  className="w-full bg-gradient-primary"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending link...
+                    </>
+                  ) : (
+                    "Send Reset Link"
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    setShowResetPassword(false);
+                    setResetEmail("");
+                  }}
+                >
+                  Back to Sign In
+                </Button>
+              </div>
+            </form>
           </CardContent>
         </Card>
       </div>
@@ -260,6 +403,14 @@ const Auth = () => {
                   ) : (
                     "Sign In"
                   )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="link"
+                  className="w-full text-xs text-muted-foreground hover:text-primary"
+                  onClick={() => setShowResetPassword(true)}
+                >
+                  Forgot password?
                 </Button>
               </form>
             </TabsContent>

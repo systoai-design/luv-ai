@@ -98,7 +98,8 @@ const DiscoverCard = ({ profile, onSwipe, isInteractive = true }: DiscoverCardPr
   return (
     <Card 
       ref={isInteractive ? cardRef : undefined}
-      className={`bg-card border-border overflow-hidden select-none relative swipe-card ${
+      variant="elevated"
+      className={`overflow-hidden select-none relative swipe-card ${
         isInteractive ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none'
       }`}
       style={{

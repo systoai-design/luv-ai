@@ -37,11 +37,16 @@ export const EmptyInterestsState = ({ variant = "feed", userId }: EmptyInterests
   }
 
   return (
-    <Card className="bg-card/30 backdrop-blur-sm border-border/50 shadow-card">
-      <CardContent className="p-8 text-center space-y-6">
+    <Card variant="glass" className="shadow-card">
+      <CardContent className="p-8 text-center space-y-6 animate-fade-in">
         <div className="space-y-3">
-          <Sparkles className="h-12 w-12 mx-auto text-primary" />
-          <h2 className="text-2xl font-semibold">Personalize Your Feed</h2>
+          <div className="relative">
+            <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full animate-pulse" />
+            <div className="relative p-4 rounded-full bg-gradient-to-br from-primary/10 to-secondary/10 inline-block animate-float">
+              <Sparkles className="h-12 w-12 text-primary" />
+            </div>
+          </div>
+          <h2 className="text-2xl font-display font-bold">Personalize Your Feed</h2>
           <p className="text-muted-foreground max-w-md mx-auto">
             Add interests to your profile to see posts from like-minded people and discover content tailored just for you
           </p>

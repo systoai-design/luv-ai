@@ -88,7 +88,7 @@ export const PostCard = ({
   };
 
   return (
-    <Card className="bg-card/30 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-all duration-300 shadow-card hover:shadow-glow hover:scale-[1.01]">
+    <Card variant="glass" className="hover:border-primary/30 transition-all duration-300 shadow-card hover:shadow-glow hover:scale-[1.01]">
       <CardContent className="pt-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex gap-3">

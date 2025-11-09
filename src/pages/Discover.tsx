@@ -6,6 +6,7 @@ import DiscoverCard from '@/components/discover/DiscoverCard';
 import MatchModal from '@/components/discover/MatchModal';
 import { calculateMatchScore } from '@/lib/interests';
 import { Loader2, Heart, RotateCcw } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useUndoSwipe } from '@/hooks/useUndoSwipe';
@@ -259,28 +260,28 @@ const Discover = () => {
     return (
       <div className="container mx-auto px-4 py-8 max-w-2xl">
         <div className="mb-6 text-center">
-          <Skeleton className="h-10 w-40 mx-auto mb-2" />
-          <Skeleton className="h-5 w-32 mx-auto" />
+          <Skeleton className="h-10 w-40 mx-auto mb-2" shimmer />
+          <Skeleton className="h-5 w-32 mx-auto" shimmer />
         </div>
         
-        <Card className="animate-pulse">
+        <Card variant="glass">
           <CardHeader className="space-y-4">
-            <Skeleton className="h-64 w-full rounded-lg" />
+            <Skeleton className="h-64 w-full rounded-lg" shimmer />
             <div className="space-y-2">
-              <Skeleton className="h-8 w-48" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-8 w-48" shimmer />
+              <Skeleton className="h-4 w-full" shimmer />
+              <Skeleton className="h-4 w-3/4" shimmer />
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex gap-2">
-              <Skeleton className="h-12 flex-1" />
-              <Skeleton className="h-12 flex-1" />
-              <Skeleton className="h-12 flex-1" />
+              <Skeleton className="h-12 flex-1" shimmer />
+              <Skeleton className="h-12 flex-1" shimmer />
+              <Skeleton className="h-12 flex-1" shimmer />
             </div>
             <div className="flex gap-2">
-              <Skeleton className="h-12 flex-1" />
-              <Skeleton className="h-12 flex-1" />
+              <Skeleton className="h-12 flex-1" shimmer />
+              <Skeleton className="h-12 flex-1" shimmer />
             </div>
           </CardContent>
         </Card>
@@ -291,49 +292,43 @@ const Discover = () => {
   if (needsInterests) {
     return (
       <div className="container mx-auto px-4 py-8 max-w-2xl">
-        <div className="bg-card border rounded-lg p-8 text-center shadow-sm">
-          <Heart className="h-16 w-16 text-primary mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-2">Let's Get You Started!</h2>
-          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-            Add interests to your profile to find compatible matches. 
-            We'll show you people who share your passions!
-          </p>
-          <div className="flex gap-3 justify-center flex-wrap">
-            <Button onClick={() => navigate('/profile')}>
-              Add Interests to Profile
-            </Button>
-            <Button variant="outline" onClick={() => navigate('/home')}>
-              Skip for Now
-            </Button>
-          </div>
-        </div>
+        <EmptyState
+          icon={Heart}
+          title="Let's Get You Started!"
+          description="Add interests to your profile to find compatible matches. We'll show you people who share your passions!"
+          action={{
+            label: "Add Interests to Profile",
+            onClick: () => navigate('/profile'),
+          }}
+          secondaryAction={{
+            label: "Skip for Now",
+            onClick: () => navigate('/home'),
+          }}
+        />
       </div>
     );
   }
 
   if (!profiles.length) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-12rem)] p-4 text-center">
-        <Heart className="h-16 w-16 text-muted-foreground mb-4" />
-        <h2 className="text-2xl font-bold mb-2">You've Seen Everyone!</h2>
-        <p className="text-muted-foreground mb-6 max-w-md">
-          {userInterests.length > 0 
-            ? "You've swiped on everyone with matching interests. Check your 'Likes You' page to see who liked you, or visit 'Your Likes' to see who you're waiting on!"
-            : "No more profiles to show. Add interests to your profile to find more matches!"}
-        </p>
-        <div className="flex gap-3 flex-wrap justify-center">
-          <Button onClick={() => navigate('/likes-received')}>
-            See Who Likes You
-          </Button>
-          <Button onClick={() => navigate('/likes-sent')} variant="outline">
-            Your Pending Likes
-          </Button>
-          {userInterests.length === 0 && (
-            <Button onClick={() => navigate('/profile')} variant="secondary">
-              Add Interests
-            </Button>
-          )}
-        </div>
+      <div className="container mx-auto px-4 py-8 max-w-2xl flex items-center justify-center min-h-[calc(100vh-12rem)]">
+        <EmptyState
+          icon={Heart}
+          title="You've Seen Everyone!"
+          description={
+            userInterests.length > 0
+              ? "You've swiped on everyone with matching interests. Check your 'Likes You' page to see who liked you, or visit 'Your Likes' to see who you're waiting on!"
+              : "No more profiles to show. Add interests to your profile to find more matches!"
+          }
+          action={{
+            label: "See Who Likes You",
+            onClick: () => navigate('/likes-received'),
+          }}
+          secondaryAction={{
+            label: "Your Pending Likes",
+            onClick: () => navigate('/likes-sent'),
+          }}
+        />
       </div>
     );
   }

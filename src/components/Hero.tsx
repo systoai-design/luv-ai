@@ -46,7 +46,7 @@ const Hero = ({ onOpenAuthModal }: HeroProps) => {
             <span className="text-sm">Wallet Sign-In • E2EE • Smart Matching • Real Connections</span>
           </div>
           
-          <h1 className="text-5xl md:text-7xl font-bold leading-tight">
+          <h1 className="text-5xl md:text-7xl font-display font-bold leading-tight">
             <span className="text-gradient-animated">
               The Future of Dating
             </span>
@@ -78,7 +78,7 @@ const Hero = ({ onOpenAuthModal }: HeroProps) => {
               <div className="p-3 rounded-full bg-primary/10">
                 <Heart className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="font-semibold text-lg">Smart Matching</h3>
+              <h3 className="font-display font-semibold text-lg">Smart Matching</h3>
               <p className="text-sm text-muted-foreground">AI-powered matching based on shared interests and location</p>
             </div>
 
@@ -86,7 +86,7 @@ const Hero = ({ onOpenAuthModal }: HeroProps) => {
               <div className="p-3 rounded-full bg-secondary/10">
                 <Lock className="h-6 w-6 text-secondary" />
               </div>
-              <h3 className="font-semibold text-lg">End-to-End Encrypted</h3>
+              <h3 className="font-display font-semibold text-lg">End-to-End Encrypted</h3>
               <p className="text-sm text-muted-foreground">Your conversations stay private, always</p>
             </div>
 
@@ -94,7 +94,7 @@ const Hero = ({ onOpenAuthModal }: HeroProps) => {
               <div className="p-3 rounded-full bg-accent/10">
                 <Shield className="h-6 w-6 text-accent" />
               </div>
-              <h3 className="font-semibold text-lg">True Encryption</h3>
+              <h3 className="font-display font-semibold text-lg">True Encryption</h3>
               <p className="text-sm text-muted-foreground">Bank-level encryption protects every conversation across the globe</p>
             </div>
           </div>

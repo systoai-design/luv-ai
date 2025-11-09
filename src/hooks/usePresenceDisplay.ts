@@ -76,7 +76,7 @@ export const usePresenceDisplay = (userIds: string[]) => {
 };
 
 const formatLastSeen = (lastSeen: string, online: boolean): string => {
-  if (online) return 'Active now';
+  if (online) return 'ONLINE';
   
   try {
     const lastSeenDate = new Date(lastSeen);

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { MessageCircle, Heart, Sparkles, Inbox } from "lucide-react";
 import { useMatches } from "@/hooks/useMatches";
 import { useRequestNotifications } from "@/hooks/useRequestNotifications";
+import { usePresenceDisplay } from "@/hooks/usePresenceDisplay";
 import { formatDistanceToNow } from "date-fns";
 import MatchChat from "@/components/matches/MatchChat";
 
@@ -16,6 +17,9 @@ const Messages = () => {
   const { count: requestCount } = useRequestNotifications();
   const [selectedMatch, setSelectedMatch] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  const matchUserIds = matches.map(m => m.profile.id).filter(Boolean);
+  const presenceMap = usePresenceDisplay(matchUserIds);
 
   const selectedMatchData = matches.find(m => m.id === selectedMatch);
 
@@ -104,11 +108,13 @@ const Messages = () => {
                               </Badge>
                             )}
                           </div>
-                          {match.last_message_at && (
-                            <p className="text-xs text-muted-foreground">
-                              {formatDistanceToNow(new Date(match.last_message_at), { addSuffix: true })}
-                            </p>
-                          )}
+                          <p className="text-xs text-muted-foreground">
+                            {presenceMap[match.profile.id]?.online 
+                              ? 'ONLINE' 
+                              : match.last_message_at 
+                                ? formatDistanceToNow(new Date(match.last_message_at), { addSuffix: true })
+                                : 'No messages yet'}
+                          </p>
                         </div>
                       </div>
                     );

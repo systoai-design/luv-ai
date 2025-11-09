@@ -42,6 +42,27 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
     if (!user) return;
     loadMessages();
 
+    // Mark messages as read
+    const markAsRead = async () => {
+      const { data: match } = await supabase
+        .from('matches')
+        .select('user_id_1, user_id_2')
+        .eq('id', matchId)
+        .single();
+
+      if (!match) return;
+
+      const isUser1 = match.user_id_1 === user.id;
+      const updateField = isUser1 ? 'unread_count_1' : 'unread_count_2';
+
+      await supabase
+        .from('matches')
+        .update({ [updateField]: 0 })
+        .eq('id', matchId);
+    };
+
+    markAsRead();
+
     // Subscribe to new messages
     const channel = supabase
       .channel(`match-${matchId}`)

@@ -7,7 +7,11 @@ import { smoothScrollTo } from "@/lib/smoothScroll";
 import { useActiveSection } from "@/hooks/useActiveSection";
 import { cn } from "@/lib/utils";
 
-const LandingHeader = () => {
+interface LandingHeaderProps {
+  onOpenAuthModal: () => void;
+}
+
+const LandingHeader = ({ onOpenAuthModal }: LandingHeaderProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const activeSection = useActiveSection(["discover", "marketplace", "how-it-works"]);
@@ -16,7 +20,7 @@ const LandingHeader = () => {
     if (user) {
       navigate("/home");
     } else {
-      navigate("/auth");
+      onOpenAuthModal();
     }
   };
 

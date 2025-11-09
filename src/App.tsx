@@ -29,7 +29,6 @@ import LikesSent from "./pages/LikesSent";
 import LikesReceived from "./pages/LikesReceived";
 import Connections from "./pages/Connections";
 import NotFound from "./pages/NotFound";
-import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
@@ -51,10 +50,10 @@ const App = () => (
                 </RouteTransition>
               } />
               
-              {/* Auth Page (No Layout) */}
+              {/* Auth Page - Redirect to landing with modal */}
               <Route path="/auth" element={
                 <RouteTransition>
-                  <Auth />
+                  <Index />
                 </RouteTransition>
               } />
               

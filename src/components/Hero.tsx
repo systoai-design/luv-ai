@@ -5,16 +5,20 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import ParticleBackground from "@/components/landing/ParticleBackground";
 import { smoothScrollTo } from "@/lib/smoothScroll";
-const Hero = () => {
-  const {
-    user
-  } = useAuth();
+
+interface HeroProps {
+  onOpenAuthModal: () => void;
+}
+
+const Hero = ({ onOpenAuthModal }: HeroProps) => {
+  const { user } = useAuth();
   const navigate = useNavigate();
+  
   const handleLaunchApp = () => {
     if (user) {
       navigate("/home");
     } else {
-      navigate("/auth");
+      onOpenAuthModal();
     }
   };
   return <section className="relative min-h-screen flex items-center justify-center overflow-hidden">

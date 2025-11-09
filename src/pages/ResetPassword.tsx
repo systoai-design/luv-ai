@@ -22,7 +22,7 @@ const ResetPassword = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         toast.error("Invalid or expired reset link");
-        navigate("/auth");
+        navigate("/");
       }
     });
   }, [navigate]);
@@ -57,7 +57,7 @@ const ResetPassword = () => {
       }
 
       toast.success("Password updated successfully!");
-      navigate("/auth");
+      navigate("/?showAuth=true");
     } catch (error) {
       toast.error("An unexpected error occurred");
     } finally {

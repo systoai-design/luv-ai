@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { smoothScrollTo } from "@/lib/smoothScroll";
 import { useActiveSection } from "@/hooks/useActiveSection";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 interface LandingHeaderProps {
   onOpenAuthModal: () => void;
@@ -17,6 +18,7 @@ const LandingHeader = ({ onOpenAuthModal }: LandingHeaderProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const activeSection = useActiveSection(["discover", "marketplace", "how-it-works"]);
+  const [clickedSection, setClickedSection] = useState<string | null>(null);
 
   const handleLaunchApp = () => {
     if (user) {
@@ -24,6 +26,12 @@ const LandingHeader = ({ onOpenAuthModal }: LandingHeaderProps) => {
     } else {
       onOpenAuthModal();
     }
+  };
+
+  const handleNavClick = (sectionId: string) => {
+    setClickedSection(sectionId);
+    smoothScrollTo(sectionId);
+    setTimeout(() => setClickedSection(null), 150);
   };
 
   return (
@@ -35,28 +43,31 @@ const LandingHeader = ({ onOpenAuthModal }: LandingHeaderProps) => {
         
         <nav className="hidden md:flex items-center gap-6">
           <button
-            onClick={() => smoothScrollTo("discover")}
+            onClick={() => handleNavClick("discover")}
             className={cn(
-              "text-foreground/80 hover:text-foreground transition-colors relative",
-              activeSection === "discover" && "text-foreground after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-0.5 after:bg-primary"
+              "text-foreground/80 hover:text-foreground transition-all relative",
+              activeSection === "discover" && "text-foreground after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-0.5 after:bg-primary",
+              clickedSection === "discover" && "scale-95"
             )}
           >
             Find Matches
           </button>
           <button
-            onClick={() => smoothScrollTo("marketplace")}
+            onClick={() => handleNavClick("marketplace")}
             className={cn(
-              "text-foreground/80 hover:text-foreground transition-colors relative",
-              activeSection === "marketplace" && "text-foreground after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-0.5 after:bg-primary"
+              "text-foreground/80 hover:text-foreground transition-all relative",
+              activeSection === "marketplace" && "text-foreground after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-0.5 after:bg-primary",
+              clickedSection === "marketplace" && "scale-95"
             )}
           >
             AI Companions
           </button>
           <button
-            onClick={() => smoothScrollTo("how-it-works")}
+            onClick={() => handleNavClick("how-it-works")}
             className={cn(
-              "text-foreground/80 hover:text-foreground transition-colors relative",
-              activeSection === "how-it-works" && "text-foreground after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-0.5 after:bg-primary"
+              "text-foreground/80 hover:text-foreground transition-all relative",
+              activeSection === "how-it-works" && "text-foreground after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-0.5 after:bg-primary",
+              clickedSection === "how-it-works" && "scale-95"
             )}
           >
             How It Works

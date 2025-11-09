@@ -11,7 +11,7 @@ export const smoothScrollTo = (targetId: string) => {
   const targetPosition = element.getBoundingClientRect().top + window.scrollY - headerHeight - 20;
   const startPosition = window.scrollY;
   const distance = targetPosition - startPosition;
-  const duration = 1200; // Increased duration for smoother scroll
+  const duration = 600; // Faster, snappier scroll duration
   let startTime: number | null = null;
   let animationFrame: number;
 

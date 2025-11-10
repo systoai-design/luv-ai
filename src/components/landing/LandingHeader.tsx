@@ -77,7 +77,7 @@ const LandingHeader = ({ onOpenAuthModal }: LandingHeaderProps) => {
         <div className="flex items-center gap-3">
           {/* Social Media Icons */}
           <a 
-            href="https://twitter.com/YourHandle" 
+            href="https://x.com/LuvloveAI" 
             target="_blank" 
             rel="noopener noreferrer"
             className="flex items-center justify-center h-9 w-9 rounded-full hover:bg-accent/10 transition-colors"

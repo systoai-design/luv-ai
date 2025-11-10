@@ -3,9 +3,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Image as ImageIcon, Loader2, X } from "lucide-react";
+import { Image as ImageIcon, Loader2, X, Globe, Users, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface PostComposerProps {
   userId: string;
@@ -24,6 +25,7 @@ export const PostComposer = ({
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [posting, setPosting] = useState(false);
+  const [visibility, setVisibility] = useState<"public" | "connections" | "private">("public");
 
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -86,6 +88,7 @@ export const PostComposer = ({
           user_id: userId,
           content: content.trim() || null,
           image_url: imageUrl,
+          visibility: visibility,
         });
 
       if (postError) throw postError;
@@ -140,27 +143,55 @@ export const PostComposer = ({
             )}
 
             <div className="flex items-center justify-between">
-              <label htmlFor="post-image">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  asChild
-                  disabled={posting}
-                >
-                  <div className="flex items-center gap-2 cursor-pointer">
-                    <ImageIcon className="h-4 w-4" />
-                    Photo
-                  </div>
-                </Button>
-                <input
-                  id="post-image"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleImageSelect}
-                  disabled={posting}
-                />
-              </label>
+              <div className="flex items-center gap-2">
+                <label htmlFor="post-image">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    asChild
+                    disabled={posting}
+                  >
+                    <div className="flex items-center gap-2 cursor-pointer">
+                      <ImageIcon className="h-4 w-4" />
+                      Photo
+                    </div>
+                  </Button>
+                  <input
+                    id="post-image"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageSelect}
+                    disabled={posting}
+                  />
+                </label>
+
+                <Select value={visibility} onValueChange={(value: any) => setVisibility(value)} disabled={posting}>
+                  <SelectTrigger className="w-[140px] h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="public">
+                      <div className="flex items-center gap-2">
+                        <Globe className="h-4 w-4" />
+                        <span>Public</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="connections">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        <span>Connections</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="private">
+                      <div className="flex items-center gap-2">
+                        <Lock className="h-4 w-4" />
+                        <span>Private</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
               <Button
                 onClick={handlePost}

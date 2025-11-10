@@ -2,7 +2,10 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Circle, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+import { toast } from "sonner";
 
 interface ProfileCompletionProps {
   profile: {
@@ -25,6 +28,8 @@ interface CompletionField {
 
 export const ProfileCompletion = ({ profile, onFieldClick }: ProfileCompletionProps) => {
   const [dismissed, setDismissed] = useState(false);
+  const { publicKey, connected } = useWallet();
+  const { setVisible } = useWalletModal();
 
   const fields: CompletionField[] = [
     {
@@ -70,6 +75,23 @@ export const ProfileCompletion = ({ profile, onFieldClick }: ProfileCompletionPr
   const completionPercentage = Math.round((completedCount / totalCount) * 100);
   const isComplete = completionPercentage === 100;
 
+  // Auto-close when profile is complete
+  useEffect(() => {
+    if (isComplete && !dismissed) {
+      toast.success("Profile completed! 🎉");
+      setTimeout(() => setDismissed(true), 2000);
+    }
+  }, [isComplete, dismissed]);
+
+  // Handle wallet connection when clicking wallet field
+  const handleWalletClick = () => {
+    if (!connected) {
+      setVisible(true);
+    } else if (onFieldClick) {
+      onFieldClick("wallet_address");
+    }
+  };
+
   if (isComplete || dismissed) return null;
 
   return (
@@ -101,7 +123,7 @@ export const ProfileCompletion = ({ profile, onFieldClick }: ProfileCompletionPr
           {fields.map((field) => (
             <button
               key={field.key}
-              onClick={() => onFieldClick?.(field.key)}
+              onClick={() => field.key === "wallet_address" ? handleWalletClick() : onFieldClick?.(field.key)}
               className="flex items-center gap-2 p-2 rounded-lg hover:bg-background/50 transition-colors text-left group"
             >
               {field.completed ? (

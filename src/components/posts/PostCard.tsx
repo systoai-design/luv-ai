@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Heart, MessageCircle, Trash2 } from "lucide-react";
+import { Heart, MessageCircle, Trash2, Globe, Users, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
@@ -18,6 +18,7 @@ interface PostCardProps {
     likes_count: number;
     comments_count: number;
     created_at: string;
+    visibility?: string;
   };
   profile: {
     display_name?: string;
@@ -42,6 +43,28 @@ export const PostCard = ({
 }: PostCardProps) => {
   const [showComments, setShowComments] = useState(false);
   const isOwnPost = post.user_id === currentUserId;
+
+  const getVisibilityIcon = () => {
+    switch (post.visibility) {
+      case "connections":
+        return <Users className="h-3 w-3" />;
+      case "private":
+        return <Lock className="h-3 w-3" />;
+      default:
+        return <Globe className="h-3 w-3" />;
+    }
+  };
+
+  const getVisibilityLabel = () => {
+    switch (post.visibility) {
+      case "connections":
+        return "Connections";
+      case "private":
+        return "Private";
+      default:
+        return "Public";
+    }
+  };
 
   const handleLike = async () => {
     try {
@@ -111,9 +134,15 @@ export const PostCard = ({
               {profile.username && (
                 <p className="text-sm text-muted-foreground">@{profile.username}</p>
               )}
-              <p className="text-xs text-muted-foreground">
-                {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-muted-foreground">
+                  {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                </p>
+                <Badge variant="outline" className="text-xs flex items-center gap-1">
+                  {getVisibilityIcon()}
+                  {getVisibilityLabel()}
+                </Badge>
+              </div>
             </div>
           </div>
 

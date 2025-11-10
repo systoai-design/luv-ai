@@ -1,16 +1,22 @@
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Loader2, X } from 'lucide-react';
+import { Send, Loader2, X, Mic } from 'lucide-react';
 import { MediaUpload } from './MediaUpload';
 import { MediaPreview } from './MediaPreview';
+import { VoiceRecorder } from './VoiceRecorder';
+import { AudioPlayer } from './AudioPlayer';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface ChatComposerProps {
   onSend: (payload: {
     text: string;
     mediaUrl?: string;
-    mediaType?: 'image' | 'video';
+    mediaType?: 'image' | 'video' | 'audio';
     mediaThumbnail?: string;
+    audioDuration?: number;
   }) => Promise<void>;
   disabled?: boolean;
   placeholder?: string;
@@ -25,8 +31,12 @@ export const ChatComposer = ({
 }: ChatComposerProps) => {
   const [text, setText] = useState('');
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
-  const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
+  const [mediaType, setMediaType] = useState<'image' | 'video' | 'audio' | null>(null);
+  const [audioDuration, setAudioDuration] = useState<number | undefined>(undefined);
+  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   const handleSend = async () => {
     if ((!text.trim() && !mediaUrl) || disabled || isLoading) return;
@@ -35,11 +45,13 @@ export const ChatComposer = ({
       text: text.trim(),
       mediaUrl: mediaUrl || undefined,
       mediaType: mediaType || undefined,
+      audioDuration: audioDuration,
     });
 
     setText('');
     setMediaUrl(null);
     setMediaType(null);
+    setAudioDuration(undefined);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -54,9 +66,49 @@ export const ChatComposer = ({
     setMediaType(type);
   };
 
+  const handleVoiceRecordingComplete = async (audioBlob: Blob, duration: number) => {
+    if (!user) return;
+
+    try {
+      const fileName = `voice_${Date.now()}_${user.id}.webm`;
+      const filePath = `${user.id}/${fileName}`;
+
+      const { data, error: uploadError } = await supabase.storage
+        .from('chat-media')
+        .upload(filePath, audioBlob, {
+          contentType: 'audio/webm',
+          cacheControl: '3600',
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('chat-media')
+        .getPublicUrl(data.path);
+
+      setMediaUrl(urlData.publicUrl);
+      setMediaType('audio');
+      setAudioDuration(duration);
+      setShowVoiceRecorder(false);
+
+      toast({
+        title: "Voice message ready",
+        description: "Click send to deliver your message",
+      });
+    } catch (error) {
+      console.error('Error uploading voice message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload voice message",
+        variant: "destructive",
+      });
+    }
+  };
+
   const clearMedia = () => {
     setMediaUrl(null);
     setMediaType(null);
+    setAudioDuration(undefined);
   };
 
   return (
@@ -72,7 +124,11 @@ export const ChatComposer = ({
           >
             <X className="h-4 w-4" />
           </Button>
-          <MediaPreview mediaUrl={mediaUrl} mediaType={mediaType} />
+          {mediaType === 'audio' ? (
+            <AudioPlayer audioUrl={mediaUrl} duration={audioDuration} />
+          ) : (
+            <MediaPreview mediaUrl={mediaUrl} mediaType={mediaType} />
+          )}
         </div>
       )}
 
@@ -106,7 +162,23 @@ export const ChatComposer = ({
       {/* Media Upload Controls */}
       <div className="flex items-center gap-2">
         <MediaUpload onMediaSelected={handleMediaSelected} disabled={disabled || isLoading} />
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setShowVoiceRecorder(true)}
+          disabled={disabled || isLoading}
+          className="shrink-0"
+        >
+          <Mic className="h-5 w-5" />
+        </Button>
       </div>
+
+      {/* Voice Recorder Modal */}
+      <VoiceRecorder
+        open={showVoiceRecorder}
+        onOpenChange={setShowVoiceRecorder}
+        onRecordingComplete={handleVoiceRecordingComplete}
+      />
     </div>
   );
 };

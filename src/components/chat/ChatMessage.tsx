@@ -1,5 +1,6 @@
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { MediaPreview } from './MediaPreview';
+import { AudioPlayer } from './AudioPlayer';
 import { formatDistanceToNow } from 'date-fns';
 
 interface ChatMessageProps {
@@ -7,8 +8,9 @@ interface ChatMessageProps {
   content?: string;
   createdAt: string;
   mediaUrl?: string;
-  mediaType?: 'image' | 'video';
+  mediaType?: 'image' | 'video' | 'audio';
   mediaThumbnail?: string;
+  audioDuration?: number;
   senderAvatar?: string;
   senderName?: string;
   showAvatar?: boolean;
@@ -21,6 +23,7 @@ export const ChatMessage = ({
   mediaUrl,
   mediaType,
   mediaThumbnail,
+  audioDuration,
   senderAvatar,
   senderName,
   showAvatar = true,
@@ -50,11 +53,15 @@ export const ChatMessage = ({
           )}
           {mediaUrl && mediaType && (
             <div className={content ? 'mt-2' : ''}>
-              <MediaPreview 
-                mediaUrl={mediaUrl} 
-                mediaType={mediaType}
-                thumbnail={mediaThumbnail}
-              />
+              {mediaType === 'audio' ? (
+                <AudioPlayer audioUrl={mediaUrl} duration={audioDuration} />
+              ) : (
+                <MediaPreview 
+                  mediaUrl={mediaUrl} 
+                  mediaType={mediaType}
+                  thumbnail={mediaThumbnail}
+                />
+              )}
             </div>
           )}
         </div>

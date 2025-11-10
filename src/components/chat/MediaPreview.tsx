@@ -1,14 +1,20 @@
 import { useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { AudioPlayer } from './AudioPlayer';
 
 interface MediaPreviewProps {
   mediaUrl: string;
-  mediaType: 'image' | 'video';
+  mediaType: 'image' | 'video' | 'audio';
   thumbnail?: string;
+  audioDuration?: number;
 }
 
-export const MediaPreview = ({ mediaUrl, mediaType, thumbnail }: MediaPreviewProps) => {
+export const MediaPreview = ({ mediaUrl, mediaType, thumbnail, audioDuration }: MediaPreviewProps) => {
   const [showLightbox, setShowLightbox] = useState(false);
+
+  if (mediaType === 'audio') {
+    return <AudioPlayer audioUrl={mediaUrl} duration={audioDuration} />;
+  }
 
   if (mediaType === 'image') {
     return (

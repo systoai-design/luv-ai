@@ -10,6 +10,7 @@ type Message = {
   media_url?: string;
   media_type?: string;
   media_thumbnail?: string;
+  audio_duration?: number;
 };
 
 export const useChat = (chatId: string, companionId: string) => {
@@ -21,7 +22,7 @@ export const useChat = (chatId: string, companionId: string) => {
     try {
       const { data, error } = await (supabase as any)
         .from('chat_messages')
-        .select('id, sender_type, content, created_at, media_url, media_type, media_thumbnail')
+        .select('id, sender_type, content, created_at, media_url, media_type, media_thumbnail, audio_duration')
         .eq('chat_id', chatId)
         .order('created_at', { ascending: true });
 
@@ -38,7 +39,7 @@ export const useChat = (chatId: string, companionId: string) => {
     }
   }, [chatId, toast]);
 
-  const sendMessage = useCallback(async (content: string, mediaUrl?: string | null, mediaType?: 'image' | 'video' | null) => {
+  const sendMessage = useCallback(async (content: string, mediaUrl?: string | null, mediaType?: 'image' | 'video' | 'audio' | null, audioDuration?: number) => {
     if (!content.trim() && !mediaUrl) return;
 
     // Check daily chat limit
@@ -89,6 +90,7 @@ export const useChat = (chatId: string, companionId: string) => {
       created_at: new Date().toISOString(),
       media_url: mediaUrl || undefined,
       media_type: mediaType || undefined,
+      audio_duration: audioDuration,
     };
     setMessages(prev => [...prev, userMsg]);
 
@@ -102,6 +104,7 @@ export const useChat = (chatId: string, companionId: string) => {
           content,
           media_url: mediaUrl,
           media_type: mediaType,
+          audio_duration: audioDuration,
         });
 
       if (saveError) throw saveError;

@@ -131,9 +131,10 @@ const Chat = () => {
   const handleSend = async (payload: { 
     text: string; 
     mediaUrl?: string; 
-    mediaType?: 'image' | 'video' 
+    mediaType?: 'image' | 'video' | 'audio';
+    audioDuration?: number;
   }) => {
-    await sendMessage(payload.text, payload.mediaUrl || null, payload.mediaType || null);
+    await sendMessage(payload.text, payload.mediaUrl || null, payload.mediaType || null, payload.audioDuration);
   };
 
   if (!companion || !chatId || isCheckingAccess) {
@@ -228,8 +229,9 @@ const Chat = () => {
               content={message.content}
               createdAt={message.created_at}
               mediaUrl={message.media_url}
-              mediaType={message.media_type as 'image' | 'video' | undefined}
+              mediaType={message.media_type as 'image' | 'video' | 'audio' | undefined}
               mediaThumbnail={message.media_thumbnail}
+              audioDuration={message.audio_duration}
               senderAvatar={companion.avatar_url}
               senderName={companion.name}
               showAvatar={message.sender_type === 'companion'}

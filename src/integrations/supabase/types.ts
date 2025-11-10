@@ -141,6 +141,7 @@ export type Database = {
       }
       chat_messages: {
         Row: {
+          audio_duration: number | null
           chat_id: string
           content: string
           created_at: string
@@ -151,6 +152,7 @@ export type Database = {
           sender_type: string
         }
         Insert: {
+          audio_duration?: number | null
           chat_id: string
           content: string
           created_at?: string
@@ -161,6 +163,7 @@ export type Database = {
           sender_type: string
         }
         Update: {
+          audio_duration?: number | null
           chat_id?: string
           content?: string
           created_at?: string
@@ -740,6 +743,7 @@ export type Database = {
       }
       user_messages: {
         Row: {
+          audio_duration: number | null
           content: string
           created_at: string | null
           id: string
@@ -751,6 +755,7 @@ export type Database = {
           sender_id: string
         }
         Insert: {
+          audio_duration?: number | null
           content: string
           created_at?: string | null
           id?: string
@@ -762,6 +767,7 @@ export type Database = {
           sender_id: string
         }
         Update: {
+          audio_duration?: number | null
           content?: string
           created_at?: string | null
           id?: string

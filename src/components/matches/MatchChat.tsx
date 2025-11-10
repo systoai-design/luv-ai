@@ -164,8 +164,12 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
         </div>
         <div className="flex-1">
           <h3 className="font-semibold">{otherUser.display_name || 'Anonymous'}</h3>
-          {typingUsers.length > 0 && (
+          {typingUsers.length > 0 ? (
             <p className="text-xs text-muted-foreground animate-pulse">typing...</p>
+          ) : (
+            <p className={`text-xs font-medium ${isOnline ? 'text-green-500' : 'text-muted-foreground'}`}>
+              {presenceMap[otherUser.id]?.formattedLastSeen || 'Offline'}
+            </p>
           )}
         </div>
       </div>

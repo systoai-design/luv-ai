@@ -97,7 +97,7 @@ const Friends = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="container mx-auto px-4 py-4 md:py-8 max-w-4xl">
         <Skeleton className="h-10 w-48 mb-6" />
         <Skeleton className="h-96 w-full" />
       </div>
@@ -105,7 +105,7 @@ const Friends = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="container mx-auto px-4 py-4 md:py-8 max-w-4xl">
       <h1 className="text-3xl font-bold mb-6 flex items-center gap-2">
         <Users className="h-8 w-8 text-primary" />
         Friends & Connections

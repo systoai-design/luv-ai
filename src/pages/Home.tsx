@@ -150,13 +150,13 @@ const Home = () => {
     };
   }, [user]);
   if (loading) {
-    return <div className="container mx-auto px-4 py-8 max-w-2xl">
+    return <div className="container mx-auto px-4 py-4 md:py-8 max-w-2xl">
         <div className="space-y-4">
           {[1, 2, 3].map(i => <Skeleton key={i} className="h-48 w-full" />)}
         </div>
       </div>;
   }
-  return <div className="container mx-auto px-4 py-8 relative">
+  return <div className="container mx-auto px-4 py-4 md:py-8 relative">
       {/* Gradient overlay for depth */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent pointer-events-none" />
       

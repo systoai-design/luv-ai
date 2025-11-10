@@ -32,8 +32,7 @@ const Marketplace = () => {
   };
 
   return (
-    <div className="h-screen overflow-y-auto">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="container mx-auto px-4 py-4 md:py-8 max-w-7xl">
         <div className="mb-8 flex items-start justify-between">
           <div>
             <h1 className="text-4xl font-bold mb-2 bg-gradient-primary bg-clip-text text-transparent">
@@ -55,7 +54,6 @@ const Marketplace = () => {
         ) : (
           <MarketplaceSection key={loading ? 'loading' : 'loaded'} />
         )}
-      </div>
     </div>
   );
 };

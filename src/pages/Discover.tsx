@@ -258,7 +258,7 @@ const Discover = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
+      <div className="container mx-auto px-4 py-4 md:py-8 max-w-2xl">
         <div className="mb-6 text-center">
           <Skeleton className="h-10 w-40 mx-auto mb-2" shimmer />
           <Skeleton className="h-5 w-32 mx-auto" shimmer />
@@ -291,7 +291,7 @@ const Discover = () => {
 
   if (needsInterests) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
+      <div className="container mx-auto px-4 py-4 md:py-8 max-w-2xl">
         <EmptyState
           icon={Heart}
           title="Let's Get You Started!"
@@ -311,7 +311,7 @@ const Discover = () => {
 
   if (!profiles.length) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-2xl flex items-center justify-center min-h-[calc(100vh-12rem)]">
+      <div className="container mx-auto px-4 py-4 md:py-8 max-w-2xl flex items-center justify-center min-h-[calc(100vh-12rem)]">
         <EmptyState
           icon={Heart}
           title="You've Seen Everyone!"
@@ -347,7 +347,7 @@ const Discover = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
+    <div className="container mx-auto px-4 py-4 md:py-8 max-w-2xl">
       <div className="mb-6 text-center">
         <h1 className="text-3xl font-bold mb-2">Discover</h1>
         <p className="text-muted-foreground">

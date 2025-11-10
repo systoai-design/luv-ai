@@ -10,7 +10,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { chatId, message, companionId } = await req.json();
+    const { chatId, message, companionId, mediaUrl, mediaType } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -85,6 +85,12 @@ serve(async (req) => {
     const traits = `Personality traits — romance:${companion.romance}, humor:${companion.humor}, intelligence:${companion.intelligence}, empathy:${companion.empathy}, playfulness:${companion.playfulness}, dominance:${companion.dominance}, loyalty:${companion.loyalty}, lust:${companion.lust}. Voice tone: ${companion.voice_tone || 'friendly'}.`;
     const systemPrompt = companion.system_prompt || `You are ${companion.name}. Be ${companion.voice_tone || 'friendly'}. ${traits}`;
 
+    // Build context with media awareness
+    let userMessageContent = message;
+    if (mediaUrl && mediaType) {
+      userMessageContent = `[User sent a ${mediaType}] ${message || ''}`.trim();
+    }
+
     const messages = [
       { 
         role: "system", 
@@ -94,7 +100,7 @@ serve(async (req) => {
         role: msg.sender_type === 'user' ? 'user' : 'assistant',
         content: msg.content
       })),
-      { role: "user", content: message }
+      { role: "user", content: userMessageContent }
     ];
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {

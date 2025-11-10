@@ -10,6 +10,8 @@ import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 import { usePresenceDisplay } from '@/hooks/usePresenceDisplay';
+import { MediaUpload } from '@/components/chat/MediaUpload';
+import { MediaPreview } from '@/components/chat/MediaPreview';
 
 interface Message {
   id: string;
@@ -17,6 +19,9 @@ interface Message {
   content: string;
   created_at: string;
   read: boolean;
+  media_url?: string;
+  media_type?: string;
+  media_thumbnail?: string;
 }
 
 interface MatchChatProps {
@@ -34,6 +39,8 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [mediaUrl, setMediaUrl] = useState<string | null>(null);
+  const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -140,7 +147,7 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !user || sending) return;
+    if ((!newMessage.trim() && !mediaUrl) || !user || sending) return;
 
     setSending(true);
     
@@ -155,16 +162,25 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
         match_id: matchId,
         sender_id: user.id,
         content: newMessage.trim(),
+        media_url: mediaUrl,
+        media_type: mediaType,
       });
 
       if (error) throw error;
       setNewMessage('');
+      setMediaUrl(null);
+      setMediaType(null);
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Failed to send message');
     } finally {
       setSending(false);
     }
+  };
+
+  const handleMediaSelected = (url: string, type: 'image' | 'video') => {
+    setMediaUrl(url);
+    setMediaType(type);
   };
 
   if (loading) {
@@ -208,19 +224,30 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
             return (
               <div
                 key={message.id}
-                className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
+                className={`flex ${isOwn ? 'justify-end' : 'justify-start'} animate-fade-in`}
               >
-                <div
-                  className={`max-w-[70%] rounded-2xl px-4 py-2 ${
-                    isOwn
-                      ? 'bg-gradient-primary text-primary-foreground message-active'
-                      : 'bg-muted'
-                  }`}
-                >
-                  <p className="break-words">{message.content}</p>
-                  <p className={`text-xs mt-1 ${isOwn ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                <div className="flex flex-col gap-1 max-w-[70%]">
+                  <div
+                    className={`rounded-2xl px-4 py-3 ${
+                      isOwn
+                        ? 'bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 text-white shadow-lg'
+                        : 'bg-muted'
+                    }`}
+                  >
+                    {message.content && <p className="break-words text-sm">{message.content}</p>}
+                    {message.media_url && message.media_type && (
+                      <div className="mt-2">
+                        <MediaPreview 
+                          mediaUrl={message.media_url} 
+                          mediaType={message.media_type as 'image' | 'video'}
+                          thumbnail={message.media_thumbnail}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <span className={`text-xs px-2 ${isOwn ? 'text-right' : 'text-left'} ${isOwn ? 'text-white/70' : 'text-muted-foreground'}`}>
                     {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
-                  </p>
+                  </span>
                 </div>
               </div>
             );
@@ -230,22 +257,37 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
       </div>
 
       {/* Input */}
-      <form onSubmit={handleSend} className="p-4 border-t border-border">
-        <div className="flex gap-2">
-          <Input
-            value={newMessage}
-            onChange={handleInputChange}
-            placeholder="Type a message..."
-            className="flex-1"
-            disabled={sending}
-          />
-          <Button type="submit" size="icon" disabled={sending || !newMessage.trim()}>
-            {sending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-          </Button>
+      <form onSubmit={handleSend} className="p-4 border-t border-border bg-card/50 backdrop-blur-sm">
+        <div className="flex flex-col gap-2">
+          {(mediaUrl && mediaType) && (
+            <div className="p-2 border border-border rounded-lg bg-card/50">
+              <MediaPreview mediaUrl={mediaUrl} mediaType={mediaType} />
+            </div>
+          )}
+          <div className="flex gap-2">
+            <Input
+              value={newMessage}
+              onChange={handleInputChange}
+              placeholder="Type a message..."
+              className="flex-1 bg-background/50"
+              disabled={sending}
+            />
+            <Button 
+              type="submit" 
+              size="icon" 
+              disabled={sending || (!newMessage.trim() && !mediaUrl)}
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+            >
+              {sending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            <MediaUpload onMediaSelected={handleMediaSelected} disabled={sending} />
+          </div>
         </div>
       </form>
     </Card>

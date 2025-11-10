@@ -163,19 +163,23 @@ const Home = () => {
       <div className="flex gap-8 relative z-10">
         {/* Main Feed */}
         <div className="flex-1 max-w-2xl mx-auto space-y-6 animate-fade-in">
-          {/* Empty state when no interests */}
-          {currentUserInterests.length === 0 && <EmptyInterestsState userId={user!.id} />}
+          {/* Interest prompt - show if no interests but don't hide posts */}
+          {currentUserInterests.length === 0 && (
+            <EmptyInterestsState userId={user!.id} />
+          )}
 
           {profile && <PostComposer userId={user!.id} avatarUrl={profile.avatar_url} displayName={profile.display_name} onPostCreated={() => loadPosts()} />}
 
-          {posts.length === 0 ? <div className="text-center py-12 text-muted-foreground bg-card/30 backdrop-blur-sm rounded-lg border border-border/50 shadow-card">
+          {posts.length === 0 && !loading ? (
+            <div className="text-center py-12 text-muted-foreground bg-card/30 backdrop-blur-sm rounded-lg border border-border/50 shadow-card">
               <p className="text-lg font-medium mb-2">No posts yet</p>
-              <p className="text-sm">
-                {currentUserInterests.length === 0 ? "Add interests to see personalized content!" : "Start following users to see their posts!"}
-              </p>
-            </div> : <div className="space-y-4">
+              <p className="text-sm">Be the first to share something!</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
               {posts.map((post: any) => <PostCard key={post.id} post={post} profile={post.profiles} currentUserId={user!.id} userLiked={userLikes.has(post.id)} sharedInterests={post.sharedInterests || []} onDelete={() => loadPosts()} onLikeToggle={() => loadPosts()} />)}
-            </div>}
+            </div>
+          )}
 
           {/* Infinite scroll trigger */}
           {hasMore && <div ref={observerTarget} className="flex justify-center py-4">

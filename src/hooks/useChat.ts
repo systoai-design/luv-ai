@@ -7,6 +7,9 @@ type Message = {
   sender_type: 'user' | 'companion';
   content: string;
   created_at: string;
+  media_url?: string;
+  media_type?: string;
+  media_thumbnail?: string;
 };
 
 export const useChat = (chatId: string, companionId: string) => {
@@ -18,7 +21,7 @@ export const useChat = (chatId: string, companionId: string) => {
     try {
       const { data, error } = await (supabase as any)
         .from('chat_messages')
-        .select('id, sender_type, content, created_at')
+        .select('id, sender_type, content, created_at, media_url, media_type, media_thumbnail')
         .eq('chat_id', chatId)
         .order('created_at', { ascending: true });
 
@@ -35,8 +38,8 @@ export const useChat = (chatId: string, companionId: string) => {
     }
   }, [chatId, toast]);
 
-  const sendMessage = useCallback(async (content: string) => {
-    if (!content.trim()) return;
+  const sendMessage = useCallback(async (content: string, mediaUrl?: string | null, mediaType?: 'image' | 'video' | null) => {
+    if (!content.trim() && !mediaUrl) return;
 
     // Check daily chat limit
     try {
@@ -84,6 +87,8 @@ export const useChat = (chatId: string, companionId: string) => {
       sender_type: 'user',
       content,
       created_at: new Date().toISOString(),
+      media_url: mediaUrl || undefined,
+      media_type: mediaType || undefined,
     };
     setMessages(prev => [...prev, userMsg]);
 
@@ -95,6 +100,8 @@ export const useChat = (chatId: string, companionId: string) => {
           chat_id: chatId,
           sender_type: 'user',
           content,
+          media_url: mediaUrl,
+          media_type: mediaType,
         });
 
       if (saveError) throw saveError;
@@ -119,7 +126,7 @@ export const useChat = (chatId: string, companionId: string) => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ chatId, message: content, companionId }),
+        body: JSON.stringify({ chatId, message: content, companionId, mediaUrl, mediaType }),
       });
 
       if (resp.status === 429 || resp.status === 402) {

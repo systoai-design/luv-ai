@@ -145,6 +145,9 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          media_thumbnail: string | null
+          media_type: string | null
+          media_url: string | null
           sender_type: string
         }
         Insert: {
@@ -152,6 +155,9 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          media_thumbnail?: string | null
+          media_type?: string | null
+          media_url?: string | null
           sender_type: string
         }
         Update: {
@@ -159,6 +165,9 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          media_thumbnail?: string | null
+          media_type?: string | null
+          media_url?: string | null
           sender_type?: string
         }
         Relationships: [
@@ -735,6 +744,9 @@ export type Database = {
           created_at: string | null
           id: string
           match_id: string
+          media_thumbnail: string | null
+          media_type: string | null
+          media_url: string | null
           read: boolean | null
           sender_id: string
         }
@@ -743,6 +755,9 @@ export type Database = {
           created_at?: string | null
           id?: string
           match_id: string
+          media_thumbnail?: string | null
+          media_type?: string | null
+          media_url?: string | null
           read?: boolean | null
           sender_id: string
         }
@@ -751,6 +766,9 @@ export type Database = {
           created_at?: string | null
           id?: string
           match_id?: string
+          media_thumbnail?: string | null
+          media_type?: string | null
+          media_url?: string | null
           read?: boolean | null
           sender_id?: string
         }

@@ -2,16 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Send, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { formatDistanceToNow } from 'date-fns';
 import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 import { usePresenceDisplay } from '@/hooks/usePresenceDisplay';
-import { MediaUpload } from '@/components/chat/MediaUpload';
-import { MediaPreview } from '@/components/chat/MediaPreview';
+import { ChatComposer } from '@/components/chat/ChatComposer';
+import { ChatMessage } from '@/components/chat/ChatMessage';
 
 interface Message {
   id: string;
@@ -36,13 +33,9 @@ interface MatchChatProps {
 const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [mediaUrl, setMediaUrl] = useState<string | null>(null);
-  const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const { typingUsers, setTyping } = useTypingIndicator(matchId);
   const presenceMap = usePresenceDisplay([otherUser.id]);
@@ -120,67 +113,32 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
     }, 100);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setNewMessage(value);
-
-    // Set typing indicator
-    if (value.length > 0) {
-      setTyping(true, otherUser.display_name || undefined);
-
-      // Clear previous timeout
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-
-      // Stop typing after 3 seconds of inactivity
-      typingTimeoutRef.current = setTimeout(() => {
-        setTyping(false);
-      }, 3000);
-    } else {
-      setTyping(false);
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-    }
-  };
-
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if ((!newMessage.trim() && !mediaUrl) || !user || sending) return;
+  const handleSend = async (payload: { 
+    text: string; 
+    mediaUrl?: string; 
+    mediaType?: 'image' | 'video' 
+  }) => {
+    if (!user || sending) return;
 
     setSending(true);
-    
-    // Stop typing indicator
     setTyping(false);
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
 
     try {
       const { error } = await supabase.from('user_messages').insert({
         match_id: matchId,
         sender_id: user.id,
-        content: newMessage.trim(),
-        media_url: mediaUrl,
-        media_type: mediaType,
+        content: payload.text,
+        media_url: payload.mediaUrl,
+        media_type: payload.mediaType,
       });
 
       if (error) throw error;
-      setNewMessage('');
-      setMediaUrl(null);
-      setMediaType(null);
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Failed to send message');
     } finally {
       setSending(false);
     }
-  };
-
-  const handleMediaSelected = (url: string, type: 'image' | 'video') => {
-    setMediaUrl(url);
-    setMediaType(type);
   };
 
   if (loading) {
@@ -222,34 +180,18 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
           messages.map((message) => {
             const isOwn = message.sender_id === user?.id;
             return (
-              <div
+              <ChatMessage
                 key={message.id}
-                className={`flex ${isOwn ? 'justify-end' : 'justify-start'} animate-fade-in`}
-              >
-                <div className="flex flex-col gap-1 max-w-[70%]">
-                  <div
-                    className={`rounded-2xl px-4 py-3 ${
-                      isOwn
-                        ? 'bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 text-white shadow-lg'
-                        : 'bg-muted'
-                    }`}
-                  >
-                    {message.content && <p className="break-words text-sm">{message.content}</p>}
-                    {message.media_url && message.media_type && (
-                      <div className="mt-2">
-                        <MediaPreview 
-                          mediaUrl={message.media_url} 
-                          mediaType={message.media_type as 'image' | 'video'}
-                          thumbnail={message.media_thumbnail}
-                        />
-                      </div>
-                    )}
-                  </div>
-                  <span className={`text-xs px-2 ${isOwn ? 'text-right' : 'text-left'} ${isOwn ? 'text-white/70' : 'text-muted-foreground'}`}>
-                    {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
-                  </span>
-                </div>
-              </div>
+                isOwn={isOwn}
+                content={message.content}
+                createdAt={message.created_at}
+                mediaUrl={message.media_url}
+                mediaType={message.media_type as 'image' | 'video' | undefined}
+                mediaThumbnail={message.media_thumbnail}
+                senderAvatar={otherUser.avatar_url || undefined}
+                senderName={otherUser.display_name || undefined}
+                showAvatar={false}
+              />
             );
           })
         )}
@@ -257,39 +199,14 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
       </div>
 
       {/* Input */}
-      <form onSubmit={handleSend} className="p-4 border-t border-border bg-card/50 backdrop-blur-sm">
-        <div className="flex flex-col gap-2">
-          {(mediaUrl && mediaType) && (
-            <div className="p-2 border border-border rounded-lg bg-card/50">
-              <MediaPreview mediaUrl={mediaUrl} mediaType={mediaType} />
-            </div>
-          )}
-          <div className="flex gap-2">
-            <Input
-              value={newMessage}
-              onChange={handleInputChange}
-              placeholder="Type a message..."
-              className="flex-1 bg-background/50"
-              disabled={sending}
-            />
-            <Button 
-              type="submit" 
-              size="icon" 
-              disabled={sending || (!newMessage.trim() && !mediaUrl)}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-            >
-              {sending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-          <div className="flex items-center gap-2">
-            <MediaUpload onMediaSelected={handleMediaSelected} disabled={sending} />
-          </div>
-        </div>
-      </form>
+      <div className="p-4 border-t border-border bg-card/50 backdrop-blur-sm">
+        <ChatComposer
+          onSend={handleSend}
+          placeholder="Type a message..."
+          disabled={sending}
+          isLoading={sending}
+        />
+      </div>
     </Card>
   );
 };

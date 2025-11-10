@@ -5,18 +5,16 @@ import { useChat } from '@/hooks/useChat';
 import { useCompanionAccess } from '@/hooks/useCompanionAccess';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Send, Loader2, CheckCircle } from 'lucide-react';
+import { Loader2, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PurchaseAccessDialog } from '@/components/PurchaseAccessDialog';
 import { ChatLimitBadge } from '@/components/chat/ChatLimitBadge';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletAuthModal } from '@/components/auth/WalletAuthModal';
-import { MediaUpload } from '@/components/chat/MediaUpload';
-import { MediaPreview } from '@/components/chat/MediaPreview';
-import { formatDistanceToNow } from 'date-fns';
+import { ChatComposer } from '@/components/chat/ChatComposer';
+import { ChatMessage } from '@/components/chat/ChatMessage';
 
 const Chat = () => {
   const { companionId } = useParams<{ companionId: string }>();
@@ -27,11 +25,8 @@ const Chat = () => {
   const { connected } = useWallet();
   const [chatId, setChatId] = useState<string | null>(null);
   const [companion, setCompanion] = useState<any>(null);
-  const [input, setInput] = useState('');
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
-  const [mediaUrl, setMediaUrl] = useState<string | null>(null);
-  const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { messages, isLoading, sendMessage, loadMessages } = useChat(chatId || '', companionId || '');
@@ -133,27 +128,12 @@ const Chat = () => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSend = async () => {
-    if ((!input.trim() && !mediaUrl) || isLoading) return;
-    const message = input;
-    const media = mediaUrl;
-    const type = mediaType;
-    setInput('');
-    setMediaUrl(null);
-    setMediaType(null);
-    await sendMessage(message, media, type);
-  };
-
-  const handleMediaSelected = (url: string, type: 'image' | 'video') => {
-    setMediaUrl(url);
-    setMediaType(type);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
+  const handleSend = async (payload: { 
+    text: string; 
+    mediaUrl?: string; 
+    mediaType?: 'image' | 'video' 
+  }) => {
+    await sendMessage(payload.text, payload.mediaUrl || null, payload.mediaType || null);
   };
 
   if (!companion || !chatId || isCheckingAccess) {
@@ -242,40 +222,18 @@ const Chat = () => {
       <ScrollArea className="flex-1 p-4">
         <div className="space-y-6 max-w-3xl mx-auto">
           {messages.map((message) => (
-            <div
+            <ChatMessage
               key={message.id}
-              className={`flex gap-3 ${message.sender_type === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
-            >
-              {message.sender_type === 'companion' && (
-                <Avatar className="h-8 w-8 shrink-0">
-                  <AvatarImage src={companion.avatar_url} alt={companion.name} />
-                  <AvatarFallback>{companion.name[0]}</AvatarFallback>
-                </Avatar>
-              )}
-              <div className="flex flex-col gap-1 max-w-[70%]">
-                <div
-                  className={`rounded-2xl px-4 py-3 ${
-                    message.sender_type === 'user'
-                      ? 'bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 text-white shadow-lg'
-                      : 'bg-muted text-foreground'
-                  }`}
-                >
-                  {message.content && <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>}
-                  {message.media_url && message.media_type && (
-                    <div className="mt-2">
-                      <MediaPreview 
-                        mediaUrl={message.media_url} 
-                        mediaType={message.media_type as 'image' | 'video'}
-                        thumbnail={message.media_thumbnail}
-                      />
-                    </div>
-                  )}
-                </div>
-                <span className={`text-xs px-2 ${message.sender_type === 'user' ? 'text-right' : 'text-left'} text-muted-foreground`}>
-                  {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
-                </span>
-              </div>
-            </div>
+              isOwn={message.sender_type === 'user'}
+              content={message.content}
+              createdAt={message.created_at}
+              mediaUrl={message.media_url}
+              mediaType={message.media_type as 'image' | 'video' | undefined}
+              mediaThumbnail={message.media_thumbnail}
+              senderAvatar={companion.avatar_url}
+              senderName={companion.name}
+              showAvatar={message.sender_type === 'companion'}
+            />
           ))}
           {isLoading && (
             <div className="flex gap-3 justify-start animate-fade-in">
@@ -295,36 +253,12 @@ const Chat = () => {
       {/* Input */}
       <div className="border-t border-border bg-card/50 backdrop-blur-sm p-4">
         <div className="max-w-3xl mx-auto">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-end gap-2">
-              <div className="flex-1 flex flex-col gap-2">
-                {(mediaUrl && mediaType) && (
-                  <div className="p-2 border border-border rounded-lg bg-card/50">
-                    <MediaPreview mediaUrl={mediaUrl} mediaType={mediaType} />
-                  </div>
-                )}
-                <Textarea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder={`Message ${companion.name}...`}
-                  className="min-h-[60px] resize-none bg-background/50"
-                  disabled={isLoading}
-                />
-              </div>
-              <Button 
-                onClick={handleSend} 
-                disabled={isLoading || (!input.trim() && !mediaUrl)} 
-                size="icon"
-                className="h-[60px] w-[60px] bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-              >
-                <Send className="h-5 w-5" />
-              </Button>
-            </div>
-            <div className="flex items-center gap-2">
-              <MediaUpload onMediaSelected={handleMediaSelected} disabled={isLoading} />
-            </div>
-          </div>
+          <ChatComposer
+            onSend={handleSend}
+            placeholder={`Message ${companion.name}...`}
+            disabled={false}
+            isLoading={isLoading}
+          />
         </div>
       </div>
     </div>

@@ -7,6 +7,8 @@ type Message = {
   sender_type: 'user' | 'companion';
   content: string;
   created_at: string;
+  read?: boolean;
+  listened?: boolean;
   media_url?: string;
   media_type?: string;
   media_thumbnail?: string;
@@ -22,7 +24,7 @@ export const useChat = (chatId: string, companionId: string) => {
     try {
       const { data, error } = await (supabase as any)
         .from('chat_messages')
-        .select('id, sender_type, content, created_at, media_url, media_type, media_thumbnail, audio_duration')
+        .select('id, sender_type, content, created_at, read, listened, media_url, media_type, media_thumbnail, audio_duration')
         .eq('chat_id', chatId)
         .order('created_at', { ascending: true });
 

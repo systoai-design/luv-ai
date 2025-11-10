@@ -16,9 +16,11 @@ interface Message {
   content: string;
   created_at: string;
   read: boolean;
+  listened?: boolean;
   media_url?: string;
   media_type?: string;
   media_thumbnail?: string;
+  audio_duration?: number;
 }
 
 interface MatchChatProps {
@@ -45,8 +47,24 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
     if (!user) return;
     loadMessages();
 
-    // Mark messages as read
-    const markAsRead = async () => {
+    // Mark messages as read when viewing
+    const markMessagesAsRead = async () => {
+      const unreadMessageIds = messages
+        .filter(msg => msg.sender_id !== user.id && !msg.read)
+        .map(msg => msg.id);
+        
+      if (unreadMessageIds.length === 0) return;
+      
+      await supabase
+        .from('user_messages')
+        .update({ read: true })
+        .in('id', unreadMessageIds);
+    };
+
+    markMessagesAsRead();
+
+    // Mark match-level unread count as 0
+    const markMatchAsRead = async () => {
       const { data: match } = await supabase
         .from('matches')
         .select('user_id_1, user_id_2')
@@ -64,11 +82,11 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
         .eq('id', matchId);
     };
 
-    markAsRead();
+    markMatchAsRead();
 
-    // Subscribe to new messages
-    const channel = supabase
-      .channel(`match-${matchId}`)
+    // Subscribe to new messages (INSERT events)
+    const insertChannel = supabase
+      .channel(`match-insert-${matchId}`)
       .on(
         'postgres_changes',
         {
@@ -84,10 +102,34 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
       )
       .subscribe();
 
+    // Subscribe to message updates (UPDATE events for read/listened status)
+    const updateChannel = supabase
+      .channel(`match-update-${matchId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'user_messages',
+          filter: `match_id=eq.${matchId}`,
+        },
+        (payload: any) => {
+          setMessages((prev) => 
+            prev.map(msg => 
+              msg.id === payload.new.id 
+                ? { ...msg, read: payload.new.read, listened: payload.new.listened }
+                : msg
+            )
+          );
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(insertChannel);
+      supabase.removeChannel(updateChannel);
     };
-  }, [matchId, user]);
+  }, [matchId, user, messages]);
 
   const loadMessages = async () => {
     try {
@@ -116,7 +158,8 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
   const handleSend = async (payload: { 
     text: string; 
     mediaUrl?: string; 
-    mediaType?: 'image' | 'video' 
+    mediaType?: 'image' | 'video' | 'audio';
+    audioDuration?: number;
   }) => {
     if (!user || sending) return;
 
@@ -130,6 +173,7 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
         content: payload.text,
         media_url: payload.mediaUrl,
         media_type: payload.mediaType,
+        audio_duration: payload.audioDuration,
       });
 
       if (error) throw error;
@@ -138,6 +182,17 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
       toast.error('Failed to send message');
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleAudioListened = async (messageId: string) => {
+    try {
+      await supabase
+        .from('user_messages')
+        .update({ listened: true, read: true })
+        .eq('id', messageId);
+    } catch (error) {
+      console.error('Error marking audio as listened:', error);
     }
   };
 
@@ -189,9 +244,14 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
                 isOwn={isOwn}
                 content={message.content}
                 createdAt={message.created_at}
+                read={message.read}
+                listened={message.listened}
+                messageId={message.id}
+                onMarkListened={handleAudioListened}
                 mediaUrl={message.media_url}
-                mediaType={message.media_type as 'image' | 'video' | undefined}
+                mediaType={message.media_type as 'image' | 'video' | 'audio' | undefined}
                 mediaThumbnail={message.media_thumbnail}
+                audioDuration={message.audio_duration}
                 senderAvatar={otherUser.avatar_url || undefined}
                 senderName={otherUser.display_name || undefined}
                 showAvatar={false}

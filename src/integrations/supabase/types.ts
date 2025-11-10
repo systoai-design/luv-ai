@@ -146,6 +146,7 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          listened: boolean | null
           media_thumbnail: string | null
           media_type: string | null
           media_url: string | null
@@ -157,6 +158,7 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          listened?: boolean | null
           media_thumbnail?: string | null
           media_type?: string | null
           media_url?: string | null
@@ -168,6 +170,7 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          listened?: boolean | null
           media_thumbnail?: string | null
           media_type?: string | null
           media_url?: string | null
@@ -747,6 +750,7 @@ export type Database = {
           content: string
           created_at: string | null
           id: string
+          listened: boolean | null
           match_id: string
           media_thumbnail: string | null
           media_type: string | null
@@ -759,6 +763,7 @@ export type Database = {
           content: string
           created_at?: string | null
           id?: string
+          listened?: boolean | null
           match_id: string
           media_thumbnail?: string | null
           media_type?: string | null
@@ -771,6 +776,7 @@ export type Database = {
           content?: string
           created_at?: string | null
           id?: string
+          listened?: boolean | null
           match_id?: string
           media_thumbnail?: string | null
           media_type?: string | null

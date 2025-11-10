@@ -137,6 +137,17 @@ const Chat = () => {
     await sendMessage(payload.text, payload.mediaUrl || null, payload.mediaType || null, payload.audioDuration);
   };
 
+  const handleAudioListened = async (messageId: string) => {
+    try {
+      await supabase
+        .from('chat_messages')
+        .update({ listened: true })
+        .eq('id', messageId);
+    } catch (error) {
+      console.error('Error marking audio as listened:', error);
+    }
+  };
+
   if (!companion || !chatId || isCheckingAccess) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -228,6 +239,10 @@ const Chat = () => {
               isOwn={message.sender_type === 'user'}
               content={message.content}
               createdAt={message.created_at}
+              read={message.read}
+              listened={message.listened}
+              messageId={message.id}
+              onMarkListened={handleAudioListened}
               mediaUrl={message.media_url}
               mediaType={message.media_type as 'image' | 'video' | 'audio' | undefined}
               mediaThumbnail={message.media_thumbnail}

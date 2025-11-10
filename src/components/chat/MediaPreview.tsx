@@ -7,13 +7,32 @@ interface MediaPreviewProps {
   mediaType: 'image' | 'video' | 'audio';
   thumbnail?: string;
   audioDuration?: number;
+  messageId?: string;
+  onPlaybackStarted?: (messageId: string) => void;
+  hasBeenListened?: boolean;
 }
 
-export const MediaPreview = ({ mediaUrl, mediaType, thumbnail, audioDuration }: MediaPreviewProps) => {
+export const MediaPreview = ({ 
+  mediaUrl, 
+  mediaType, 
+  thumbnail, 
+  audioDuration,
+  messageId,
+  onPlaybackStarted,
+  hasBeenListened
+}: MediaPreviewProps) => {
   const [showLightbox, setShowLightbox] = useState(false);
 
   if (mediaType === 'audio') {
-    return <AudioPlayer audioUrl={mediaUrl} duration={audioDuration} />;
+    return (
+      <AudioPlayer 
+        audioUrl={mediaUrl} 
+        duration={audioDuration}
+        messageId={messageId}
+        onPlaybackStarted={onPlaybackStarted}
+        hasBeenListened={hasBeenListened}
+      />
+    );
   }
 
   if (mediaType === 'image') {

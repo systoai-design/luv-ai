@@ -1,12 +1,17 @@
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { MediaPreview } from './MediaPreview';
 import { AudioPlayer } from './AudioPlayer';
+import { MessageStatusIndicator } from './MessageStatusIndicator';
 import { formatDistanceToNow } from 'date-fns';
 
 interface ChatMessageProps {
   isOwn: boolean;
   content?: string;
   createdAt: string;
+  read?: boolean;
+  listened?: boolean;
+  messageId?: string;
+  onMarkListened?: (messageId: string) => void;
   mediaUrl?: string;
   mediaType?: 'image' | 'video' | 'audio';
   mediaThumbnail?: string;
@@ -20,6 +25,10 @@ export const ChatMessage = ({
   isOwn,
   content,
   createdAt,
+  read,
+  listened,
+  messageId,
+  onMarkListened,
   mediaUrl,
   mediaType,
   mediaThumbnail,
@@ -54,7 +63,13 @@ export const ChatMessage = ({
           {mediaUrl && mediaType && (
             <div className={content ? 'mt-2' : ''}>
               {mediaType === 'audio' ? (
-                <AudioPlayer audioUrl={mediaUrl} duration={audioDuration} />
+                <AudioPlayer 
+                  audioUrl={mediaUrl} 
+                  duration={audioDuration}
+                  messageId={messageId}
+                  onPlaybackStarted={onMarkListened}
+                  hasBeenListened={listened}
+                />
               ) : (
                 <MediaPreview 
                   mediaUrl={mediaUrl} 
@@ -65,11 +80,17 @@ export const ChatMessage = ({
             </div>
           )}
         </div>
-        <span 
-          className={`text-xs px-2 ${isOwn ? 'text-right' : 'text-left'} text-muted-foreground`}
-        >
-          {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
-        </span>
+        <div className={`flex items-center gap-1.5 px-2 ${isOwn ? 'justify-end' : 'justify-start'}`}>
+          <span className="text-xs text-muted-foreground">
+            {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
+          </span>
+          <MessageStatusIndicator 
+            read={read || false} 
+            listened={listened || false}
+            mediaType={mediaType}
+            isOwn={isOwn}
+          />
+        </div>
       </div>
     </div>
   );

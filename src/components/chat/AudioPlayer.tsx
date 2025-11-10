@@ -6,12 +6,22 @@ import { Slider } from '@/components/ui/slider';
 interface AudioPlayerProps {
   audioUrl: string;
   duration?: number;
+  messageId?: string;
+  onPlaybackStarted?: (messageId: string) => void;
+  hasBeenListened?: boolean;
 }
 
-export const AudioPlayer = ({ audioUrl, duration }: AudioPlayerProps) => {
+export const AudioPlayer = ({ 
+  audioUrl, 
+  duration, 
+  messageId, 
+  onPlaybackStarted,
+  hasBeenListened 
+}: AudioPlayerProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [audioDuration, setAudioDuration] = useState(duration || 0);
+  const [hasStartedOnce, setHasStartedOnce] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -44,6 +54,11 @@ export const AudioPlayer = ({ audioUrl, duration }: AudioPlayerProps) => {
       audioRef.current.pause();
     } else {
       audioRef.current.play();
+      // Mark as listened when playback starts for the first time
+      if (messageId && onPlaybackStarted && !hasStartedOnce) {
+        setHasStartedOnce(true);
+        onPlaybackStarted(messageId);
+      }
     }
     setIsPlaying(!isPlaying);
   };
@@ -76,7 +91,7 @@ export const AudioPlayer = ({ audioUrl, duration }: AudioPlayerProps) => {
         size="icon"
         variant="ghost"
         onClick={togglePlayback}
-        className="shrink-0 h-10 w-10"
+        className={`shrink-0 h-10 w-10 ${hasBeenListened ? 'text-blue-500' : ''}`}
       >
         {isPlaying ? (
           <Pause className="h-5 w-5" />

@@ -150,6 +150,7 @@ export type Database = {
           media_thumbnail: string | null
           media_type: string | null
           media_url: string | null
+          reply_to_message_id: string | null
           sender_type: string
         }
         Insert: {
@@ -162,6 +163,7 @@ export type Database = {
           media_thumbnail?: string | null
           media_type?: string | null
           media_url?: string | null
+          reply_to_message_id?: string | null
           sender_type: string
         }
         Update: {
@@ -174,6 +176,7 @@ export type Database = {
           media_thumbnail?: string | null
           media_type?: string | null
           media_url?: string | null
+          reply_to_message_id?: string | null
           sender_type?: string
         }
         Relationships: [
@@ -182,6 +185,13 @@ export type Database = {
             columns: ["chat_id"]
             isOneToOne: false
             referencedRelation: "user_chats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_reply_to_message_id_fkey"
+            columns: ["reply_to_message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
             referencedColumns: ["id"]
           },
         ]
@@ -756,6 +766,7 @@ export type Database = {
           media_type: string | null
           media_url: string | null
           read: boolean | null
+          reply_to_message_id: string | null
           sender_id: string
         }
         Insert: {
@@ -769,6 +780,7 @@ export type Database = {
           media_type?: string | null
           media_url?: string | null
           read?: boolean | null
+          reply_to_message_id?: string | null
           sender_id: string
         }
         Update: {
@@ -782,6 +794,7 @@ export type Database = {
           media_type?: string | null
           media_url?: string | null
           read?: boolean | null
+          reply_to_message_id?: string | null
           sender_id?: string
         }
         Relationships: [
@@ -790,6 +803,13 @@ export type Database = {
             columns: ["match_id"]
             isOneToOne: false
             referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_messages_reply_to_message_id_fkey"
+            columns: ["reply_to_message_id"]
+            isOneToOne: false
+            referencedRelation: "user_messages"
             referencedColumns: ["id"]
           },
         ]

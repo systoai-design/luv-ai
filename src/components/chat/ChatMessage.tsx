@@ -2,8 +2,9 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { MediaPreview } from './MediaPreview';
 import { AudioPlayer } from './AudioPlayer';
 import { MessageStatusIndicator } from './MessageStatusIndicator';
+import { QuotedMessage } from './QuotedMessage';
 import { formatDistanceToNow } from 'date-fns';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Reply } from 'lucide-react';
 import { useSwipeToDelete } from '@/hooks/useSwipeToDelete';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
@@ -22,6 +23,7 @@ interface ChatMessageProps {
   messageId?: string;
   onMarkListened?: (messageId: string) => void;
   onDelete?: (messageId: string) => void;
+  onReply?: (messageId: string) => void;
   mediaUrl?: string;
   mediaType?: 'image' | 'video' | 'audio';
   mediaThumbnail?: string;
@@ -29,6 +31,12 @@ interface ChatMessageProps {
   senderAvatar?: string;
   senderName?: string;
   showAvatar?: boolean;
+  quotedMessage?: {
+    content?: string;
+    mediaType?: 'image' | 'video' | 'audio';
+    senderName?: string;
+    isOwn?: boolean;
+  };
 }
 
 export const ChatMessage = ({
@@ -40,6 +48,7 @@ export const ChatMessage = ({
   messageId,
   onMarkListened,
   onDelete,
+  onReply,
   mediaUrl,
   mediaType,
   mediaThumbnail,
@@ -47,12 +56,19 @@ export const ChatMessage = ({
   senderAvatar,
   senderName,
   showAvatar = true,
+  quotedMessage,
 }: ChatMessageProps) => {
   const isMobile = useIsMobile();
 
   const handleDelete = () => {
     if (messageId && onDelete) {
       onDelete(messageId);
+    }
+  };
+
+  const handleReply = () => {
+    if (messageId && onReply) {
+      onReply(messageId);
     }
   };
 
@@ -86,6 +102,14 @@ export const ChatMessage = ({
               : 'bg-muted text-foreground'
           }`}
         >
+          {quotedMessage && (
+            <QuotedMessage 
+              content={quotedMessage.content}
+              mediaType={quotedMessage.mediaType}
+              senderName={quotedMessage.senderName}
+              isOwn={quotedMessage.isOwn}
+            />
+          )}
           {content && (
             <p className="text-sm whitespace-pre-wrap break-words">
               {content}
@@ -139,19 +163,36 @@ export const ChatMessage = ({
   );
 
   // Desktop: Wrap with context menu, Mobile: just show swipe
-  if (!isMobile && isOwn && onDelete && messageId) {
+  if (!isMobile && messageId && (onDelete || onReply)) {
     return (
       <ContextMenu>
         <ContextMenuTrigger asChild>
           {messageContent}
         </ContextMenuTrigger>
         <ContextMenuContent>
-          <ContextMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete Message
-          </ContextMenuItem>
+          {onReply && (
+            <ContextMenuItem onClick={handleReply}>
+              <Reply className="h-4 w-4 mr-2" />
+              Reply
+            </ContextMenuItem>
+          )}
+          {isOwn && onDelete && (
+            <ContextMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Message
+            </ContextMenuItem>
+          )}
         </ContextMenuContent>
       </ContextMenu>
+    );
+  }
+
+  // Mobile: Wrap with tap handler for reply
+  if (isMobile && messageId && onReply) {
+    return (
+      <div onClick={handleReply}>
+        {messageContent}
+      </div>
     );
   }
 

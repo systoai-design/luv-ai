@@ -21,6 +21,12 @@ interface Message {
   media_type?: string;
   media_thumbnail?: string;
   audio_duration?: number;
+  reply_to_message_id?: string;
+  quoted_message?: {
+    content?: string;
+    media_type?: string;
+    sender_id?: string;
+  };
 }
 
 interface MatchChatProps {
@@ -37,6 +43,7 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const { typingUsers, setTyping } = useTypingIndicator(matchId);
@@ -135,7 +142,14 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
     try {
       const { data, error } = await supabase
         .from('user_messages')
-        .select('*')
+        .select(`
+          *,
+          quoted_message:reply_to_message_id (
+            content,
+            media_type,
+            sender_id
+          )
+        `)
         .eq('match_id', matchId)
         .order('created_at', { ascending: true });
 
@@ -160,6 +174,7 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
     mediaUrl?: string; 
     mediaType?: 'image' | 'video' | 'audio';
     audioDuration?: number;
+    replyToMessageId?: string;
   }) => {
     if (!user || sending) return;
 
@@ -174,9 +189,11 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
         media_url: payload.mediaUrl,
         media_type: payload.mediaType,
         audio_duration: payload.audioDuration,
+        reply_to_message_id: payload.replyToMessageId,
       });
 
       if (error) throw error;
+      setReplyToMessage(null);
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Failed to send message');
@@ -214,6 +231,13 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
       toast.error('Failed to delete message');
       // Reload messages on error
       loadMessages();
+    }
+  };
+
+  const handleReplyToMessage = (messageId: string) => {
+    const message = messages.find(msg => msg.id === messageId);
+    if (message) {
+      setReplyToMessage(message);
     }
   };
 
@@ -259,6 +283,13 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
         ) : (
           messages.map((message) => {
             const isOwn = message.sender_id === user?.id;
+            const quotedMsg = message.quoted_message ? {
+              content: message.quoted_message.content,
+              mediaType: message.quoted_message.media_type as 'image' | 'video' | 'audio' | undefined,
+              senderName: message.quoted_message.sender_id === user?.id ? 'You' : otherUser.display_name || 'User',
+              isOwn: message.quoted_message.sender_id === user?.id,
+            } : undefined;
+
             return (
               <ChatMessage
                 key={message.id}
@@ -270,6 +301,7 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
                 messageId={message.id}
                 onMarkListened={handleAudioListened}
                 onDelete={isOwn ? handleDeleteMessage : undefined}
+                onReply={handleReplyToMessage}
                 mediaUrl={message.media_url}
                 mediaType={message.media_type as 'image' | 'video' | 'audio' | undefined}
                 mediaThumbnail={message.media_thumbnail}
@@ -277,6 +309,7 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
                 senderAvatar={otherUser.avatar_url || undefined}
                 senderName={otherUser.display_name || undefined}
                 showAvatar={false}
+                quotedMessage={quotedMsg}
               />
             );
           })
@@ -291,6 +324,14 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
           placeholder="Type a message..."
           disabled={sending}
           isLoading={sending}
+          replyToMessage={replyToMessage ? {
+            id: replyToMessage.id,
+            content: replyToMessage.content,
+            mediaType: replyToMessage.media_type as 'image' | 'video' | 'audio' | undefined,
+            senderName: replyToMessage.sender_id === user?.id ? 'You' : otherUser.display_name || 'User',
+            isOwn: replyToMessage.sender_id === user?.id,
+          } : null}
+          onCancelReply={() => setReplyToMessage(null)}
         />
       </div>
     </Card>

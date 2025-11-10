@@ -13,6 +13,7 @@ type Message = {
   media_type?: string;
   media_thumbnail?: string;
   audio_duration?: number;
+  reply_to_message_id?: string;
 };
 
 export const useChat = (chatId: string, companionId: string) => {
@@ -41,7 +42,7 @@ export const useChat = (chatId: string, companionId: string) => {
     }
   }, [chatId, toast]);
 
-  const sendMessage = useCallback(async (content: string, mediaUrl?: string | null, mediaType?: 'image' | 'video' | 'audio' | null, audioDuration?: number) => {
+  const sendMessage = useCallback(async (content: string, mediaUrl?: string | null, mediaType?: 'image' | 'video' | 'audio' | null, audioDuration?: number, replyToMessageId?: string) => {
     if (!content.trim() && !mediaUrl) return;
 
     // Check daily chat limit
@@ -93,6 +94,7 @@ export const useChat = (chatId: string, companionId: string) => {
       media_url: mediaUrl || undefined,
       media_type: mediaType || undefined,
       audio_duration: audioDuration,
+      reply_to_message_id: replyToMessageId,
     };
     setMessages(prev => [...prev, userMsg]);
 
@@ -107,6 +109,7 @@ export const useChat = (chatId: string, companionId: string) => {
           media_url: mediaUrl,
           media_type: mediaType,
           audio_duration: audioDuration,
+          reply_to_message_id: replyToMessageId,
         });
 
       if (saveError) throw saveError;

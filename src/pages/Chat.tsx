@@ -29,6 +29,7 @@ const Chat = () => {
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [localMessages, setLocalMessages] = useState<any[]>([]);
+  const [replyToMessage, setReplyToMessage] = useState<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { messages, isLoading, sendMessage, loadMessages } = useChat(chatId || '', companionId || '');
@@ -139,8 +140,17 @@ const Chat = () => {
     mediaUrl?: string; 
     mediaType?: 'image' | 'video' | 'audio';
     audioDuration?: number;
+    replyToMessageId?: string;
   }) => {
-    await sendMessage(payload.text, payload.mediaUrl || null, payload.mediaType || null, payload.audioDuration);
+    await sendMessage(payload.text, payload.mediaUrl || null, payload.mediaType || null, payload.audioDuration, payload.replyToMessageId);
+    setReplyToMessage(null);
+  };
+
+  const handleReplyToMessage = (messageId: string) => {
+    const message = localMessages.find(msg => msg.id === messageId);
+    if (message) {
+      setReplyToMessage(message);
+    }
   };
 
   const handleAudioListened = async (messageId: string) => {
@@ -273,6 +283,7 @@ const Chat = () => {
                 messageId={message.id}
                 onMarkListened={handleAudioListened}
                 onDelete={isOwn ? handleDeleteMessage : undefined}
+                onReply={handleReplyToMessage}
                 mediaUrl={message.media_url}
                 mediaType={message.media_type as 'image' | 'video' | 'audio' | undefined}
                 mediaThumbnail={message.media_thumbnail}
@@ -306,6 +317,14 @@ const Chat = () => {
             placeholder={`Message ${companion.name}...`}
             disabled={false}
             isLoading={isLoading}
+            replyToMessage={replyToMessage ? {
+              id: replyToMessage.id,
+              content: replyToMessage.content,
+              mediaType: replyToMessage.media_type,
+              senderName: replyToMessage.sender_type === 'user' ? 'You' : companion.name,
+              isOwn: replyToMessage.sender_type === 'user',
+            } : null}
+            onCancelReply={() => setReplyToMessage(null)}
           />
         </div>
       </div>

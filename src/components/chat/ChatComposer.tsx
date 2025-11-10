@@ -6,6 +6,7 @@ import { MediaUpload } from './MediaUpload';
 import { MediaPreview } from './MediaPreview';
 import { VoiceRecorder } from './VoiceRecorder';
 import { AudioPlayer } from './AudioPlayer';
+import { QuotedMessage } from './QuotedMessage';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -17,17 +18,28 @@ interface ChatComposerProps {
     mediaType?: 'image' | 'video' | 'audio';
     mediaThumbnail?: string;
     audioDuration?: number;
+    replyToMessageId?: string;
   }) => Promise<void>;
   disabled?: boolean;
   placeholder?: string;
   isLoading?: boolean;
+  replyToMessage?: {
+    id: string;
+    content?: string;
+    mediaType?: 'image' | 'video' | 'audio';
+    senderName?: string;
+    isOwn?: boolean;
+  } | null;
+  onCancelReply?: () => void;
 }
 
 export const ChatComposer = ({ 
   onSend, 
   disabled, 
   placeholder = "Type a message...",
-  isLoading = false
+  isLoading = false,
+  replyToMessage,
+  onCancelReply
 }: ChatComposerProps) => {
   const [text, setText] = useState('');
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
@@ -46,12 +58,14 @@ export const ChatComposer = ({
       mediaUrl: mediaUrl || undefined,
       mediaType: mediaType || undefined,
       audioDuration: audioDuration,
+      replyToMessageId: replyToMessage?.id,
     });
 
     setText('');
     setMediaUrl(null);
     setMediaType(null);
     setAudioDuration(undefined);
+    onCancelReply?.();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -113,6 +127,26 @@ export const ChatComposer = ({
 
   return (
     <div className="flex flex-col gap-2">
+      {/* Reply Preview */}
+      {replyToMessage && (
+        <div className="relative">
+          <QuotedMessage
+            content={replyToMessage.content}
+            mediaType={replyToMessage.mediaType}
+            senderName={replyToMessage.senderName}
+            isOwn={replyToMessage.isOwn}
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-1 right-1 h-6 w-6"
+            onClick={onCancelReply}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+
       {/* Media Preview */}
       {mediaUrl && mediaType && (
         <div className="relative p-2 border border-border rounded-lg bg-card/50">

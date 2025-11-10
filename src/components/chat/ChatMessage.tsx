@@ -3,16 +3,26 @@ import { MediaPreview } from './MediaPreview';
 import { AudioPlayer } from './AudioPlayer';
 import { MessageStatusIndicator } from './MessageStatusIndicator';
 import { QuotedMessage } from './QuotedMessage';
+import { MessageReactions } from './MessageReactions';
+import { ReactionPicker } from './ReactionPicker';
 import { formatDistanceToNow } from 'date-fns';
 import { Trash2, Reply } from 'lucide-react';
 import { useSwipeToDelete } from '@/hooks/useSwipeToDelete';
+import { useLongPress } from '@/hooks/useLongPress';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useState, useRef } from 'react';
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
+
+interface Reaction {
+  emoji: string;
+  count: number;
+  hasReacted: boolean;
+}
 
 interface ChatMessageProps {
   isOwn: boolean;
@@ -24,6 +34,7 @@ interface ChatMessageProps {
   onMarkListened?: (messageId: string) => void;
   onDelete?: (messageId: string) => void;
   onReply?: (messageId: string) => void;
+  onReact?: (messageId: string, emoji: string) => void;
   mediaUrl?: string;
   mediaType?: 'image' | 'video' | 'audio';
   mediaThumbnail?: string;
@@ -31,6 +42,7 @@ interface ChatMessageProps {
   senderAvatar?: string;
   senderName?: string;
   showAvatar?: boolean;
+  reactions?: Reaction[];
   quotedMessage?: {
     content?: string;
     mediaType?: 'image' | 'video' | 'audio';
@@ -49,6 +61,7 @@ export const ChatMessage = ({
   onMarkListened,
   onDelete,
   onReply,
+  onReact,
   mediaUrl,
   mediaType,
   mediaThumbnail,
@@ -56,9 +69,13 @@ export const ChatMessage = ({
   senderAvatar,
   senderName,
   showAvatar = true,
+  reactions = [],
   quotedMessage,
 }: ChatMessageProps) => {
   const isMobile = useIsMobile();
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
+  const [pickerPosition, setPickerPosition] = useState({ x: 0, y: 0 });
+  const messageRef = useRef<HTMLDivElement>(null);
 
   const handleDelete = () => {
     if (messageId && onDelete) {
@@ -71,6 +88,36 @@ export const ChatMessage = ({
       onReply(messageId);
     }
   };
+
+  const handleShowReactionPicker = () => {
+    if (messageRef.current) {
+      const rect = messageRef.current.getBoundingClientRect();
+      setPickerPosition({
+        x: rect.left + rect.width / 2,
+        y: rect.top,
+      });
+      setShowReactionPicker(true);
+    }
+  };
+
+  const handleReaction = (emoji: string) => {
+    if (messageId && onReact) {
+      onReact(messageId, emoji);
+    }
+    setShowReactionPicker(false);
+  };
+
+  const handleReactionClick = (emoji: string) => {
+    if (messageId && onReact) {
+      onReact(messageId, emoji);
+    }
+  };
+
+  const longPressHandlers = useLongPress({
+    onLongPress: handleShowReactionPicker,
+    onClick: isMobile ? handleReply : undefined,
+    delay: 500,
+  });
 
   const { swipeX, handlers } = useSwipeToDelete({
     onDelete: handleDelete,
@@ -88,12 +135,14 @@ export const ChatMessage = ({
         </Avatar>
       )}
       <div 
+        ref={messageRef}
         className="flex flex-col gap-1 max-w-[70%] relative"
         style={isMobile && isOwn ? {
           transform: `translateX(${swipeX}px)`,
           transition: swipeX === 0 ? 'transform 0.3s ease-out' : 'none',
         } : undefined}
         {...(isMobile && isOwn ? handlers : {})}
+        {...longPressHandlers}
       >
         <div
           className={`rounded-2xl px-4 py-3 ${
@@ -146,6 +195,12 @@ export const ChatMessage = ({
             isOwn={isOwn}
           />
         </div>
+
+        <MessageReactions
+          reactions={reactions}
+          onReactionClick={handleReactionClick}
+          isOwn={isOwn}
+        />
         
         {/* Delete indicator for swipe */}
         {isMobile && isOwn && swipeX < -20 && (
@@ -159,10 +214,16 @@ export const ChatMessage = ({
           </div>
         )}
       </div>
+      
+      <ReactionPicker
+        isOpen={showReactionPicker}
+        onSelect={handleReaction}
+        position={pickerPosition}
+      />
     </div>
   );
 
-  // Desktop: Wrap with context menu, Mobile: just show swipe
+  // Desktop: Wrap with context menu
   if (!isMobile && messageId && (onDelete || onReply)) {
     return (
       <ContextMenu>
@@ -184,15 +245,6 @@ export const ChatMessage = ({
           )}
         </ContextMenuContent>
       </ContextMenu>
-    );
-  }
-
-  // Mobile: Wrap with tap handler for reply
-  if (isMobile && messageId && onReply) {
-    return (
-      <div onClick={handleReply}>
-        {messageContent}
-      </div>
     );
   }
 

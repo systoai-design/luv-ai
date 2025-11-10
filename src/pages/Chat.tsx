@@ -153,6 +153,44 @@ const Chat = () => {
     }
   };
 
+  const handleReact = async (messageId: string, emoji: string) => {
+    if (!user) return;
+
+    try {
+      // Check if user already reacted with this emoji
+      const { data: existing } = await supabase
+        .from('chat_message_reactions')
+        .select('id')
+        .eq('message_id', messageId)
+        .eq('user_id', user.id)
+        .eq('emoji', emoji)
+        .maybeSingle();
+
+      if (existing) {
+        // Remove reaction
+        await supabase
+          .from('chat_message_reactions')
+          .delete()
+          .eq('id', existing.id);
+      } else {
+        // Add reaction
+        await supabase
+          .from('chat_message_reactions')
+          .insert({
+            message_id: messageId,
+            user_id: user.id,
+            emoji,
+          });
+      }
+
+      // Reload messages to update reactions
+      await loadMessages();
+    } catch (error) {
+      console.error('Error handling reaction:', error);
+      sonnerToast.error('Failed to react to message');
+    }
+  };
+
   const handleAudioListened = async (messageId: string) => {
     try {
       await supabase
@@ -272,6 +310,13 @@ const Chat = () => {
         <div className="space-y-6 max-w-3xl mx-auto">
           {localMessages.map((message) => {
             const isOwn = message.sender_type === 'user';
+            const quotedMsg = message.quoted_message ? {
+              content: message.quoted_message.content,
+              mediaType: message.quoted_message.media_type as 'image' | 'video' | 'audio' | undefined,
+              senderName: message.quoted_message.sender_type === 'user' ? 'You' : companion.name,
+              isOwn: message.quoted_message.sender_type === 'user',
+            } : undefined;
+
             return (
               <ChatMessage
                 key={message.id}
@@ -284,6 +329,7 @@ const Chat = () => {
                 onMarkListened={handleAudioListened}
                 onDelete={isOwn ? handleDeleteMessage : undefined}
                 onReply={handleReplyToMessage}
+                onReact={handleReact}
                 mediaUrl={message.media_url}
                 mediaType={message.media_type as 'image' | 'video' | 'audio' | undefined}
                 mediaThumbnail={message.media_thumbnail}
@@ -291,6 +337,8 @@ const Chat = () => {
                 senderAvatar={companion.avatar_url}
                 senderName={companion.name}
                 showAvatar={message.sender_type === 'companion'}
+                reactions={message.reactions || []}
+                quotedMessage={quotedMsg}
               />
             );
           })}

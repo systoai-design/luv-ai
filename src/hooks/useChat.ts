@@ -2,6 +2,12 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+interface Reaction {
+  emoji: string;
+  count: number;
+  hasReacted: boolean;
+}
+
 type Message = {
   id: string;
   sender_type: 'user' | 'companion';
@@ -14,6 +20,12 @@ type Message = {
   media_thumbnail?: string;
   audio_duration?: number;
   reply_to_message_id?: string;
+  reactions?: Reaction[];
+  quoted_message?: {
+    content?: string;
+    media_type?: string;
+    sender_type?: string;
+  };
 };
 
 export const useChat = (chatId: string, companionId: string) => {
@@ -23,15 +35,67 @@ export const useChat = (chatId: string, companionId: string) => {
 
   const loadMessages = useCallback(async () => {
     try {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) return;
+
       const { data, error } = await (supabase as any)
         .from('chat_messages')
-        .select('id, sender_type, content, created_at, read, listened, media_url, media_type, media_thumbnail, audio_duration')
+        .select(`
+          id, 
+          sender_type, 
+          content, 
+          created_at, 
+          read, 
+          listened, 
+          media_url, 
+          media_type, 
+          media_thumbnail, 
+          audio_duration,
+          reply_to_message_id,
+          quoted_message:reply_to_message_id (
+            content,
+            media_type,
+            sender_type
+          )
+        `)
         .eq('chat_id', chatId)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
 
-      setMessages(data || []);
+      // Load reactions for all messages
+      const messageIds = data?.map((m: any) => m.id) || [];
+      const { data: reactionsData } = await supabase
+        .from('chat_message_reactions')
+        .select('*')
+        .in('message_id', messageIds);
+
+      // Group reactions by message and aggregate
+      const reactionsByMessage: Record<string, Reaction[]> = {};
+      reactionsData?.forEach((reaction: any) => {
+        if (!reactionsByMessage[reaction.message_id]) {
+          reactionsByMessage[reaction.message_id] = [];
+        }
+        
+        const existing = reactionsByMessage[reaction.message_id].find(r => r.emoji === reaction.emoji);
+        if (existing) {
+          existing.count++;
+          if (reaction.user_id === user.user.id) existing.hasReacted = true;
+        } else {
+          reactionsByMessage[reaction.message_id].push({
+            emoji: reaction.emoji,
+            count: 1,
+            hasReacted: reaction.user_id === user.user.id,
+          });
+        }
+      });
+
+      const messagesWithReactions = data?.map((msg: any) => ({
+        ...msg,
+        reactions: reactionsByMessage[msg.id] || [],
+      }));
+
+      setMessages(messagesWithReactions || []);
     } catch (error) {
       console.error('Error loading messages:', error);
       toast({

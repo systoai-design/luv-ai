@@ -10,6 +10,12 @@ import { usePresenceDisplay } from '@/hooks/usePresenceDisplay';
 import { ChatComposer } from '@/components/chat/ChatComposer';
 import { ChatMessage } from '@/components/chat/ChatMessage';
 
+interface Reaction {
+  emoji: string;
+  count: number;
+  hasReacted: boolean;
+}
+
 interface Message {
   id: string;
   sender_id: string;
@@ -22,6 +28,7 @@ interface Message {
   media_thumbnail?: string;
   audio_duration?: number;
   reply_to_message_id?: string;
+  reactions?: Reaction[];
   quoted_message?: {
     content?: string;
     media_type?: string;
@@ -139,6 +146,8 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
   }, [matchId, user, messages]);
 
   const loadMessages = async () => {
+    if (!user) return;
+    
     try {
       const { data, error } = await supabase
         .from('user_messages')
@@ -154,7 +163,40 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setMessages(data || []);
+
+      // Load reactions for all messages
+      const messageIds = data?.map(m => m.id) || [];
+      const { data: reactionsData } = await supabase
+        .from('message_reactions')
+        .select('*')
+        .in('message_id', messageIds);
+
+      // Group reactions by message and aggregate
+      const reactionsByMessage: Record<string, Reaction[]> = {};
+      reactionsData?.forEach((reaction) => {
+        if (!reactionsByMessage[reaction.message_id]) {
+          reactionsByMessage[reaction.message_id] = [];
+        }
+        
+        const existing = reactionsByMessage[reaction.message_id].find(r => r.emoji === reaction.emoji);
+        if (existing) {
+          existing.count++;
+          if (reaction.user_id === user.id) existing.hasReacted = true;
+        } else {
+          reactionsByMessage[reaction.message_id].push({
+            emoji: reaction.emoji,
+            count: 1,
+            hasReacted: reaction.user_id === user.id,
+          });
+        }
+      });
+
+      const messagesWithReactions = data?.map(msg => ({
+        ...msg,
+        reactions: reactionsByMessage[msg.id] || [],
+      }));
+
+      setMessages(messagesWithReactions || []);
       scrollToBottom();
     } catch (error) {
       console.error('Error loading messages:', error);
@@ -241,6 +283,44 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
     }
   };
 
+  const handleReact = async (messageId: string, emoji: string) => {
+    if (!user) return;
+
+    try {
+      // Check if user already reacted with this emoji
+      const { data: existing } = await supabase
+        .from('message_reactions')
+        .select('id')
+        .eq('message_id', messageId)
+        .eq('user_id', user.id)
+        .eq('emoji', emoji)
+        .maybeSingle();
+
+      if (existing) {
+        // Remove reaction
+        await supabase
+          .from('message_reactions')
+          .delete()
+          .eq('id', existing.id);
+      } else {
+        // Add reaction
+        await supabase
+          .from('message_reactions')
+          .insert({
+            message_id: messageId,
+            user_id: user.id,
+            emoji,
+          });
+      }
+
+      // Reload messages to update reactions
+      await loadMessages();
+    } catch (error) {
+      console.error('Error handling reaction:', error);
+      toast.error('Failed to react to message');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -302,6 +382,7 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
                 onMarkListened={handleAudioListened}
                 onDelete={isOwn ? handleDeleteMessage : undefined}
                 onReply={handleReplyToMessage}
+                onReact={handleReact}
                 mediaUrl={message.media_url}
                 mediaType={message.media_type as 'image' | 'video' | 'audio' | undefined}
                 mediaThumbnail={message.media_thumbnail}
@@ -309,6 +390,7 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
                 senderAvatar={otherUser.avatar_url || undefined}
                 senderName={otherUser.display_name || undefined}
                 showAvatar={false}
+                reactions={message.reactions}
                 quotedMessage={quotedMsg}
               />
             );

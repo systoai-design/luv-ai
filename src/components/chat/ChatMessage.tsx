@@ -5,18 +5,10 @@ import { MessageStatusIndicator } from './MessageStatusIndicator';
 import { QuotedMessage } from './QuotedMessage';
 import { MessageReactions } from './MessageReactions';
 import { ReactionPicker } from './ReactionPicker';
+import { MessageMenu } from './MessageMenu';
 import { formatDistanceToNow } from 'date-fns';
-import { Trash2, Reply } from 'lucide-react';
-import { useSwipeToDelete } from '@/hooks/useSwipeToDelete';
-import { useLongPress } from '@/hooks/useLongPress';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useState, useRef } from 'react';
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-} from '@/components/ui/context-menu';
 
 interface Reaction {
   emoji: string;
@@ -33,8 +25,10 @@ interface ChatMessageProps {
   messageId?: string;
   onMarkListened?: (messageId: string) => void;
   onDelete?: (messageId: string) => void;
+  onDeleteForMe?: (messageId: string) => void;
   onReply?: (messageId: string) => void;
   onReact?: (messageId: string, emoji: string) => void;
+  onForward?: (messageId: string) => void;
   mediaUrl?: string;
   mediaType?: 'image' | 'video' | 'audio';
   mediaThumbnail?: string;
@@ -60,8 +54,10 @@ export const ChatMessage = ({
   messageId,
   onMarkListened,
   onDelete,
+  onDeleteForMe,
   onReply,
   onReact,
+  onForward,
   mediaUrl,
   mediaType,
   mediaThumbnail,
@@ -75,6 +71,7 @@ export const ChatMessage = ({
   const isMobile = useIsMobile();
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [pickerPosition, setPickerPosition] = useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
   const messageRef = useRef<HTMLDivElement>(null);
 
   const handleDelete = () => {
@@ -83,9 +80,21 @@ export const ChatMessage = ({
     }
   };
 
+  const handleDeleteForMe = () => {
+    if (messageId && onDeleteForMe) {
+      onDeleteForMe(messageId);
+    }
+  };
+
   const handleReply = () => {
     if (messageId && onReply) {
       onReply(messageId);
+    }
+  };
+
+  const handleForward = () => {
+    if (messageId && onForward) {
+      onForward(messageId);
     }
   };
 
@@ -113,20 +122,11 @@ export const ChatMessage = ({
     }
   };
 
-  const longPressHandlers = useLongPress({
-    onLongPress: handleShowReactionPicker,
-    onClick: isMobile ? handleReply : undefined,
-    delay: 500,
-  });
-
-  const { swipeX, handlers } = useSwipeToDelete({
-    onDelete: handleDelete,
-    threshold: 100,
-  });
-
-  const messageContent = (
+  return (
     <div
-      className={`flex gap-3 ${isOwn ? 'justify-end' : 'justify-start'} animate-fade-in`}
+      className={`flex gap-3 ${isOwn ? 'justify-end' : 'justify-start'} animate-fade-in group`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       {!isOwn && showAvatar && (
         <Avatar className="h-8 w-8 shrink-0">
@@ -137,53 +137,66 @@ export const ChatMessage = ({
       <div 
         ref={messageRef}
         className="flex flex-col gap-1 max-w-[70%] relative"
-        style={isMobile && isOwn ? {
-          transform: `translateX(${swipeX}px)`,
-          transition: swipeX === 0 ? 'transform 0.3s ease-out' : 'none',
-        } : undefined}
-        {...(isMobile && isOwn ? handlers : {})}
-        {...longPressHandlers}
       >
-        <div
-          className={`rounded-2xl px-4 py-3 ${
-            isOwn
-              ? 'bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 text-white shadow-lg'
-              : 'bg-muted text-foreground'
-          }`}
-        >
-          {quotedMessage && (
-            <QuotedMessage 
-              content={quotedMessage.content}
-              mediaType={quotedMessage.mediaType}
-              senderName={quotedMessage.senderName}
-              isOwn={quotedMessage.isOwn}
+        <div className="relative">
+          <div
+            className={`rounded-2xl px-4 py-3 ${
+              isOwn
+                ? 'bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 text-white shadow-lg'
+                : 'bg-muted text-foreground'
+            }`}
+          >
+            {quotedMessage && (
+              <QuotedMessage 
+                content={quotedMessage.content}
+                mediaType={quotedMessage.mediaType}
+                senderName={quotedMessage.senderName}
+                isOwn={quotedMessage.isOwn}
+              />
+            )}
+            {content && (
+              <p className="text-sm whitespace-pre-wrap break-words">
+                {content}
+              </p>
+            )}
+            {mediaUrl && mediaType && (
+              <div className={content ? 'mt-2' : ''}>
+                {mediaType === 'audio' ? (
+                  <AudioPlayer 
+                    audioUrl={mediaUrl} 
+                    duration={audioDuration}
+                    messageId={messageId}
+                    onPlaybackStarted={onMarkListened}
+                    hasBeenListened={listened}
+                  />
+                ) : (
+                  <MediaPreview 
+                    mediaUrl={mediaUrl} 
+                    mediaType={mediaType}
+                    thumbnail={mediaThumbnail}
+                  />
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Message Menu */}
+          {messageId && (
+            <MessageMenu
+              messageId={messageId}
+              isOwn={isOwn}
+              onReact={handleShowReactionPicker}
+              onReply={handleReply}
+              onForward={handleForward}
+              onDelete={handleDelete}
+              onDeleteForMe={handleDeleteForMe}
+              className={`absolute -top-2 ${isOwn ? '-left-8' : '-right-8'} ${
+                isMobile ? 'opacity-100' : isHovered ? 'opacity-100' : 'opacity-0'
+              } transition-opacity`}
             />
           )}
-          {content && (
-            <p className="text-sm whitespace-pre-wrap break-words">
-              {content}
-            </p>
-          )}
-          {mediaUrl && mediaType && (
-            <div className={content ? 'mt-2' : ''}>
-              {mediaType === 'audio' ? (
-                <AudioPlayer 
-                  audioUrl={mediaUrl} 
-                  duration={audioDuration}
-                  messageId={messageId}
-                  onPlaybackStarted={onMarkListened}
-                  hasBeenListened={listened}
-                />
-              ) : (
-                <MediaPreview 
-                  mediaUrl={mediaUrl} 
-                  mediaType={mediaType}
-                  thumbnail={mediaThumbnail}
-                />
-              )}
-            </div>
-          )}
         </div>
+
         <div className={`flex items-center gap-1.5 px-2 ${isOwn ? 'justify-end' : 'justify-start'}`}>
           <span className="text-xs text-muted-foreground">
             {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
@@ -201,18 +214,6 @@ export const ChatMessage = ({
           onReactionClick={handleReactionClick}
           isOwn={isOwn}
         />
-        
-        {/* Delete indicator for swipe */}
-        {isMobile && isOwn && swipeX < -20 && (
-          <div 
-            className="absolute right-0 top-0 bottom-0 w-16 flex items-center justify-center bg-destructive rounded-r-2xl"
-            style={{
-              transform: `translateX(${Math.abs(swipeX)}px)`,
-            }}
-          >
-            <Trash2 className="h-5 w-5 text-destructive-foreground" />
-          </div>
-        )}
       </div>
       
       <ReactionPicker
@@ -222,31 +223,4 @@ export const ChatMessage = ({
       />
     </div>
   );
-
-  // Desktop: Wrap with context menu
-  if (!isMobile && messageId && (onDelete || onReply)) {
-    return (
-      <ContextMenu>
-        <ContextMenuTrigger asChild>
-          {messageContent}
-        </ContextMenuTrigger>
-        <ContextMenuContent>
-          {onReply && (
-            <ContextMenuItem onClick={handleReply}>
-              <Reply className="h-4 w-4 mr-2" />
-              Reply
-            </ContextMenuItem>
-          )}
-          {isOwn && onDelete && (
-            <ContextMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete Message
-            </ContextMenuItem>
-          )}
-        </ContextMenuContent>
-      </ContextMenu>
-    );
-  }
-
-  return messageContent;
 };

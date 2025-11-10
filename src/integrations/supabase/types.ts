@@ -533,6 +533,30 @@ export type Database = {
           },
         ]
       }
+      message_deletions: {
+        Row: {
+          deleted_at: string
+          id: string
+          message_id: string
+          message_type: string
+          user_id: string
+        }
+        Insert: {
+          deleted_at?: string
+          id?: string
+          message_id: string
+          message_type: string
+          user_id: string
+        }
+        Update: {
+          deleted_at?: string
+          id?: string
+          message_id?: string
+          message_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       message_reactions: {
         Row: {
           created_at: string

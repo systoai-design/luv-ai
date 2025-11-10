@@ -9,6 +9,7 @@ import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 import { usePresenceDisplay } from '@/hooks/usePresenceDisplay';
 import { ChatComposer } from '@/components/chat/ChatComposer';
 import { ChatMessage } from '@/components/chat/ChatMessage';
+import { ForwardMessageDialog } from '@/components/chat/ForwardMessageDialog';
 
 interface Reaction {
   emoji: string;
@@ -51,6 +52,8 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
+  const [deletedMessageIds, setDeletedMessageIds] = useState<Set<string>>(new Set());
+  const [forwardMessageId, setForwardMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const { typingUsers, setTyping } = useTypingIndicator(matchId);
@@ -60,6 +63,7 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
   useEffect(() => {
     if (!user) return;
     loadMessages();
+    loadDeletedMessages();
 
     // Mark messages as read when viewing
     const markMessagesAsRead = async () => {
@@ -139,11 +143,46 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
       )
       .subscribe();
 
+    // Subscribe to message deletions
+    const deletionChannel = supabase
+      .channel(`match-deletions-${matchId}-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'message_deletions',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload: any) => {
+          if (payload.new.message_type === 'user_message') {
+            setDeletedMessageIds(prev => new Set([...prev, payload.new.message_id]));
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(insertChannel);
       supabase.removeChannel(updateChannel);
+      supabase.removeChannel(deletionChannel);
     };
   }, [matchId, user, messages]);
+
+  const loadDeletedMessages = async () => {
+    if (!user) return;
+    try {
+      const { data } = await supabase
+        .from('message_deletions')
+        .select('message_id')
+        .eq('user_id', user.id)
+        .eq('message_type', 'user_message');
+      
+      setDeletedMessageIds(new Set(data?.map(d => d.message_id) || []));
+    } catch (error) {
+      console.error('Error loading deleted messages:', error);
+    }
+  };
 
   const loadMessages = async () => {
     if (!user) return;
@@ -321,6 +360,61 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
     }
   };
 
+  const handleDeleteForMe = async (messageId: string) => {
+    if (!user) return;
+
+    // Optimistic update
+    setDeletedMessageIds(prev => new Set([...prev, messageId]));
+
+    try {
+      const { error } = await supabase
+        .from('message_deletions')
+        .insert({
+          message_id: messageId,
+          user_id: user.id,
+          message_type: 'user_message'
+        });
+
+      if (error) throw error;
+      toast.success('Message deleted for you');
+    } catch (error) {
+      // Revert on error
+      setDeletedMessageIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(messageId);
+        return newSet;
+      });
+      console.error('Error deleting message for me:', error);
+      toast.error('Failed to delete message');
+    }
+  };
+
+  const handleForward = async (chatIds: string[]) => {
+    if (!forwardMessageId) return;
+
+    const message = messages.find(m => m.id === forwardMessageId);
+    if (!message || !user) return;
+
+    try {
+      for (const chatId of chatIds) {
+        await supabase
+          .from('user_messages')
+          .insert({
+            match_id: chatId,
+            sender_id: user.id,
+            content: `📤 Forwarded message:\n${message.content}`,
+            media_url: message.media_url,
+            media_type: message.media_type,
+            media_thumbnail: message.media_thumbnail,
+            audio_duration: message.audio_duration,
+          });
+      }
+    } catch (error) {
+      console.error('Error forwarding message:', error);
+      throw error;
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -330,93 +424,109 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
   }
 
   return (
-    <Card className="bg-card border-border flex flex-col h-[600px]">
-      {/* Header */}
-      <div className="p-4 border-b border-border flex items-center gap-3">
-        <div className="relative">
-          <Avatar>
-            <AvatarImage src={otherUser.avatar_url || ''} alt={otherUser.display_name || 'User'} />
-            <AvatarFallback>{otherUser.display_name?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
-          </Avatar>
-          {isOnline && (
-            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-card" />
-          )}
-        </div>
-        <div className="flex-1">
-          <h3 className="font-semibold">{otherUser.display_name || 'Anonymous'}</h3>
-          {typingUsers.length > 0 ? (
-            <p className="text-xs text-muted-foreground animate-pulse">typing...</p>
-          ) : (
-            <p className={`text-xs font-medium ${isOnline ? 'text-green-500' : 'text-muted-foreground'}`}>
-              {presenceMap[otherUser.id]?.formattedLastSeen || 'Offline'}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <p>Start the conversation!</p>
+    <>
+      <Card className="bg-card border-border flex flex-col h-[600px]">
+        {/* Header */}
+        <div className="p-4 border-b border-border flex items-center gap-3">
+          <div className="relative">
+            <Avatar>
+              <AvatarImage src={otherUser.avatar_url || ''} alt={otherUser.display_name || 'User'} />
+              <AvatarFallback>{otherUser.display_name?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
+            </Avatar>
+            {isOnline && (
+              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-card" />
+            )}
           </div>
-        ) : (
-          messages.map((message) => {
-            const isOwn = message.sender_id === user?.id;
-            const quotedMsg = message.quoted_message ? {
-              content: message.quoted_message.content,
-              mediaType: message.quoted_message.media_type as 'image' | 'video' | 'audio' | undefined,
-              senderName: message.quoted_message.sender_id === user?.id ? 'You' : otherUser.display_name || 'User',
-              isOwn: message.quoted_message.sender_id === user?.id,
-            } : undefined;
+          <div className="flex-1">
+            <h3 className="font-semibold">{otherUser.display_name || 'Anonymous'}</h3>
+            {typingUsers.length > 0 ? (
+              <p className="text-xs text-muted-foreground animate-pulse">typing...</p>
+            ) : (
+              <p className={`text-xs font-medium ${isOnline ? 'text-green-500' : 'text-muted-foreground'}`}>
+                {presenceMap[otherUser.id]?.formattedLastSeen || 'Offline'}
+              </p>
+            )}
+          </div>
+        </div>
 
-            return (
-              <ChatMessage
-                key={message.id}
-                isOwn={isOwn}
-                content={message.content}
-                createdAt={message.created_at}
-                read={message.read}
-                listened={message.listened}
-                messageId={message.id}
-                onMarkListened={handleAudioListened}
-                onDelete={isOwn ? handleDeleteMessage : undefined}
-                onReply={handleReplyToMessage}
-                onReact={handleReact}
-                mediaUrl={message.media_url}
-                mediaType={message.media_type as 'image' | 'video' | 'audio' | undefined}
-                mediaThumbnail={message.media_thumbnail}
-                audioDuration={message.audio_duration}
-                senderAvatar={otherUser.avatar_url || undefined}
-                senderName={otherUser.display_name || undefined}
-                showAvatar={false}
-                reactions={message.reactions}
-                quotedMessage={quotedMsg}
-              />
-            );
-          })
-        )}
-        <div ref={messagesEndRef} />
-      </div>
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {messages.filter(msg => !deletedMessageIds.has(msg.id)).length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <p>Start the conversation!</p>
+            </div>
+          ) : (
+            messages
+              .filter(msg => !deletedMessageIds.has(msg.id))
+              .map((message) => {
+                const isOwn = message.sender_id === user?.id;
+                const quotedMsg = message.quoted_message ? {
+                  content: message.quoted_message.content,
+                  mediaType: message.quoted_message.media_type as 'image' | 'video' | 'audio' | undefined,
+                  senderName: message.quoted_message.sender_id === user?.id ? 'You' : otherUser.display_name || 'User',
+                  isOwn: message.quoted_message.sender_id === user?.id,
+                } : undefined;
 
-      {/* Input */}
-      <div className="p-4 border-t border-border bg-card/50 backdrop-blur-sm">
-        <ChatComposer
-          onSend={handleSend}
-          placeholder="Type a message..."
-          disabled={sending}
-          isLoading={sending}
-          replyToMessage={replyToMessage ? {
-            id: replyToMessage.id,
-            content: replyToMessage.content,
-            mediaType: replyToMessage.media_type as 'image' | 'video' | 'audio' | undefined,
-            senderName: replyToMessage.sender_id === user?.id ? 'You' : otherUser.display_name || 'User',
-            isOwn: replyToMessage.sender_id === user?.id,
-          } : null}
-          onCancelReply={() => setReplyToMessage(null)}
-        />
-      </div>
-    </Card>
+                return (
+                  <ChatMessage
+                    key={message.id}
+                    isOwn={isOwn}
+                    content={message.content}
+                    createdAt={message.created_at}
+                    read={message.read}
+                    listened={message.listened}
+                    messageId={message.id}
+                    onMarkListened={handleAudioListened}
+                    onDelete={isOwn ? handleDeleteMessage : undefined}
+                    onDeleteForMe={!isOwn ? handleDeleteForMe : undefined}
+                    onReply={handleReplyToMessage}
+                    onReact={handleReact}
+                    onForward={() => setForwardMessageId(message.id)}
+                    mediaUrl={message.media_url}
+                    mediaType={message.media_type as 'image' | 'video' | 'audio' | undefined}
+                    mediaThumbnail={message.media_thumbnail}
+                    audioDuration={message.audio_duration}
+                    senderAvatar={otherUser.avatar_url || undefined}
+                    senderName={otherUser.display_name || undefined}
+                    showAvatar={false}
+                    reactions={message.reactions}
+                    quotedMessage={quotedMsg}
+                  />
+                );
+              })
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input */}
+        <div className="p-4 border-t border-border bg-card/50 backdrop-blur-sm">
+          <ChatComposer
+            onSend={handleSend}
+            placeholder="Type a message..."
+            disabled={sending}
+            isLoading={sending}
+            replyToMessage={replyToMessage ? {
+              id: replyToMessage.id,
+              content: replyToMessage.content,
+              mediaType: replyToMessage.media_type as 'image' | 'video' | 'audio' | undefined,
+              senderName: replyToMessage.sender_id === user?.id ? 'You' : otherUser.display_name || 'User',
+              isOwn: replyToMessage.sender_id === user?.id,
+            } : null}
+            onCancelReply={() => setReplyToMessage(null)}
+          />
+        </div>
+      </Card>
+
+      {/* Forward Dialog */}
+      <ForwardMessageDialog
+        open={forwardMessageId !== null}
+        onOpenChange={(open) => !open && setForwardMessageId(null)}
+        messageContent={messages.find(m => m.id === forwardMessageId)?.content || ''}
+        mediaUrl={messages.find(m => m.id === forwardMessageId)?.media_url}
+        mediaType={messages.find(m => m.id === forwardMessageId)?.media_type as any}
+        onForward={handleForward}
+      />
+    </>
   );
 };
 

@@ -15,6 +15,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletAuthModal } from '@/components/auth/WalletAuthModal';
 import { ChatComposer } from '@/components/chat/ChatComposer';
 import { ChatMessage } from '@/components/chat/ChatMessage';
+import { ForwardMessageDialog } from '@/components/chat/ForwardMessageDialog';
 import { toast as sonnerToast } from 'sonner';
 
 const Chat = () => {
@@ -30,6 +31,8 @@ const Chat = () => {
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [localMessages, setLocalMessages] = useState<any[]>([]);
   const [replyToMessage, setReplyToMessage] = useState<any>(null);
+  const [deletedMessageIds, setDeletedMessageIds] = useState<Set<string>>(new Set());
+  const [forwardMessageId, setForwardMessageId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { messages, isLoading, sendMessage, loadMessages } = useChat(chatId || '', companionId || '');
@@ -115,10 +118,26 @@ const Chat = () => {
   }, [user, companionId, navigate, toast]);
 
   useEffect(() => {
-    if (chatId && hasAccess) {
+    if (chatId && hasAccess && user) {
       loadMessages();
+      loadDeletedMessages();
     }
-  }, [chatId, hasAccess, loadMessages]);
+  }, [chatId, hasAccess, loadMessages, user]);
+
+  const loadDeletedMessages = async () => {
+    if (!user) return;
+    try {
+      const { data } = await supabase
+        .from('message_deletions')
+        .select('message_id')
+        .eq('user_id', user.id)
+        .eq('message_type', 'chat_message');
+      
+      setDeletedMessageIds(new Set(data?.map(d => d.message_id) || []));
+    } catch (error) {
+      console.error('Error loading deleted messages:', error);
+    }
+  };
 
   // Handle ?purchase=1 query param
   useEffect(() => {
@@ -134,6 +153,33 @@ const Chat = () => {
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => {
+    if (!user || !chatId) return;
+
+    // Subscribe to message deletions
+    const deletionChannel = supabase
+      .channel(`chat-deletions-${chatId}-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'message_deletions',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload: any) => {
+          if (payload.new.message_type === 'chat_message') {
+            setDeletedMessageIds(prev => new Set([...prev, payload.new.message_id]));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(deletionChannel);
+    };
+  }, [user, chatId]);
 
   const handleSend = async (payload: { 
     text: string; 
@@ -223,6 +269,60 @@ const Chat = () => {
     }
   };
 
+  const handleDeleteForMe = async (messageId: string) => {
+    if (!user) return;
+
+    // Optimistic update
+    setDeletedMessageIds(prev => new Set([...prev, messageId]));
+
+    try {
+      const { error } = await supabase
+        .from('message_deletions')
+        .insert({
+          message_id: messageId,
+          user_id: user.id,
+          message_type: 'chat_message'
+        });
+
+      if (error) throw error;
+      sonnerToast.success('Message deleted for you');
+    } catch (error) {
+      // Revert on error
+      setDeletedMessageIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(messageId);
+        return newSet;
+      });
+      console.error('Error deleting message for me:', error);
+      sonnerToast.error('Failed to delete message');
+    }
+  };
+
+  const handleForward = async (chatIds: string[]) => {
+    if (!forwardMessageId) return;
+
+    const message = localMessages.find(m => m.id === forwardMessageId);
+    if (!message || !user) return;
+
+    try {
+      for (const chatId of chatIds) {
+        await supabase
+          .from('chat_messages')
+          .insert({
+            chat_id: chatId,
+            sender_type: 'user',
+            content: `📤 Forwarded message:\n${message.content}`,
+            media_url: message.media_url,
+            media_type: message.media_type,
+            audio_duration: message.audio_duration,
+          });
+      }
+    } catch (error) {
+      console.error('Error forwarding message:', error);
+      throw error;
+    }
+  };
+
   if (!companion || !chatId || isCheckingAccess) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -308,7 +408,7 @@ const Chat = () => {
       {/* Messages */}
       <ScrollArea className="flex-1 p-4">
         <div className="space-y-6 max-w-3xl mx-auto">
-          {localMessages.map((message) => {
+          {localMessages.filter(msg => !deletedMessageIds.has(msg.id)).map((message) => {
             const isOwn = message.sender_type === 'user';
             const quotedMsg = message.quoted_message ? {
               content: message.quoted_message.content,
@@ -328,8 +428,10 @@ const Chat = () => {
                 messageId={message.id}
                 onMarkListened={handleAudioListened}
                 onDelete={isOwn ? handleDeleteMessage : undefined}
+                onDeleteForMe={!isOwn ? handleDeleteForMe : undefined}
                 onReply={handleReplyToMessage}
                 onReact={handleReact}
+                onForward={() => setForwardMessageId(message.id)}
                 mediaUrl={message.media_url}
                 mediaType={message.media_type as 'image' | 'video' | 'audio' | undefined}
                 mediaThumbnail={message.media_thumbnail}
@@ -376,6 +478,16 @@ const Chat = () => {
           />
         </div>
       </div>
+
+      {/* Forward Dialog */}
+      <ForwardMessageDialog
+        open={forwardMessageId !== null}
+        onOpenChange={(open) => !open && setForwardMessageId(null)}
+        messageContent={localMessages.find(m => m.id === forwardMessageId)?.content || ''}
+        mediaUrl={localMessages.find(m => m.id === forwardMessageId)?.media_url}
+        mediaType={localMessages.find(m => m.id === forwardMessageId)?.media_type as any}
+        onForward={handleForward}
+      />
     </div>
   );
 };

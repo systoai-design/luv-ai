@@ -31,6 +31,39 @@ const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> => {
   ]);
 };
 
+// Event-driven helper: waits for adapter to emit 'connect' event
+const waitForAdapterConnected = (adapter: any, timeoutMs: number): Promise<boolean> => {
+  return new Promise((resolve) => {
+    // If already connected, resolve immediately
+    if (adapter.connected && adapter.publicKey) {
+      console.info('[wallet] Adapter already connected');
+      resolve(true);
+      return;
+    }
+
+    let resolved = false;
+    const timeout = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        console.warn('[wallet] Adapter connection event timeout');
+        resolve(false);
+      }
+    }, timeoutMs);
+
+    // Listen for the connect event
+    const onConnect = () => {
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timeout);
+        console.info('[wallet] Adapter connect event received');
+        resolve(true);
+      }
+    };
+
+    adapter.once('connect', onConnect);
+  });
+};
+
 export const WalletConnectPanel = ({ onConnected }: WalletConnectPanelProps) => {
   const { select, connect, disconnect, wallets, wallet, connected, publicKey } = useWallet();
   const [connecting, setConnecting] = useState(false);
@@ -39,18 +72,6 @@ export const WalletConnectPanel = ({ onConnected }: WalletConnectPanelProps) => 
   const [isCheckingUser, setIsCheckingUser] = useState(false);
   const [isExistingUser, setIsExistingUser] = useState<boolean | null>(null);
 
-// Helper to wait for connection state to update (increased timeout to 8s)
-  const waitForConnection = async (maxMs = 8000): Promise<boolean> => {
-    const startTime = Date.now();
-    while (Date.now() - startTime < maxMs) {
-      if (connected && publicKey) {
-        console.info('[wallet] Connection verified! publicKey:', publicKey.toBase58());
-        return true;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-    return false;
-  };
 
   // Check if wallet exists in database
   const checkWalletExists = async (walletAddress: string): Promise<boolean> => {
@@ -102,46 +123,44 @@ export const WalletConnectPanel = ({ onConnected }: WalletConnectPanelProps) => 
     try {
       console.info('[wallet] Starting connection flow for:', walletName);
 
-      // Step 1: Only disconnect if connected to a DIFFERENT wallet
+      // Step 1: If switching wallets, disconnect and clear cache FIRST
       if (connected && wallet?.adapter?.name !== walletName) {
         console.info('[wallet] Disconnecting existing wallet:', wallet?.adapter?.name);
         await disconnect().catch(() => {});
-        
-        // Step 2: Clear cached wallet state only when switching wallets
         console.info('[wallet] Clearing wallet cache due to wallet switch');
         await clearWalletStorage();
+        // Small delay for cleanup
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
 
-      // Step 3: Select the target wallet
+      // Step 2: Select the target wallet
       console.info('[wallet] Selecting wallet:', walletName);
       select(walletName);
 
-      // Step 4: Wait for selection to propagate
-      console.info('[wallet] Waiting for wallet selection to apply');
-      await waitUntil(() => wallet?.adapter?.name === walletName, 3000, 50);
-      console.info('[wallet] Wallet selected:', wallet?.adapter?.name);
-
-      // Step 5: Add small delay for state synchronization
-      await new Promise(resolve => setTimeout(resolve, 150));
-
-      // Step 6: Attempt connection with increased timeout (15s)
-      console.info('[wallet] Opening wallet popup...');
-      await withTimeout(connect(), 15000);
-
-      // Step 7: Wait for connected state to actually update
-      console.info('[wallet] Verifying connection...');
-      const isConnected = await waitForConnection(8000);
-      
-      if (!isConnected) {
-        throw new Error('Connection state did not update. Please check your wallet and try again.');
+      // Step 3: Get the adapter
+      const targetWallet = wallets.find(w => w.adapter.name === walletName);
+      if (!targetWallet) {
+        throw new Error('Wallet adapter not found. Please refresh and try again.');
       }
 
-      console.info('[wallet] Connection verified!');
+      // Step 4: Connect via adapter directly
+      console.info('[wallet] Calling adapter.connect()...');
+      await withTimeout(targetWallet.adapter.connect(), 15000);
+
+      // Step 5: Wait for adapter to emit connect event
+      console.info('[wallet] Waiting for adapter connect event...');
+      const isConnected = await waitForAdapterConnected(targetWallet.adapter, 8000);
+      
+      if (!isConnected) {
+        throw new Error('Wallet did not finish connecting in time. Please approve in your wallet and try "Reset Wallet Cache" if issues persist.');
+      }
+
+      console.info('[wallet] Adapter connected successfully');
       setConnectionVerified(true);
       
       // Check if user exists in database
       setIsCheckingUser(true);
-      const walletAddress = publicKey.toBase58().toLowerCase();
+      const walletAddress = targetWallet.adapter.publicKey!.toBase58().toLowerCase();
       const exists = await checkWalletExists(walletAddress);
       setIsExistingUser(exists);
       setIsCheckingUser(false);
@@ -159,48 +178,7 @@ export const WalletConnectPanel = ({ onConnected }: WalletConnectPanelProps) => 
       
     } catch (error: any) {
       console.error('[wallet] Connection failed:', error);
-
-      // Fallback: Try connecting directly via adapter
-      const targetWallet = wallets.find(w => w.adapter.name === walletName);
-      if (targetWallet && !connected) {
-        try {
-          console.info('[wallet] Trying fallback: direct adapter connection');
-          await withTimeout(targetWallet.adapter.connect(), 15000);
-          
-          // Wait for connection state to update
-          const isConnected = await waitForConnection(8000);
-          if (!isConnected) {
-            throw new Error('Fallback connection state did not update.');
-          }
-          
-          console.info('[wallet] Fallback connection verified!');
-          setConnectionVerified(true);
-          
-          // Check if user exists in database
-          setIsCheckingUser(true);
-          const walletAddress = publicKey.toBase58().toLowerCase();
-          const exists = await checkWalletExists(walletAddress);
-          setIsExistingUser(exists);
-          setIsCheckingUser(false);
-
-          if (exists) {
-            // Existing user - automatically proceed
-            console.info('[wallet] Existing user detected, auto-proceeding');
-            toast.success("Welcome back! 💜");
-            onConnected();
-          } else {
-            // New user - show registration prompt
-            console.info('[wallet] New user detected, showing registration prompt');
-            toast.success("Wallet connected successfully! 🎉");
-          }
-          return;
-        } catch (fallbackError: any) {
-          console.error('[wallet] Fallback also failed:', fallbackError);
-          await showError(fallbackError, true); // Auto-retry enabled
-        }
-      } else {
-        await showError(error, true); // Auto-retry enabled
-      }
+      await showError(error, true);
     } finally {
       setConnecting(false);
       setSelectedWallet(null);

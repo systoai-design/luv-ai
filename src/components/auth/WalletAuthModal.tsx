@@ -35,6 +35,39 @@ const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> => {
   ]);
 };
 
+// Event-driven helper: waits for adapter to emit 'connect' event
+const waitForAdapterConnected = (adapter: any, timeoutMs: number): Promise<boolean> => {
+  return new Promise((resolve) => {
+    // If already connected, resolve immediately
+    if (adapter.connected && adapter.publicKey) {
+      console.info('[wallet] Adapter already connected');
+      resolve(true);
+      return;
+    }
+
+    let resolved = false;
+    const timeout = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        console.warn('[wallet] Adapter connection event timeout');
+        resolve(false);
+      }
+    }, timeoutMs);
+
+    // Listen for the connect event
+    const onConnect = () => {
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timeout);
+        console.info('[wallet] Adapter connect event received');
+        resolve(true);
+      }
+    };
+
+    adapter.once('connect', onConnect);
+  });
+};
+
 export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthModalProps) => {
   const { wallets, select, connected, publicKey, disconnect, connect } = useWallet();
   const { authState, checkUsernameAvailable, registerWithWallet, signInWithWallet } = useWalletAuth();
@@ -106,27 +139,6 @@ export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthMod
     }
   }, [connected, step]);
 
-  const waitForConnected = async (maxMs = 20000): Promise<boolean> => {
-    const start = Date.now();
-    let attempts = 0;
-    
-    while (Date.now() - start < maxMs) {
-      attempts++;
-      if (connected && publicKey) {
-        console.info('[wallet] Connection verified after', attempts, 'attempts:', publicKey.toBase58());
-        return true;
-      }
-      
-      // Log every 2 seconds for debugging
-      if (attempts % 20 === 0) {
-        console.log('[wallet] Still waiting...', { connected, hasPublicKey: !!publicKey });
-      }
-      
-      await new Promise(r => setTimeout(r, 100));
-    }
-    console.error('[wallet] Timeout after', attempts, 'attempts', { connected, hasPublicKey: !!publicKey });
-    return false;
-  };
 
   const showError = (error: any) => {
     const msg = String(error?.message || error);
@@ -177,47 +189,57 @@ export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthMod
         return;
       }
 
-      // Select the wallet synchronously
+      // If switching wallets, disconnect and clear cache FIRST
+      if (connected) {
+        console.info('[wallet] Disconnecting existing wallet');
+        await disconnect().catch(() => {});
+        await clearWalletStorage();
+        // Small delay for cleanup
+        await new Promise(r => setTimeout(r, 200));
+      }
+
+      // Select the wallet
+      console.info('[wallet] Selecting wallet:', walletName);
       select(walletName);
 
-      // Immediately trigger the wallet popup within the user gesture
-      console.info('[wallet] Calling provider connect()...');
-      const connectPromise = withTimeout(connect(), 20000);
-
-      // If in an iframe, the popup may be blocked – nudge to open in a new window
-      setTimeout(() => {
-        if (isIframed && !publicKey) {
-          toast.info("Wallet popup may be blocked in an embedded view.", {
-            action: { label: "Open in New Window", onClick: openInNewWindow } as any,
-          } as any);
-        }
-      }, 1500);
-
-      // Kick off background cleanup WITHOUT blocking the popup
-      if (connected) {
-        disconnect().catch(() => {});
+      // Get the adapter
+      const wallet = wallets.find(w => w.adapter.name === walletName);
+      if (!wallet) {
+        throw new Error("Wallet adapter not found. Please refresh and try again.");
       }
-      clearWalletStorage().catch(() => {});
 
-      // Wait for connect to resolve
-      await connectPromise;
-      console.info('[wallet] connect() resolved');
+      // If in an iframe, show early hint about popup blockers
+      if (isIframed) {
+        setTimeout(() => {
+          if (!wallet.adapter.connected) {
+            toast.info("Wallet popup may be blocked in an embedded view.", {
+              action: { label: "Open in New Window", onClick: openInNewWindow } as any,
+            } as any);
+          }
+        }, 1500);
+      }
 
-      // Wait for connection state to update
-      const isConnected = await waitForConnected(20000);
+      // Connect via adapter directly
+      console.info('[wallet] Calling adapter.connect()...');
+      await withTimeout(wallet.adapter.connect(), 20000);
+
+      // Wait for adapter to emit connect event
+      console.info('[wallet] Waiting for adapter connect event...');
+      const isConnected = await waitForAdapterConnected(wallet.adapter, 20000);
       if (!isConnected) {
-        throw new Error("Fallback connection state did not update");
+        throw new Error("Wallet did not finish connecting in time. Please approve in your wallet.");
       }
+
+      console.info('[wallet] Adapter connected successfully');
 
       // Optional: request a message signature if supported
       try {
-        const wallet = wallets.find(w => w.adapter.name === walletName);
-        const adapterAny = wallet?.adapter as any;
-        if (adapterAny && typeof adapterAny.signMessage === 'function' && publicKey) {
+        const adapterAny = wallet.adapter as any;
+        if (adapterAny && typeof adapterAny.signMessage === 'function' && wallet.adapter.publicKey) {
           console.info('[wallet] Requesting message signature...');
           const encoder = new TextEncoder();
           const nonce = Math.random().toString(36).slice(2);
-          const msg = `LUVAI Sign-In\nAddress: ${publicKey.toBase58()}\nNonce: ${nonce}\nDomain: ${window.location.host}\nTime: ${new Date().toISOString()}`;
+          const msg = `LUVAI Sign-In\nAddress: ${wallet.adapter.publicKey.toBase58()}\nNonce: ${nonce}\nDomain: ${window.location.host}\nTime: ${new Date().toISOString()}`;
           await withTimeout(adapterAny.signMessage(encoder.encode(msg)), 20000);
           console.info('[wallet] Message signed');
         } else {
@@ -231,7 +253,7 @@ export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthMod
       console.info('[wallet] Connection successful, checking account...');
       setStep("checking");
 
-      const address = publicKey!.toBase58();
+      const address = wallet.adapter.publicKey!.toBase58();
       const result = await withTimeout(signInWithWallet(address), 8000);
 
       if (result.isNewUser) {

@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Users, MessageSquare, Heart, Star } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useCountUp } from "@/hooks/useCountUp";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
+import { useStats } from "@/hooks/useStats";
 import { cn } from "@/lib/utils";
 
 interface Stat {
@@ -11,13 +13,6 @@ interface Stat {
   label: string;
   suffix?: string;
 }
-
-const stats: Stat[] = [
-  { icon: Users, value: 50000, label: "Active Users", suffix: "+" },
-  { icon: Heart, value: 10000, label: "Matches Made", suffix: "+" },
-  { icon: MessageSquare, value: 30, label: "Messages Per Day" },
-  { icon: Star, value: 100, label: "Encrypted Chats", suffix: "%" },
-];
 
 const formatNumber = (num: number, suffix?: string): string => {
   if (suffix === "%") return `${num}${suffix}`;
@@ -56,6 +51,14 @@ const StatCard = ({ stat, inView, index }: { stat: Stat; inView: boolean; index:
 
 const StatsSection = () => {
   const { elementRef, isVisible } = useScrollAnimation({ threshold: 0.2 });
+  const { stats: dbStats, loading } = useStats();
+
+  const stats: Stat[] = [
+    { icon: Users, value: dbStats?.activeUsers || 0, label: "Active Users", suffix: "+" },
+    { icon: Heart, value: dbStats?.matchesMade || 0, label: "Matches Made", suffix: "+" },
+    { icon: MessageSquare, value: dbStats?.messagesPerDay || 0, label: "Messages Per Day" },
+    { icon: Star, value: dbStats?.encryptedChats || 0, label: "Encrypted Chats", suffix: "+" },
+  ];
 
   return (
     <section
@@ -81,9 +84,21 @@ const StatsSection = () => {
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat, index) => (
-            <StatCard key={index} stat={stat} inView={isVisible} index={index} />
-          ))}
+          {loading ? (
+            Array.from({ length: 4 }).map((_, index) => (
+              <Card key={index} className="bg-background/40 backdrop-blur-lg border-border p-8">
+                <div className="flex flex-col items-center gap-4">
+                  <Skeleton className="h-16 w-16 rounded-full" />
+                  <Skeleton className="h-12 w-24" />
+                  <Skeleton className="h-6 w-32" />
+                </div>
+              </Card>
+            ))
+          ) : (
+            stats.map((stat, index) => (
+              <StatCard key={index} stat={stat} inView={isVisible} index={index} />
+            ))
+          )}
         </div>
       </div>
     </section>

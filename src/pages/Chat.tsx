@@ -15,6 +15,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletAuthModal } from '@/components/auth/WalletAuthModal';
 import { ChatComposer } from '@/components/chat/ChatComposer';
 import { ChatMessage } from '@/components/chat/ChatMessage';
+import { toast as sonnerToast } from 'sonner';
 
 const Chat = () => {
   const { companionId } = useParams<{ companionId: string }>();
@@ -27,10 +28,15 @@ const Chat = () => {
   const [companion, setCompanion] = useState<any>(null);
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
+  const [localMessages, setLocalMessages] = useState<any[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { messages, isLoading, sendMessage, loadMessages } = useChat(chatId || '', companionId || '');
   const { hasAccess, isLoading: isCheckingAccess, accessPrice, grantAccess } = useCompanionAccess(companionId);
+
+  useEffect(() => {
+    setLocalMessages(messages);
+  }, [messages]);
 
   useEffect(() => {
     if (!user || !companionId) {
@@ -148,6 +154,27 @@ const Chat = () => {
     }
   };
 
+  const handleDeleteMessage = async (messageId: string) => {
+    try {
+      // Optimistic update
+      setLocalMessages((prev) => prev.filter((msg) => msg.id !== messageId));
+
+      const { error } = await supabase
+        .from('chat_messages')
+        .delete()
+        .eq('id', messageId);
+
+      if (error) throw error;
+      
+      sonnerToast.success('Message deleted');
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      sonnerToast.error('Failed to delete message');
+      // Reload messages on error
+      loadMessages();
+    }
+  };
+
   if (!companion || !chatId || isCheckingAccess) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -233,25 +260,29 @@ const Chat = () => {
       {/* Messages */}
       <ScrollArea className="flex-1 p-4">
         <div className="space-y-6 max-w-3xl mx-auto">
-          {messages.map((message) => (
-            <ChatMessage
-              key={message.id}
-              isOwn={message.sender_type === 'user'}
-              content={message.content}
-              createdAt={message.created_at}
-              read={message.read}
-              listened={message.listened}
-              messageId={message.id}
-              onMarkListened={handleAudioListened}
-              mediaUrl={message.media_url}
-              mediaType={message.media_type as 'image' | 'video' | 'audio' | undefined}
-              mediaThumbnail={message.media_thumbnail}
-              audioDuration={message.audio_duration}
-              senderAvatar={companion.avatar_url}
-              senderName={companion.name}
-              showAvatar={message.sender_type === 'companion'}
-            />
-          ))}
+          {localMessages.map((message) => {
+            const isOwn = message.sender_type === 'user';
+            return (
+              <ChatMessage
+                key={message.id}
+                isOwn={isOwn}
+                content={message.content}
+                createdAt={message.created_at}
+                read={message.read}
+                listened={message.listened}
+                messageId={message.id}
+                onMarkListened={handleAudioListened}
+                onDelete={isOwn ? handleDeleteMessage : undefined}
+                mediaUrl={message.media_url}
+                mediaType={message.media_type as 'image' | 'video' | 'audio' | undefined}
+                mediaThumbnail={message.media_thumbnail}
+                audioDuration={message.audio_duration}
+                senderAvatar={companion.avatar_url}
+                senderName={companion.name}
+                showAvatar={message.sender_type === 'companion'}
+              />
+            );
+          })}
           {isLoading && (
             <div className="flex gap-3 justify-start animate-fade-in">
               <Avatar className="h-8 w-8 shrink-0">

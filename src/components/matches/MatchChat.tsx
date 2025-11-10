@@ -196,6 +196,27 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
     }
   };
 
+  const handleDeleteMessage = async (messageId: string) => {
+    try {
+      // Optimistic update
+      setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
+
+      const { error } = await supabase
+        .from('user_messages')
+        .delete()
+        .eq('id', messageId);
+
+      if (error) throw error;
+      
+      toast.success('Message deleted');
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      toast.error('Failed to delete message');
+      // Reload messages on error
+      loadMessages();
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -248,6 +269,7 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
                 listened={message.listened}
                 messageId={message.id}
                 onMarkListened={handleAudioListened}
+                onDelete={isOwn ? handleDeleteMessage : undefined}
                 mediaUrl={message.media_url}
                 mediaType={message.media_type as 'image' | 'video' | 'audio' | undefined}
                 mediaThumbnail={message.media_thumbnail}

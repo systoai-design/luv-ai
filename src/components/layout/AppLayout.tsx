@@ -3,6 +3,7 @@ import TopNav from "./TopNav";
 import LeftSidebar from "./LeftSidebar";
 import RightSidebar from "./RightSidebar";
 import MobileSidebar from "./MobileSidebar";
+import { FloatingActionButton } from "./FloatingActionButton";
 import { RouteTransition } from "@/components/RouteTransition";
 import { useSidebarState } from "@/hooks/useSidebarState";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
@@ -45,6 +46,9 @@ const AppLayout = () => {
         {/* Right Sidebar (Optional) */}
         <RightSidebar />
       </div>
+
+      {/* Floating Action Button - Mobile Only */}
+      <FloatingActionButton />
     </div>
   );
 };

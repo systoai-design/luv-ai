@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { PostCard } from "@/components/posts/PostCard";
 import { PostComposer } from "@/components/posts/PostComposer";
+import { PostFilters } from "@/components/posts/PostFilters";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2 } from "lucide-react";
 import { calculateMatchScore } from "@/lib/interests";
@@ -20,6 +21,9 @@ const Home = () => {
   const [userLikes, setUserLikes] = useState<Set<string>>(new Set());
   const [profile, setProfile] = useState<any>(null);
   const [currentUserInterests, setCurrentUserInterests] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [interestFilter, setInterestFilter] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState<{ from: Date | null; to: Date | null }>({ from: null, to: null });
   const observerTarget = useRef(null);
   const loadPosts = async (offset = 0) => {
     if (!user) return;
@@ -32,11 +36,24 @@ const Home = () => {
       }
 
       // First get posts
-      const { data: postsData, error: postsError } = await supabase
+      let query = supabase
         .from("posts")
         .select("*")
-        .order("created_at", { ascending: false })
-        .range(offset, offset + POSTS_PER_PAGE - 1);
+        .order("created_at", { ascending: false });
+
+      // Apply date range filter
+      if (dateRange.from) {
+        query = query.gte("created_at", dateRange.from.toISOString());
+      }
+      if (dateRange.to) {
+        const endDate = new Date(dateRange.to);
+        endDate.setHours(23, 59, 59, 999);
+        query = query.lte("created_at", endDate.toISOString());
+      }
+
+      query = query.range(offset, offset + POSTS_PER_PAGE - 1);
+
+      const { data: postsData, error: postsError } = await query;
       
       if (postsError) throw postsError;
 
@@ -63,8 +80,8 @@ const Home = () => {
       const likedPostIds = new Set(likesData?.map(l => l.post_id) || []);
       setUserLikes(likedPostIds);
 
-      // Score and sort posts by shared interests
-      const scoredPosts = postsWithProfiles.map((post: any) => {
+      // Score and sort posts by shared interests and filters
+      let scoredPosts = postsWithProfiles.map((post: any) => {
         const authorInterests = post.profiles?.interests || [];
         const {
           score: sharedCount,
@@ -76,6 +93,21 @@ const Home = () => {
           interestScore: sharedCount
         };
       });
+
+      // Apply search filter
+      if (searchQuery) {
+        scoredPosts = scoredPosts.filter((post: any) =>
+          post.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          post.profiles?.display_name?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      }
+
+      // Apply interest filter
+      if (interestFilter) {
+        scoredPosts = scoredPosts.filter((post: any) =>
+          post.profiles?.interests?.includes(interestFilter)
+        );
+      }
 
       // Sort: High interest match first, then medium, then low, within each group by date
       scoredPosts.sort((a, b) => {
@@ -98,6 +130,7 @@ const Home = () => {
       setLoadingMore(false);
     }
   };
+
   const loadProfile = async () => {
     if (!user) return;
     try {
@@ -116,7 +149,40 @@ const Home = () => {
     if (!loadingMore && hasMore) {
       loadPosts(posts.length);
     }
-  }, [loadingMore, hasMore, posts.length]);
+  }, [loadingMore, hasMore, posts.length, loadPosts]);
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setPosts([]);
+    loadPosts(0);
+  };
+
+  const handleInterestFilter = (interest: string | null) => {
+    setInterestFilter(interest);
+    setPosts([]);
+    loadPosts(0);
+  };
+
+  const handleDateRangeFilter = (from: Date | null, to: Date | null) => {
+    setDateRange({ from, to });
+    setPosts([]);
+    loadPosts(0);
+  };
+
+  const handleClearFilters = () => {
+    setSearchQuery("");
+    setInterestFilter(null);
+    setDateRange({ from: null, to: null });
+    setPosts([]);
+    loadPosts(0);
+  };
+
+  const activeFiltersCount =
+    (searchQuery ? 1 : 0) +
+    (interestFilter ? 1 : 0) +
+    (dateRange.from ? 1 : 0) +
+    (dateRange.to ? 1 : 0);
+
   useEffect(() => {
     if (user) {
       loadPosts();
@@ -204,6 +270,15 @@ const Home = () => {
           )}
 
           {profile && <PostComposer userId={user!.id} avatarUrl={profile.avatar_url} displayName={profile.display_name} onPostCreated={() => loadPosts()} />}
+
+          <PostFilters
+            onSearch={handleSearch}
+            onInterestFilter={handleInterestFilter}
+            onDateRangeFilter={handleDateRangeFilter}
+            onClearFilters={handleClearFilters}
+            userInterests={currentUserInterests}
+            activeFiltersCount={activeFiltersCount}
+          />
 
           {posts.length === 0 && !loading ? (
             <div className="text-center py-12 text-muted-foreground bg-card/30 backdrop-blur-sm rounded-lg border border-border/50 shadow-card">

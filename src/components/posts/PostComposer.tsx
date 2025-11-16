@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Image as ImageIcon, Loader2, X, Globe, Users, Lock } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Image as ImageIcon, Loader2, X, Globe, Users, Lock, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DraftsDialog } from "./DraftsDialog";
+import { useDebounce } from "@/hooks/use-debounce";
 
 interface PostComposerProps {
   userId: string;
@@ -26,6 +29,94 @@ export const PostComposer = ({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [posting, setPosting] = useState(false);
   const [visibility, setVisibility] = useState<"public" | "connections" | "private">("public");
+  const [showDrafts, setShowDrafts] = useState(false);
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
+  const [draftCount, setDraftCount] = useState(0);
+  
+  const debouncedContent = useDebounce(content, 2000);
+
+  // Load draft count on mount
+  useEffect(() => {
+    loadDraftCount();
+  }, [userId]);
+
+  // Auto-save draft
+  useEffect(() => {
+    if (debouncedContent || imagePreview) {
+      saveDraft();
+    }
+  }, [debouncedContent, imagePreview, visibility]);
+
+  const loadDraftCount = async () => {
+    try {
+      const { count } = await supabase
+        .from("post_drafts")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", userId);
+      setDraftCount(count || 0);
+    } catch (error) {
+      console.error("Error loading draft count:", error);
+    }
+  };
+
+  const saveDraft = async () => {
+    if (!content.trim() && !imagePreview) return;
+
+    try {
+      if (currentDraftId) {
+        // Update existing draft
+        await supabase
+          .from("post_drafts")
+          .update({
+            content: content.trim() || null,
+            image_url: imagePreview,
+            visibility,
+          })
+          .eq("id", currentDraftId);
+      } else {
+        // Create new draft
+        const { data } = await supabase
+          .from("post_drafts")
+          .insert({
+            user_id: userId,
+            content: content.trim() || null,
+            image_url: imagePreview,
+            visibility,
+          })
+          .select("id")
+          .single();
+        
+        if (data) {
+          setCurrentDraftId(data.id);
+          loadDraftCount();
+        }
+      }
+    } catch (error) {
+      console.error("Error saving draft:", error);
+    }
+  };
+
+  const handleLoadDraft = (draft: any) => {
+    setContent(draft.content || "");
+    setImagePreview(draft.image_url);
+    setVisibility(draft.visibility);
+    setCurrentDraftId(draft.id);
+  };
+
+  const clearDraft = async () => {
+    if (currentDraftId) {
+      try {
+        await supabase
+          .from("post_drafts")
+          .delete()
+          .eq("id", currentDraftId);
+        setCurrentDraftId(null);
+        loadDraftCount();
+      } catch (error) {
+        console.error("Error clearing draft:", error);
+      }
+    }
+  };
 
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -95,6 +186,7 @@ export const PostComposer = ({
 
       setContent("");
       handleRemoveImage();
+      await clearDraft();
       
       const visibilityLabel = visibility.charAt(0).toUpperCase() + visibility.slice(1);
       toast.success(`Post created as ${visibilityLabel}!`);
@@ -110,9 +202,26 @@ export const PostComposer = ({
   };
 
   return (
-    <Card className="bg-card border-border">
-      <CardContent className="pt-6">
-        <div className="flex gap-3">
+    <>
+      <Card className="bg-card border-border">
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-medium text-muted-foreground">Create Post</h3>
+            </div>
+            {draftCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowDrafts(true)}
+                className="gap-2"
+              >
+                <FileText className="h-4 w-4" />
+                Drafts ({draftCount})
+              </Button>
+            )}
+          </div>
+          <div className="flex gap-3">
           <Avatar className="h-10 w-10">
             <AvatarImage src={avatarUrl} alt={displayName || "User"} />
             <AvatarFallback>
@@ -215,5 +324,13 @@ export const PostComposer = ({
         </div>
       </CardContent>
     </Card>
+
+    <DraftsDialog
+      open={showDrafts}
+      onOpenChange={setShowDrafts}
+      userId={userId}
+      onLoadDraft={handleLoadDraft}
+    />
+  </>
   );
 };

@@ -34,6 +34,8 @@ const Chat = () => {
   const [deletedMessageIds, setDeletedMessageIds] = useState<Set<string>>(new Set());
   const [forwardMessageId, setForwardMessageId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
   const prevMessagesLengthRef = useRef(0);
 
   const { messages, isLoading, sendMessage, loadMessages } = useChat(chatId || '', companionId || '');
@@ -41,6 +43,12 @@ const Chat = () => {
 
   const scrollToBottom = () => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const element = e.currentTarget;
+    const isNearBottom = element.scrollHeight - element.scrollTop - element.clientHeight < 100;
+    setShowScrollButton(!isNearBottom);
   };
 
   useEffect(() => {
@@ -419,8 +427,8 @@ const Chat = () => {
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-6 max-w-3xl mx-auto">
+      <ScrollArea className="flex-1 p-4" onScroll={handleScroll}>
+        <div className="space-y-6 max-w-3xl mx-auto relative">
           {localMessages.filter(msg => !deletedMessageIds.has(msg.id)).map((message) => {
             const isOwn = message.sender_type === 'user';
             const quotedMsg = message.quoted_message ? {
@@ -470,6 +478,30 @@ const Chat = () => {
           )}
           <div ref={scrollRef} />
         </div>
+
+        {/* Scroll to bottom button */}
+        {showScrollButton && (
+          <Button
+            size="icon"
+            className="absolute bottom-6 right-6 rounded-full shadow-lg z-10"
+            onClick={scrollToBottom}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="18 15 12 21 6 15"></polyline>
+              <polyline points="18 9 12 15 6 9"></polyline>
+            </svg>
+          </Button>
+        )}
       </ScrollArea>
 
       {/* Input */}

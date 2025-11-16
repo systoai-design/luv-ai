@@ -98,6 +98,45 @@ export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthMod
     }
   }, [open]);
 
+  // Auto-detect already connected wallet and proceed to authentication
+  useEffect(() => {
+    if (!open || !connected || !publicKey) return;
+    
+    const autoAuthenticate = async () => {
+      console.log('[wallet] Auto-detecting connected wallet:', publicKey.toBase58());
+      setConnecting(true);
+      setStep("checking");
+      
+      try {
+        const walletAddress = publicKey.toBase58();
+        const result = await signInWithWallet(walletAddress);
+        
+        if (result.isNewUser) {
+          console.log('[wallet] New user detected, showing registration');
+          setStep("register");
+          setConnecting(false);
+        } else if (result.success) {
+          console.log('[wallet] Existing user signed in successfully');
+          toast.success("Welcome back!");
+          onOpenChange(false);
+          onSuccess?.();
+        } else if (result.error) {
+          console.error('[wallet] Authentication error:', result.error);
+          showError(result.error);
+          setStep("connect");
+          setConnecting(false);
+        }
+      } catch (error) {
+        console.error('[wallet] Auto-authentication failed:', error);
+        showError(error instanceof Error ? error.message : 'Authentication failed');
+        setStep("connect");
+        setConnecting(false);
+      }
+    };
+
+    autoAuthenticate();
+  }, [open, connected, publicKey]);
+
   // Safety guard: if "checking" takes too long, fall back to register
   useEffect(() => {
     if (step !== "checking") return;

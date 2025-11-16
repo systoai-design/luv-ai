@@ -4,13 +4,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Video, ArrowDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 import { usePresenceDisplay } from '@/hooks/usePresenceDisplay';
 import { ChatComposer } from '@/components/chat/ChatComposer';
 import { ChatMessage } from '@/components/chat/ChatMessage';
 import { ForwardMessageDialog } from '@/components/chat/ForwardMessageDialog';
+import { VideoCall } from '@/components/video/VideoCall';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Reaction {
   emoji: string;
@@ -55,6 +57,7 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
   const [deletedMessageIds, setDeletedMessageIds] = useState<Set<string>>(new Set());
   const [forwardMessageId, setForwardMessageId] = useState<string | null>(null);
+  const [isVideoCallActive, setIsVideoCallActive] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const prevMessagesLengthRef = useRef(0);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -438,6 +441,17 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
     );
   }
 
+  if (isVideoCallActive) {
+    return (
+      <VideoCall
+        matchId={matchId}
+        otherUserId={otherUser.id}
+        otherUserName={otherUser.display_name || 'User'}
+        onClose={() => setIsVideoCallActive(false)}
+      />
+    );
+  }
+
   return (
     <>
       <Card className="bg-card border-border flex flex-col h-[600px]">
@@ -462,6 +476,14 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
               </p>
             )}
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsVideoCallActive(true)}
+            className="shrink-0"
+          >
+            <Video className="h-5 w-5" />
+          </Button>
         </div>
 
         {/* Messages */}

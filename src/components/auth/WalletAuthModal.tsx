@@ -16,6 +16,7 @@ interface WalletAuthModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  connectionIntent?: 'authenticate' | 'switch'; // 'authenticate' = use existing connection, 'switch' = change wallet
 }
 
 type Step = "connect" | "checking" | "register";
@@ -68,7 +69,7 @@ const waitForAdapterConnected = (adapter: any, timeoutMs: number): Promise<boole
   });
 };
 
-export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthModalProps) => {
+export const WalletAuthModal = ({ open, onOpenChange, onSuccess, connectionIntent = 'authenticate' }: WalletAuthModalProps) => {
   const { wallets, select, connected, publicKey, disconnect, connect } = useWallet();
   const { authState, checkUsernameAvailable, registerWithWallet, signInWithWallet } = useWalletAuth();
 
@@ -101,6 +102,9 @@ export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthMod
   // Auto-detect already connected wallet and proceed to authentication
   useEffect(() => {
     if (!open || !connected || !publicKey) return;
+    
+    // Only auto-authenticate if intent is 'authenticate', not 'switch'
+    if (connectionIntent !== 'authenticate') return;
     
     const autoAuthenticate = async () => {
       console.log('[wallet] Auto-detecting connected wallet:', publicKey.toBase58());
@@ -135,7 +139,7 @@ export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthMod
     };
 
     autoAuthenticate();
-  }, [open, connected, publicKey]);
+  }, [open, connected, publicKey, connectionIntent]);
 
   // Safety guard: if "checking" takes too long, fall back to register
   useEffect(() => {
@@ -228,9 +232,9 @@ export const WalletAuthModal = ({ open, onOpenChange, onSuccess }: WalletAuthMod
         return;
       }
 
-      // If switching wallets, disconnect and clear cache FIRST
-      if (connected) {
-        console.info('[wallet] Disconnecting existing wallet');
+      // Only disconnect if we're explicitly switching wallets
+      if (connected && connectionIntent === 'switch') {
+        console.info('[wallet] Switching wallets - disconnecting existing wallet');
         await disconnect().catch(() => {});
         await clearWalletStorage();
         // Small delay for cleanup

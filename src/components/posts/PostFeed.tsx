@@ -2,6 +2,7 @@ import { useEffect, useState, forwardRef, useImperativeHandle } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PostCard } from "./PostCard";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 interface PostFeedProps {
   userId: string;
@@ -18,22 +19,30 @@ export const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(
     const [loading, setLoading] = useState(true);
     const [userLikes, setUserLikes] = useState<Set<string>>(new Set());
 
-    const loadPosts = async () => {
-      try {
-        const { data: postsData, error: postsError } = await supabase
-          .from("posts")
-          .select(`
-            *,
-            profiles:user_id (
-              display_name,
-              avatar_url,
-              username
-            )
-          `)
-          .eq("user_id", userId)
-          .order("created_at", { ascending: false });
+  const loadPosts = async () => {
+    try {
+      console.log("PostFeed: Loading posts for userId:", userId);
+      
+      const { data: postsData, error: postsError } = await supabase
+        .from("posts")
+        .select(`
+          *,
+          profiles:user_id (
+            display_name,
+            avatar_url,
+            username
+          )
+        `)
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
 
-        if (postsError) throw postsError;
+      if (postsError) {
+        console.error("PostFeed error:", postsError);
+        toast.error("Failed to load posts");
+        throw postsError;
+      }
+
+      console.log("PostFeed: Posts loaded:", postsData?.length || 0);
 
         const { data: likesData } = await supabase
           .from("likes")
@@ -58,7 +67,7 @@ export const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(
       loadPosts();
 
       const channel = supabase
-        .channel("posts-changes")
+        .channel(`posts-changes-${userId}`)
         .on(
           "postgres_changes",
           {
@@ -67,11 +76,14 @@ export const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(
             table: "posts",
             filter: `user_id=eq.${userId}`,
           },
-          () => {
+          (payload) => {
+            console.log("PostFeed: Realtime post change:", payload);
             loadPosts();
           }
         )
-        .subscribe();
+        .subscribe((status) => {
+          console.log("PostFeed: Realtime subscription status:", status);
+        });
 
       return () => {
         supabase.removeChannel(channel);

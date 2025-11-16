@@ -34,12 +34,25 @@ const Chat = () => {
   const [deletedMessageIds, setDeletedMessageIds] = useState<Set<string>>(new Set());
   const [forwardMessageId, setForwardMessageId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const prevMessagesLengthRef = useRef(0);
 
   const { messages, isLoading, sendMessage, loadMessages } = useChat(chatId || '', companionId || '');
   const { hasAccess, isLoading: isCheckingAccess, accessPrice, grantAccess } = useCompanionAccess(companionId);
 
+  const scrollToBottom = () => {
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   useEffect(() => {
     setLocalMessages(messages);
+  }, [messages]);
+
+  // Only auto-scroll when new messages are added
+  useEffect(() => {
+    if (messages.length > prevMessagesLengthRef.current) {
+      scrollToBottom();
+    }
+    prevMessagesLengthRef.current = messages.length;
   }, [messages]);
 
   useEffect(() => {

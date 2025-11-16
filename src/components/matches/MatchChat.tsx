@@ -55,10 +55,23 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
   const [deletedMessageIds, setDeletedMessageIds] = useState<Set<string>>(new Set());
   const [forwardMessageId, setForwardMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const prevMessagesLengthRef = useRef(0);
   
   const { typingUsers, setTyping } = useTypingIndicator(matchId);
   const presenceMap = usePresenceDisplay([otherUser.id]);
   const isOnline = presenceMap[otherUser.id]?.online;
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Only auto-scroll when new messages are added
+  useEffect(() => {
+    if (messages.length > prevMessagesLengthRef.current) {
+      scrollToBottom();
+    }
+    prevMessagesLengthRef.current = messages.length;
+  }, [messages]);
 
   useEffect(() => {
     if (!user) return;
@@ -236,7 +249,6 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
       }));
 
       setMessages(messagesWithReactions || []);
-      scrollToBottom();
     } catch (error) {
       console.error('Error loading messages:', error);
     } finally {
@@ -244,13 +256,7 @@ const MatchChat = ({ matchId, otherUser }: MatchChatProps) => {
     }
   };
 
-  const scrollToBottom = () => {
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
-  };
-
-  const handleSend = async (payload: { 
+  const handleSend = async (payload: {
     text: string; 
     mediaUrl?: string; 
     mediaType?: 'image' | 'video' | 'audio';

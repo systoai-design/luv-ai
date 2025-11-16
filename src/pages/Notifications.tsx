@@ -55,6 +55,7 @@ const Notifications = () => {
         .from('super_like_notifications')
         .select('id, sender_id, created_at, viewed')
         .eq('recipient_id', user.id)
+        .eq('viewed', false)
         .order('created_at', { ascending: false });
 
       // Fetch sender profiles for super likes

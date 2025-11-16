@@ -99,47 +99,7 @@ export const WalletAuthModal = ({ open, onOpenChange, onSuccess, connectionInten
     }
   }, [open]);
 
-  // Auto-detect already connected wallet and proceed to authentication
-  useEffect(() => {
-    if (!open || !connected || !publicKey) return;
-    
-    // Only auto-authenticate if intent is 'authenticate', not 'switch'
-    if (connectionIntent !== 'authenticate') return;
-    
-    const autoAuthenticate = async () => {
-      console.log('[wallet] Auto-detecting connected wallet:', publicKey.toBase58());
-      setConnecting(true);
-      setStep("checking");
-      
-      try {
-        const walletAddress = publicKey.toBase58();
-        const result = await signInWithWallet(walletAddress);
-        
-        if (result.isNewUser) {
-          console.log('[wallet] New user detected, showing registration');
-          setStep("register");
-          setConnecting(false);
-        } else if (result.success) {
-          console.log('[wallet] Existing user signed in successfully');
-          toast.success("Welcome back!");
-          onOpenChange(false);
-          onSuccess?.();
-        } else if (result.error) {
-          console.error('[wallet] Authentication error:', result.error);
-          showError(result.error);
-          setStep("connect");
-          setConnecting(false);
-        }
-      } catch (error) {
-        console.error('[wallet] Auto-authentication failed:', error);
-        showError(error instanceof Error ? error.message : 'Authentication failed');
-        setStep("connect");
-        setConnecting(false);
-      }
-    };
-
-    autoAuthenticate();
-  }, [open, connected, publicKey, connectionIntent]);
+  // Removed auto-authentication - users must explicitly select and connect a wallet
 
   // Safety guard: if "checking" takes too long, fall back to register
   useEffect(() => {
@@ -232,14 +192,7 @@ export const WalletAuthModal = ({ open, onOpenChange, onSuccess, connectionInten
         return;
       }
 
-      // Only disconnect if we're explicitly switching wallets
-      if (connected && connectionIntent === 'switch') {
-        console.info('[wallet] Switching wallets - disconnecting existing wallet');
-        await disconnect().catch(() => {});
-        await clearWalletStorage();
-        // Small delay for cleanup
-        await new Promise(r => setTimeout(r, 200));
-      }
+      // Only disconnect if we're explicitly switching wallets (keep this logic)
 
       // Select the wallet
       console.info('[wallet] Selecting wallet:', walletName);

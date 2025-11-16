@@ -55,7 +55,7 @@ export const WalletContextProvider = ({ children }: { children: ReactNode }) => 
 
   return (
     <ConnectionProvider endpoint={endpoint}>
-      <SolanaWalletProvider wallets={wallets} autoConnect={true} onError={onError}>
+      <SolanaWalletProvider wallets={wallets} autoConnect={false} onError={onError}>
         <WalletModalProvider>
           <WalletContext.Provider value={{}}>
             {children}

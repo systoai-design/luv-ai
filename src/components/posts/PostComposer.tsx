@@ -95,7 +95,11 @@ export const PostComposer = ({
 
       setContent("");
       handleRemoveImage();
-      toast.success("Post created successfully");
+      
+      const visibilityLabel = visibility.charAt(0).toUpperCase() + visibility.slice(1);
+      toast.success(`Post created as ${visibilityLabel}!`);
+      setVisibility("public"); // Reset to public for next post
+      
       onPostCreated();
     } catch (error) {
       console.error("Error creating post:", error);

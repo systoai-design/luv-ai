@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -42,7 +43,14 @@ export const PostCard = ({
   onLikeToggle,
 }: PostCardProps) => {
   const [showComments, setShowComments] = useState(false);
+  const navigate = useNavigate();
   const isOwnPost = post.user_id === currentUserId;
+
+  const handleProfileClick = () => {
+    if (profile?.username) {
+      navigate(`/profile/${profile.username}`);
+    }
+  };
 
   const getVisibilityIcon = () => {
     switch (post.visibility) {
@@ -114,8 +122,8 @@ export const PostCard = ({
     <Card variant="glass" className="hover:border-primary/30 transition-all duration-300 shadow-card hover:shadow-glow hover:scale-[1.01]">
       <CardContent className="pt-6">
         <div className="flex items-start justify-between mb-4">
-          <div className="flex gap-3">
-            <Avatar className="h-10 w-10">
+          <div className="flex gap-3 cursor-pointer" onClick={handleProfileClick}>
+            <Avatar className="h-10 w-10 hover:opacity-80 transition-opacity">
               <AvatarImage src={profile.avatar_url} alt={profile.display_name || "User"} />
               <AvatarFallback>
                 {profile.display_name?.charAt(0).toUpperCase() || "U"}
@@ -124,7 +132,7 @@ export const PostCard = ({
 
             <div>
               <div className="flex items-center gap-2">
-                <p className="font-semibold">{profile.display_name || "User"}</p>
+                <p className="font-semibold hover:underline">{profile.display_name || "User"}</p>
                 {sharedInterests.length > 0 && (
                   <Badge variant="secondary" className="text-xs">
                     🎯 {sharedInterests.length} shared

@@ -116,6 +116,33 @@ const Home = () => {
     }
   }, [user]);
 
+  // Subscribe to new posts for real-time updates
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('home-posts-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'posts',
+        },
+        (payload) => {
+          console.log("Home: New post created:", payload);
+          loadPosts(0); // Refresh feed
+        }
+      )
+      .subscribe((status) => {
+        console.log("Home: Realtime subscription status:", status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, currentUserInterests]);
+
   // Infinite scroll observer
   useEffect(() => {
     const observer = new IntersectionObserver(entries => {

@@ -233,12 +233,15 @@ const MarketplaceSection = () => {
                           <span>{companion.total_chats?.toLocaleString() || 0} chats</span>
                         </div>
                       </div>
-                      <div className="bg-primary/10 rounded-lg p-3 text-center">
-                        <div className="text-2xl font-bold text-primary">
+                      <div className="bg-primary/10 rounded-lg p-3 text-center relative">
+                        <Badge className="absolute -top-2 right-2 bg-yellow-500 text-yellow-950">
+                          Coming Soon
+                        </Badge>
+                        <div className="text-2xl font-bold text-primary opacity-50">
                           {companion.access_price} {companion.currency}
                         </div>
                         <div className="text-xs text-muted-foreground mt-1">
-                          One-time purchase • On-chain verified
+                          Payment feature launching soon
                         </div>
                       </div>
                     </div>
@@ -247,7 +250,7 @@ const MarketplaceSection = () => {
                       className="w-full bg-gradient-primary hover:opacity-90 transition-opacity"
                       onClick={() => handleStartChat(companion.id)}
                     >
-                      Purchase & Start Chat
+                      Get Early Access
                     </Button>
                   </CardContent>
                 </Card>

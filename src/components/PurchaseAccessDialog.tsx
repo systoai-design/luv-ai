@@ -1,9 +1,4 @@
-import { useState, useEffect } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
-import { AuthModal } from '@/components/AuthModal';
-import { sharedConnection } from '@/contexts/WalletContext';
-import { executeWithRetry } from '@/lib/rpcManager';
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -12,10 +7,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Sparkles, Wifi, WifiOff, Wallet } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Loader2, Sparkles, Mail } from 'lucide-react';
 
 interface PurchaseAccessDialogProps {
   open: boolean;
@@ -30,385 +26,139 @@ interface PurchaseAccessDialogProps {
   onGrantAccess: (signature: string, amount: number) => Promise<boolean>;
 }
 
-const PLATFORM_WALLET = '5UD8QQ5WrJFXYcN7yy1iUkhvHoa6hyko4f9Wa3EDDeJ3';
-
 export const PurchaseAccessDialog = ({
   open,
   onOpenChange,
   companion,
-  onSuccess,
-  onGrantAccess,
 }: PurchaseAccessDialogProps) => {
-  const { publicKey, sendTransaction, connected, connecting } = useWallet();
   const { toast } = useToast();
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [rpcStatus, setRpcStatus] = useState<'checking' | 'connected' | 'error'>('connected');
-  const [currentStep, setCurrentStep] = useState<string>('');
-  const [isWalletConnected, setIsWalletConnected] = useState(false);
-  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
-  const handleConnectWallet = () => {
-    console.log('[Purchase] Opening wallet connection modal');
-    setAuthModalOpen(true);
-  };
-
-  // Track wallet connection state reactively
-  useEffect(() => {
-    console.log('[Purchase] Wallet state changed:', { connected, publicKey: publicKey?.toBase58() });
-    setIsWalletConnected(connected && !!publicKey);
-  }, [connected, publicKey]);
-
-  // Check RPC connection when dialog opens
-  useEffect(() => {
-    if (open && isWalletConnected) {
-      checkRpcConnection();
-    }
-  }, [open, isWalletConnected]);
-
-  const checkRpcConnection = async () => {
-    setRpcStatus('checking');
-    setCurrentStep('Testing network connection...');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    try {
-      await executeWithRetry(async (connection) => {
-        await connection.getLatestBlockhash();
-      }, 2);
-      
-      setRpcStatus('connected');
-      setCurrentStep('');
-      console.log('[Purchase] RPC connection verified');
-    } catch (error) {
-      console.error('[Purchase] RPC check failed:', error);
-      setRpcStatus('error');
-      setCurrentStep('Network connection unstable');
-    }
-  };
-
-  const handlePurchase = async () => {
-    console.log('[Purchase] Starting purchase:', { publicKey: publicKey?.toBase58(), connected, connecting, isWalletConnected });
-    
-    if (!isWalletConnected || !publicKey) {
+    if (!email || !email.includes('@')) {
       toast({
-        title: 'Wallet not connected',
-        description: 'Please connect your wallet first from the header menu',
+        title: 'Invalid email',
+        description: 'Please enter a valid email address',
         variant: 'destructive',
       });
       return;
     }
 
-    setIsProcessing(true);
-    setCurrentStep('Preparing transaction...');
-    let signature: string | undefined;
+    setIsSubmitting(true);
 
-    try {
-      const lamports = companion.access_price * 1000000000; // Convert SOL to lamports
+    // Simulate submission - this is just a placeholder UI
+    await new Promise(resolve => setTimeout(resolve, 800));
 
-      // Check balance with resilient connection
-      setCurrentStep('Checking wallet balance...');
-      const balance = await executeWithRetry(async (connection) => {
-        return await connection.getBalance(publicKey);
-      }, 5); // More aggressive retries
-      
-      const requiredLamports = lamports + 10000; // Add buffer for transaction fee (0.00001 SOL)
-      
-      if (balance < requiredLamports) {
-        const balanceSOL = (balance / 1000000000).toFixed(6);
-        const requiredSOL = (requiredLamports / 1000000000).toFixed(6);
-        toast({
-          title: 'Insufficient balance',
-          description: `You need ${requiredSOL} SOL but only have ${balanceSOL} SOL. Please add more SOL to your wallet.`,
-          variant: 'destructive',
-        });
-        setIsProcessing(false);
-        setCurrentStep('');
-        return;
-      }
+    console.log('Early access signup:', { email, companion: companion.name });
 
-      // Create transaction
-      setCurrentStep('Creating transaction...');
-      const transaction = new Transaction().add(
-        SystemProgram.transfer({
-          fromPubkey: publicKey,
-          toPubkey: new PublicKey(PLATFORM_WALLET),
-          lamports,
-        })
-      );
+    setSubmitted(true);
+    toast({
+      title: 'You\'re on the list!',
+      description: 'We\'ll notify you when AI companion purchases are available.',
+    });
 
-      // Send transaction
-      setCurrentStep('Waiting for wallet approval...');
-      toast({
-        title: 'Sending transaction...',
-        description: 'Please approve the transaction in your wallet',
-      });
+    setTimeout(() => {
+      onOpenChange(false);
+      setSubmitted(false);
+      setEmail('');
+    }, 2000);
 
-      // Use resilient connection for sending
-      const connection = sharedConnection;
-      signature = await sendTransaction(transaction, connection);
-      console.log('[Purchase] Transaction sent:', signature);
-
-      setCurrentStep('Confirming on blockchain...');
-      toast({
-        title: 'Confirming transaction...',
-        description: 'This may take up to 90 seconds',
-      });
-
-      // Enhanced confirmation with more retries
-      let confirmed = false;
-      const maxRetries = 10; // Increased from 5
-      let retryDelay = 2000;
-
-      for (let i = 0; i < maxRetries && !confirmed; i++) {
-        setCurrentStep(`Confirming transaction... (${i + 1}/${maxRetries})`);
-        
-        try {
-          const confirmation = await executeWithRetry(async (conn) => {
-            return await conn.confirmTransaction(signature!, 'confirmed');
-          }, 2);
-          
-          if (confirmation.value.err) {
-            throw new Error('Transaction failed on-chain');
-          }
-
-          confirmed = true;
-          console.log(`[Purchase] Transaction confirmed after ${i + 1} attempts:`, signature);
-        } catch (confirmError) {
-          if (i === maxRetries - 1) {
-            // Last retry - check transaction status manually
-            console.log('[Purchase] Checking transaction status manually...');
-            const status = await executeWithRetry(async (conn) => {
-              return await conn.getSignatureStatus(signature!);
-            }, 2);
-            
-            if (status.value?.confirmationStatus === 'confirmed' || 
-                status.value?.confirmationStatus === 'finalized') {
-              // Check if transaction has an error
-              if (status.value.err) {
-                throw new Error(`Transaction failed on blockchain. Please check your balance and try again. Error: ${JSON.stringify(status.value.err)}`);
-              }
-              confirmed = true;
-              console.log('[Purchase] Transaction confirmed via status check:', signature);
-            } else {
-              throw new Error(`Transaction confirmation timeout after ${maxRetries} attempts. Check status at: https://solscan.io/tx/${signature}`);
-            }
-          } else {
-            console.log(`[Purchase] Retry ${i + 1}/${maxRetries} waiting ${retryDelay}ms...`);
-            await new Promise(resolve => setTimeout(resolve, retryDelay));
-            retryDelay = Math.min(retryDelay * 1.3, 8000); // Cap at 8 seconds
-          }
-        }
-      }
-
-      if (!confirmed) {
-        throw new Error(`Could not confirm transaction. Check status at: https://solscan.io/tx/${signature}`);
-      }
-
-      // Fetch full transaction details to verify it succeeded
-      setCurrentStep('Verifying transaction details...');
-      const txDetails = await executeWithRetry(async (conn) => {
-        return await conn.getTransaction(signature!, {
-          maxSupportedTransactionVersion: 0
-        });
-      }, 3);
-
-      if (txDetails?.meta?.err) {
-        throw new Error(`Transaction failed on blockchain: ${JSON.stringify(txDetails.meta.err)}. This usually means insufficient balance or expired blockhash. Check details at: https://solscan.io/tx/${signature}`);
-      }
-
-      console.log('[Purchase] Transaction verified successfully on blockchain');
-
-      // Verify payment on backend
-      setCurrentStep('Verifying payment...');
-      const success = await onGrantAccess(signature, companion.access_price);
-
-      if (success) {
-        setCurrentStep('Success!');
-        toast({
-          title: 'Access granted!',
-          description: `You now have lifetime access to ${companion.name}`,
-        });
-        onSuccess();
-        onOpenChange(false);
-      } else {
-        throw new Error('Payment verification failed on backend');
-      }
-    } catch (error) {
-      console.error('[Purchase] Error:', error);
-      setCurrentStep('');
-      let errorMessage = error instanceof Error ? error.message : 'Please try again';
-      let errorTitle = 'Purchase failed';
-      
-      // Check for specific error types
-      if (errorMessage.includes('User rejected') || errorMessage.includes('rejected the request')) {
-        errorTitle = 'Transaction Cancelled';
-        errorMessage = 'You cancelled the transaction. Please try again and approve the transaction in your wallet.';
-      } else if (errorMessage.includes('Insufficient balance') || errorMessage.includes('insufficient funds')) {
-        errorTitle = 'Insufficient Balance';
-        errorMessage = errorMessage; // Keep the detailed balance message
-      } else if (errorMessage.includes('Transaction failed on blockchain')) {
-        errorTitle = 'Transaction Failed';
-        errorMessage = errorMessage; // Keep the detailed blockchain error
-      } else if (errorMessage.includes('blockhash') || errorMessage.includes('expired')) {
-        errorTitle = 'Transaction Expired';
-        errorMessage = 'Transaction took too long to process. Please try again with a faster network connection.';
-      } else if (errorMessage.includes('not been authorized') || errorMessage.includes('Wallet not connected')) {
-        errorTitle = 'Wallet Not Connected';
-        errorMessage = 'Please connect your wallet first using the wallet button in the header.';
-      } else if (errorMessage.includes('RPC') || errorMessage.includes('403') || errorMessage.includes('Too Many Requests') || errorMessage.includes('rate limit')) {
-        errorTitle = 'Network Issues';
-        errorMessage = 'Network connection issues detected. Our system will automatically retry with backup connections. Please try again.';
-      }
-      
-      toast({
-        title: errorTitle,
-        description: signature 
-          ? `${errorMessage}\n\nView transaction: https://solscan.io/tx/${signature}`
-          : errorMessage,
-        variant: 'destructive',
-        duration: 10000,
-      });
-    } finally {
-      setIsProcessing(false);
-      setCurrentStep('');
-    }
+    setIsSubmitting(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Purchase Access</DialogTitle>
-          <DialogDescription>
-            Get lifetime access to chat with {companion.name}
+          <div className="flex items-center justify-center mb-2">
+            <Badge className="bg-yellow-500 text-yellow-950 hover:bg-yellow-500">
+              <Sparkles className="h-3 w-3 mr-1" />
+              Coming Soon
+            </Badge>
+          </div>
+          <DialogTitle className="text-2xl text-center">AI Companion Purchases</DialogTitle>
+          <DialogDescription className="text-center">
+            We're launching AI companion purchases soon! Get early access and be the first to know.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col items-center gap-6 py-4">
-          <Avatar className="h-24 w-24">
-            <AvatarImage src={companion.avatar_url} alt={companion.name} />
-            <AvatarFallback>{companion.name[0]}</AvatarFallback>
-          </Avatar>
-
-          <div className="text-center">
-            <h3 className="text-2xl font-bold">{companion.name}</h3>
-            <div className="mt-4 flex items-center justify-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              <span className="text-3xl font-bold">{companion.access_price} SOL</span>
-            </div>
-            <p className="mt-2 text-sm text-muted-foreground">One-time payment</p>
-          </div>
-
-          {/* RPC Status Indicator */}
-          {isWalletConnected && (
-            <div className="w-full flex items-center justify-center gap-2">
-              {rpcStatus === 'checking' && (
-                <Badge variant="outline" className="gap-2">
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  Checking network...
-                </Badge>
-              )}
-              {rpcStatus === 'connected' && (
-                <Badge variant="outline" className="gap-2 border-green-500 text-green-500">
-                  <Wifi className="h-3 w-3" />
-                  Network ready
-                </Badge>
-              )}
-              {rpcStatus === 'error' && (
-                <Badge variant="outline" className="gap-2 border-yellow-500 text-yellow-500">
-                  <WifiOff className="h-3 w-3" />
-                  Connection unstable (will auto-retry)
-                </Badge>
-              )}
-            </div>
-          )}
-
-          {currentStep && (
-            <p className="text-sm text-muted-foreground text-center animate-pulse">
-              {currentStep}
-            </p>
-          )}
-
-          <div className="w-full space-y-2 rounded-lg bg-muted p-4">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Access type:</span>
-              <span className="font-medium">Lifetime</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Messages:</span>
-              <span className="font-medium">30/day</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Network:</span>
-              <span className="font-medium">Solana Mainnet</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">RPC Provider:</span>
-              <span className="font-medium text-xs">Helius (Premium)</span>
-            </div>
-          </div>
-
-          {!isWalletConnected ? (
-            <>
-              <Button
-                onClick={handleConnectWallet}
-                className="w-full bg-gradient-primary hover:opacity-90"
-                size="lg"
-              >
-                <Wallet className="mr-2 h-4 w-4" />
-                Connect Wallet to Purchase
-              </Button>
-              <p className="text-sm text-muted-foreground text-center">
-                You need to connect your Solana wallet to complete the purchase
+        <div className="space-y-6 py-4">
+          {/* Companion Info */}
+          <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
+            <Avatar className="h-16 w-16">
+              <AvatarImage src={companion.avatar_url} alt={companion.name} />
+              <AvatarFallback>{companion.name[0]}</AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+              <h3 className="font-semibold text-lg">{companion.name}</h3>
+              <p className="text-sm text-muted-foreground opacity-50">
+                {companion.access_price} SOL • Lifetime Access
               </p>
-            </>
-          ) : (
-            <>
-              <Button
-                onClick={handlePurchase}
-                disabled={isProcessing || connecting || rpcStatus === 'error'}
-                className="w-full bg-gradient-primary hover:opacity-90"
+            </div>
+          </div>
+
+          {!submitted ? (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="email" className="text-sm font-medium">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="your@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10"
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  We'll notify you when AI companion purchases go live
+                </p>
+              </div>
+
+              <Button 
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full"
                 size="lg"
               >
-                {isProcessing ? (
+                {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {currentStep || 'Processing...'}
+                    Joining...
                   </>
-                ) : connecting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Connecting...
-                  </>
-                ) : rpcStatus === 'error' ? (
-                  'Network Error - Try Again'
                 ) : (
                   <>
                     <Sparkles className="mr-2 h-4 w-4" />
-                    Purchase for {companion.access_price} SOL
+                    Get Early Access
                   </>
                 )}
               </Button>
-              
-              {connecting && (
-                <p className="text-sm text-muted-foreground text-center">
-                  <Loader2 className="inline h-3 w-3 animate-spin mr-1" />
-                  Connecting to your wallet...
-                </p>
-              )}
-            </>
+            </form>
+          ) : (
+            <div className="text-center py-8 space-y-3">
+              <div className="flex justify-center">
+                <div className="h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center">
+                  <Mail className="h-8 w-8 text-green-500" />
+                </div>
+              </div>
+              <h3 className="font-semibold text-lg">You're on the list!</h3>
+              <p className="text-sm text-muted-foreground">
+                We'll email you as soon as {companion.name} is available for purchase.
+              </p>
+            </div>
           )}
         </div>
       </DialogContent>
-
-      <AuthModal
-        open={authModalOpen}
-        onOpenChange={setAuthModalOpen}
-        onSuccess={() => {
-          console.log('[Purchase] Wallet connected successfully');
-          setAuthModalOpen(false);
-          // Wallet state will update automatically via useEffect
-        }}
-        connectionIntent="authenticate"
-      />
     </Dialog>
   );
 };

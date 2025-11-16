@@ -13,6 +13,23 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Mail } from 'lucide-react';
 
+// Import companion avatars
+import lunaAvatar from "@/assets/companions/luna-avatar.jpg";
+import sophiaAvatar from "@/assets/companions/sophia-avatar.jpg";
+import ariaAvatar from "@/assets/companions/aria-avatar.jpg";
+import roseAvatar from "@/assets/companions/rose-avatar.jpg";
+import scarlettAvatar from "@/assets/companions/scarlett-avatar.jpg";
+import jennaAvatar from "@/assets/companions/jenna-avatar.jpg";
+
+const avatarMap: Record<string, string> = {
+  "Luna": lunaAvatar,
+  "Sophia": sophiaAvatar,
+  "Aria": ariaAvatar,
+  "Rose": roseAvatar,
+  "Scarlett": scarlettAvatar,
+  "Jenna": jennaAvatar,
+};
+
 interface PurchaseAccessDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -90,7 +107,11 @@ export const PurchaseAccessDialog = ({
           {/* Companion Info */}
           <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
             <Avatar className="h-16 w-16">
-              <AvatarImage src={companion.avatar_url} alt={companion.name} />
+              <AvatarImage 
+                src={avatarMap[companion.name] || companion.avatar_url || ""} 
+                alt={companion.name}
+                className="object-cover"
+              />
               <AvatarFallback>{companion.name[0]}</AvatarFallback>
             </Avatar>
             <div className="flex-1">

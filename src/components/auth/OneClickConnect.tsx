@@ -64,6 +64,7 @@ const OneClickConnect = ({ className, onNewUser }: OneClickConnectProps) => {
       open={showWalletModal} 
       onOpenChange={setShowWalletModal}
       onSuccess={() => navigate("/home")}
+      connectionIntent="authenticate"
     />
   );
 };

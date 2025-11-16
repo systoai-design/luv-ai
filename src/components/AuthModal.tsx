@@ -33,9 +33,10 @@ interface AuthModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  connectionIntent?: 'authenticate' | 'switch';
 }
 
-export const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
+export const AuthModal = ({ open, onOpenChange, onSuccess, connectionIntent = 'authenticate' }: AuthModalProps) => {
   const { user } = useAuth();
   const { connected, publicKey } = useWallet();
   const {
@@ -67,11 +68,11 @@ export const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => 
       setUsernameAvailable(null);
       setLoadingState('idle');
       setConnectionError(null);
-    } else if (step === "connect") {
-      // Aggressively clear wallet cache when opening to connect
+    } else if (step === "connect" && connectionIntent === 'switch') {
+      // Only clear wallet cache when explicitly switching wallets
       clearWalletStorage();
     }
-  }, [open, step]);
+  }, [open, step, connectionIntent]);
 
   // Move to registration if new user and wallet connected
   useEffect(() => {

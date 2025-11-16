@@ -254,6 +254,7 @@ const TopNav = () => {
         open={authModalOpen}
         onOpenChange={setAuthModalOpen}
         onSuccess={() => navigate("/home")}
+        connectionIntent="switch"
       />
       
       <DisconnectDialog

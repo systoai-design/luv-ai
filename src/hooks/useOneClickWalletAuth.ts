@@ -34,10 +34,40 @@ export const useOneClickWalletAuth = () => {
 
       console.log('[OneClick] Attempting sign in for:', normalizedAddress);
 
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      // First attempt: try normalized credentials
+      let { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
+
+      // If normalized failed, try legacy (original case) credentials
+      if (signInError?.message.includes("Invalid login credentials")) {
+        console.log('[OneClick] Normalized credentials failed, trying legacy credentials');
+        const legacyEmail = emailFor(walletAddress); // Original case
+        const legacyPassword = createWalletPassword(walletAddress); // Original case
+
+        const legacyResult = await supabase.auth.signInWithPassword({
+          email: legacyEmail,
+          password: legacyPassword,
+        });
+
+        if (!legacyResult.error) {
+          console.log('[OneClick] Legacy credentials successful, normalizing wallet address');
+          signInError = null;
+          
+          // Normalize the wallet_address in profile for future logins
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ wallet_address: normalizedAddress })
+            .eq('wallet_address', walletAddress);
+
+          if (updateError) {
+            console.error('[OneClick] Failed to normalize wallet address:', updateError);
+          }
+        } else {
+          signInError = legacyResult.error;
+        }
+      }
 
       if (!signInError) {
         console.log('[OneClick] Sign in successful');

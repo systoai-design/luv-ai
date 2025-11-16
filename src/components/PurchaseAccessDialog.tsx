@@ -108,12 +108,14 @@ export const PurchaseAccessDialog = ({
         return await connection.getBalance(publicKey);
       }, 5); // More aggressive retries
       
-      const requiredLamports = lamports + 5000; // Add buffer for transaction fee
+      const requiredLamports = lamports + 10000; // Add buffer for transaction fee (0.00001 SOL)
       
       if (balance < requiredLamports) {
+        const balanceSOL = (balance / 1000000000).toFixed(6);
+        const requiredSOL = (requiredLamports / 1000000000).toFixed(6);
         toast({
           title: 'Insufficient balance',
-          description: 'You need more SOL to complete this purchase. Please add SOL to your wallet.',
+          description: `You need ${requiredSOL} SOL but only have ${balanceSOL} SOL. Please add more SOL to your wallet.`,
           variant: 'destructive',
         });
         setIsProcessing(false);
@@ -178,10 +180,14 @@ export const PurchaseAccessDialog = ({
             
             if (status.value?.confirmationStatus === 'confirmed' || 
                 status.value?.confirmationStatus === 'finalized') {
+              // Check if transaction has an error
+              if (status.value.err) {
+                throw new Error(`Transaction failed on blockchain. Please check your balance and try again. Error: ${JSON.stringify(status.value.err)}`);
+              }
               confirmed = true;
               console.log('[Purchase] Transaction confirmed via status check:', signature);
             } else {
-              throw new Error(`Transaction confirmation timeout after ${maxRetries} attempts. Signature: ${signature}`);
+              throw new Error(`Transaction confirmation timeout after ${maxRetries} attempts. Check status at: https://solscan.io/tx/${signature}`);
             }
           } else {
             console.log(`[Purchase] Retry ${i + 1}/${maxRetries} waiting ${retryDelay}ms...`);
@@ -194,6 +200,20 @@ export const PurchaseAccessDialog = ({
       if (!confirmed) {
         throw new Error(`Could not confirm transaction. Check status at: https://solscan.io/tx/${signature}`);
       }
+
+      // Fetch full transaction details to verify it succeeded
+      setCurrentStep('Verifying transaction details...');
+      const txDetails = await executeWithRetry(async (conn) => {
+        return await conn.getTransaction(signature!, {
+          maxSupportedTransactionVersion: 0
+        });
+      }, 3);
+
+      if (txDetails?.meta?.err) {
+        throw new Error(`Transaction failed on blockchain: ${JSON.stringify(txDetails.meta.err)}. This usually means insufficient balance or expired blockhash. Check details at: https://solscan.io/tx/${signature}`);
+      }
+
+      console.log('[Purchase] Transaction verified successfully on blockchain');
 
       // Verify payment on backend
       setCurrentStep('Verifying payment...');
@@ -214,23 +234,36 @@ export const PurchaseAccessDialog = ({
       console.error('[Purchase] Error:', error);
       setCurrentStep('');
       let errorMessage = error instanceof Error ? error.message : 'Please try again';
+      let errorTitle = 'Purchase failed';
       
-      // Check for specific wallet errors
+      // Check for specific error types
       if (errorMessage.includes('User rejected') || errorMessage.includes('rejected the request')) {
-        errorMessage = 'Transaction was cancelled. Please try again and approve the transaction in your wallet.';
+        errorTitle = 'Transaction Cancelled';
+        errorMessage = 'You cancelled the transaction. Please try again and approve the transaction in your wallet.';
+      } else if (errorMessage.includes('Insufficient balance') || errorMessage.includes('insufficient funds')) {
+        errorTitle = 'Insufficient Balance';
+        errorMessage = errorMessage; // Keep the detailed balance message
+      } else if (errorMessage.includes('Transaction failed on blockchain')) {
+        errorTitle = 'Transaction Failed';
+        errorMessage = errorMessage; // Keep the detailed blockchain error
+      } else if (errorMessage.includes('blockhash') || errorMessage.includes('expired')) {
+        errorTitle = 'Transaction Expired';
+        errorMessage = 'Transaction took too long to process. Please try again with a faster network connection.';
       } else if (errorMessage.includes('not been authorized') || errorMessage.includes('Wallet not connected')) {
+        errorTitle = 'Wallet Not Connected';
         errorMessage = 'Please connect your wallet first using the wallet button in the header.';
       } else if (errorMessage.includes('RPC') || errorMessage.includes('403') || errorMessage.includes('Too Many Requests') || errorMessage.includes('rate limit')) {
+        errorTitle = 'Network Issues';
         errorMessage = 'Network connection issues detected. Our system will automatically retry with backup connections. Please try again.';
       }
       
       toast({
-        title: 'Purchase failed',
+        title: errorTitle,
         description: signature 
-          ? `${errorMessage}\n\nTransaction: ${signature}\nVerify at: https://solscan.io/tx/${signature}`
+          ? `${errorMessage}\n\nView transaction: https://solscan.io/tx/${signature}`
           : errorMessage,
         variant: 'destructive',
-        duration: 8000,
+        duration: 10000,
       });
     } finally {
       setIsProcessing(false);

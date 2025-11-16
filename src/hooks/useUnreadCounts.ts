@@ -17,15 +17,31 @@ export const useUnreadCounts = () => {
     loadCounts();
 
     // Set up real-time subscriptions
-    const notificationsChannel = supabase
-      .channel('notifications-changes')
+    const superLikesChannel = supabase
+      .channel('super-likes-changes')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`,
+          table: 'super_like_notifications',
+          filter: `recipient_id=eq.${user.id}`,
+        },
+        () => {
+          loadCounts();
+        }
+      )
+      .subscribe();
+
+    const chatRequestsChannel = supabase
+      .channel('chat-requests-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'chat_requests',
+          filter: `receiver_id=eq.${user.id}`,
         },
         () => {
           loadCounts();
@@ -49,7 +65,8 @@ export const useUnreadCounts = () => {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(notificationsChannel);
+      supabase.removeChannel(superLikesChannel);
+      supabase.removeChannel(chatRequestsChannel);
       supabase.removeChannel(messagesChannel);
     };
   }, [user]);

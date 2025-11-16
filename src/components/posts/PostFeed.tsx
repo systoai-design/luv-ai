@@ -23,16 +23,10 @@ export const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(
     try {
       console.log("PostFeed: Loading posts for userId:", userId);
       
+      // First get posts
       const { data: postsData, error: postsError } = await supabase
         .from("posts")
-        .select(`
-          *,
-          profiles:user_id (
-            display_name,
-            avatar_url,
-            username
-          )
-        `)
+        .select("*")
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
@@ -44,20 +38,37 @@ export const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(
 
       console.log("PostFeed: Posts loaded:", postsData?.length || 0);
 
-        const { data: likesData } = await supabase
-          .from("likes")
-          .select("post_id")
-          .eq("user_id", currentUserId);
+      // Then get profile
+      let postsWithProfile: any[] = [];
+      if (postsData && postsData.length > 0) {
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("user_id, display_name, avatar_url, username, interests")
+          .eq("user_id", userId)
+          .single();
 
-        const likedPostIds = new Set(likesData?.map((l) => l.post_id) || []);
-        setUserLikes(likedPostIds);
-        setPosts(postsData || []);
-      } catch (error) {
-        console.error("Error loading posts:", error);
-      } finally {
-        setLoading(false);
+        // Merge profile into posts
+        postsWithProfile = postsData.map(post => ({
+          ...post,
+          profiles: profileData
+        }));
       }
-    };
+
+      // Get liked post IDs
+      const { data: likesData } = await supabase
+        .from("likes")
+        .select("post_id")
+        .eq("user_id", currentUserId);
+
+      const likedPostIds = new Set(likesData?.map((l) => l.post_id) || []);
+      setUserLikes(likedPostIds);
+      setPosts(postsWithProfile);
+    } catch (error) {
+      console.error("Error loading posts:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
     useImperativeHandle(ref, () => ({
       refresh: loadPosts,

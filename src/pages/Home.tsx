@@ -31,22 +31,30 @@ const Home = () => {
         setLoadingMore(true);
       }
 
-      // Load posts from all users with author interests
-      const {
-        data: postsData,
-        error: postsError
-      } = await supabase.from("posts").select(`
-          *,
-          profiles:user_id (
-            display_name,
-            avatar_url,
-            username,
-            interests
-          )
-        `).order("created_at", {
-        ascending: false
-      }).range(offset, offset + POSTS_PER_PAGE - 1);
+      // First get posts
+      const { data: postsData, error: postsError } = await supabase
+        .from("posts")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .range(offset, offset + POSTS_PER_PAGE - 1);
+      
       if (postsError) throw postsError;
+
+      // Then get profiles for those posts
+      let postsWithProfiles: any[] = [];
+      if (postsData && postsData.length > 0) {
+        const userIds = [...new Set(postsData.map(p => p.user_id))];
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("user_id, display_name, avatar_url, username, interests")
+          .in("user_id", userIds);
+
+        // Merge profiles into posts
+        postsWithProfiles = postsData.map(post => ({
+          ...post,
+          profiles: profilesData?.find(p => p.user_id === post.user_id) || null
+        }));
+      }
 
       // Load user's likes
       const {
@@ -56,7 +64,7 @@ const Home = () => {
       setUserLikes(likedPostIds);
 
       // Score and sort posts by shared interests
-      const scoredPosts = (postsData || []).map((post: any) => {
+      const scoredPosts = postsWithProfiles.map((post: any) => {
         const authorInterests = post.profiles?.interests || [];
         const {
           score: sharedCount,

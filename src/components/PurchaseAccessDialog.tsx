@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
 import { sharedConnection } from '@/contexts/WalletContext';
 import { executeWithRetry } from '@/lib/rpcManager';
@@ -13,7 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Sparkles, Wifi, WifiOff } from 'lucide-react';
+import { Loader2, Sparkles, Wifi, WifiOff, Wallet } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface PurchaseAccessDialogProps {
@@ -38,12 +39,17 @@ export const PurchaseAccessDialog = ({
   onSuccess,
   onGrantAccess,
 }: PurchaseAccessDialogProps) => {
-  const { publicKey, sendTransaction, connected, connecting } = useWallet();
+  const { publicKey, sendTransaction, connected, connecting, select, wallets } = useWallet();
+  const { setVisible } = useWalletModal();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const [rpcStatus, setRpcStatus] = useState<'checking' | 'connected' | 'error'>('connected');
   const [currentStep, setCurrentStep] = useState<string>('');
   const [isWalletConnected, setIsWalletConnected] = useState(false);
+
+  const handleConnectWallet = () => {
+    setVisible(true);
+  };
 
   // Track wallet connection state reactively
   useEffect(() => {
@@ -306,37 +312,55 @@ export const PurchaseAccessDialog = ({
             </div>
           </div>
 
-          <Button
-            onClick={handlePurchase}
-            disabled={isProcessing || !connected || connecting}
-            className="w-full"
-            size="lg"
-          >
-            {isProcessing ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Processing...
-              </>
-            ) : connecting ? (
-              'Connecting wallet...'
-            ) : !connected ? (
-              'Connect Wallet First'
-            ) : (
-              `Purchase for ${companion.access_price} SOL`
-            )}
-          </Button>
-
-          {!connected && !connecting && (
-            <p className="text-sm text-muted-foreground text-center">
-              Please connect your wallet using the button in the header to continue
-            </p>
-          )}
-          
-          {connecting && (
-            <p className="text-sm text-muted-foreground text-center">
-              <Loader2 className="inline h-3 w-3 animate-spin mr-1" />
-              Connecting to your wallet...
-            </p>
+          {!isWalletConnected ? (
+            <>
+              <Button
+                onClick={handleConnectWallet}
+                className="w-full bg-gradient-primary hover:opacity-90"
+                size="lg"
+              >
+                <Wallet className="mr-2 h-4 w-4" />
+                Connect Wallet to Purchase
+              </Button>
+              <p className="text-sm text-muted-foreground text-center">
+                You need to connect your Solana wallet to complete the purchase
+              </p>
+            </>
+          ) : (
+            <>
+              <Button
+                onClick={handlePurchase}
+                disabled={isProcessing || connecting || rpcStatus === 'error'}
+                className="w-full bg-gradient-primary hover:opacity-90"
+                size="lg"
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {currentStep || 'Processing...'}
+                  </>
+                ) : connecting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Connecting...
+                  </>
+                ) : rpcStatus === 'error' ? (
+                  'Network Error - Try Again'
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Purchase for {companion.access_price} SOL
+                  </>
+                )}
+              </Button>
+              
+              {connecting && (
+                <p className="text-sm text-muted-foreground text-center">
+                  <Loader2 className="inline h-3 w-3 animate-spin mr-1" />
+                  Connecting to your wallet...
+                </p>
+              )}
+            </>
           )}
         </div>
       </DialogContent>

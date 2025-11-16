@@ -44,6 +44,7 @@ const Discover = () => {
     matchId?: string;
   } | null>(null);
   const [showUndo, setShowUndo] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const { remaining: undoRemaining, checkLimit: checkUndoLimit, refreshRemaining: refreshUndo } = useUndoSwipe();
 
   useEffect(() => {
@@ -334,7 +335,6 @@ const Discover = () => {
   }
 
   const currentProfile = profiles[currentIndex];
-  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const handleSwipeWithTransition = (swipeData: { match: any; swipeId: string }, action: 'like' | 'pass' | 'super_like') => {
     setIsTransitioning(true);

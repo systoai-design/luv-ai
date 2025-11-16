@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
+import { AuthModal } from '@/components/AuthModal';
 import { sharedConnection } from '@/contexts/WalletContext';
 import { executeWithRetry } from '@/lib/rpcManager';
 import {
@@ -39,16 +39,17 @@ export const PurchaseAccessDialog = ({
   onSuccess,
   onGrantAccess,
 }: PurchaseAccessDialogProps) => {
-  const { publicKey, sendTransaction, connected, connecting, select, wallets } = useWallet();
-  const { setVisible } = useWalletModal();
+  const { publicKey, sendTransaction, connected, connecting } = useWallet();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const [rpcStatus, setRpcStatus] = useState<'checking' | 'connected' | 'error'>('connected');
   const [currentStep, setCurrentStep] = useState<string>('');
   const [isWalletConnected, setIsWalletConnected] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   const handleConnectWallet = () => {
-    setVisible(true);
+    console.log('[Purchase] Opening wallet connection modal');
+    setAuthModalOpen(true);
   };
 
   // Track wallet connection state reactively
@@ -397,6 +398,17 @@ export const PurchaseAccessDialog = ({
           )}
         </div>
       </DialogContent>
+
+      <AuthModal
+        open={authModalOpen}
+        onOpenChange={setAuthModalOpen}
+        onSuccess={() => {
+          console.log('[Purchase] Wallet connected successfully');
+          setAuthModalOpen(false);
+          // Wallet state will update automatically via useEffect
+        }}
+        connectionIntent="authenticate"
+      />
     </Dialog>
   );
 };

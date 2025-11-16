@@ -33,10 +33,12 @@ export const useVideoCall = ({ matchId, otherUserId, onCallEnded }: UseVideoCall
   const [isSharingScreen, setIsSharingScreen] = useState(false);
   const [isConnecting, setIsConnecting] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
+  const [callStartTime, setCallStartTime] = useState<Date | null>(null);
 
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const channelRef = useRef<any>(null);
   const screenStreamRef = useRef<MediaStream | null>(null);
+  const callHistoryIdRef = useRef<string | null>(null);
 
   // Initialize local media stream
   const initializeMedia = useCallback(async () => {
@@ -108,6 +110,28 @@ export const useVideoCall = ({ matchId, otherUserId, onCallEnded }: UseVideoCall
       // Initialize media
       const stream = await initializeMedia();
       if (!stream) return;
+      
+      // Set call start time
+      setCallStartTime(new Date());
+      
+      // Create call history record
+      if (user) {
+        const { data, error } = await supabase
+          .from('call_history')
+          .insert({
+            match_id: matchId,
+            caller_id: user.id,
+            receiver_id: otherUserId,
+            call_type: 'video',
+            status: 'completed',
+          })
+          .select()
+          .single();
+
+        if (data && !error) {
+          callHistoryIdRef.current = data.id;
+        }
+      }
 
       // Create peer connection
       const pc = createPeerConnection();
@@ -270,7 +294,21 @@ export const useVideoCall = ({ matchId, otherUserId, onCallEnded }: UseVideoCall
     }
   }, [isSharingScreen, localStream]);
 
-  const endCall = useCallback(() => {
+  const endCall = useCallback(async () => {
+    // Update call history with duration
+    if (user && callHistoryIdRef.current && callStartTime) {
+      const endTime = new Date();
+      const durationSeconds = Math.floor((endTime.getTime() - callStartTime.getTime()) / 1000);
+      
+      await supabase
+        .from('call_history')
+        .update({
+          ended_at: endTime.toISOString(),
+          duration_seconds: durationSeconds,
+        })
+        .eq('id', callHistoryIdRef.current);
+    }
+    
     if (channelRef.current) {
       const message: SignalMessage = {
         type: 'end-call',
@@ -290,9 +328,12 @@ export const useVideoCall = ({ matchId, otherUserId, onCallEnded }: UseVideoCall
     screenStreamRef.current?.getTracks().forEach((track) => track.stop());
     peerConnectionRef.current?.close();
     channelRef.current?.unsubscribe();
+    
+    callHistoryIdRef.current = null;
+    setCallStartTime(null);
 
     onCallEnded?.();
-  }, [user, otherUserId, matchId, localStream, onCallEnded]);
+  }, [user, otherUserId, matchId, localStream, callStartTime, onCallEnded]);
 
   return {
     localStream,

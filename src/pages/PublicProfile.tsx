@@ -15,6 +15,7 @@ import { useUserBadges } from "@/hooks/useUserBadges";
 import { useChatRequest } from "@/hooks/useChatRequest";
 import { ChatRequestButton } from "@/components/chat/ChatRequestButton";
 import { MutualConnections } from "@/components/profile/MutualConnections";
+import { BlockReportMenu } from "@/components/profile/BlockReportMenu";
 
 const PublicProfile = () => {
   const { username } = useParams();
@@ -86,6 +87,14 @@ const PublicProfile = () => {
     <>
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="space-y-6">
+          <div className="flex justify-end">
+            {user && user.id !== profile.user_id && (
+              <BlockReportMenu
+                userId={profile.user_id}
+                username={profile.username || profile.display_name || 'User'}
+              />
+            )}
+          </div>
           <ProfileHeader
             userId={profile.user_id}
             displayName={profile.display_name}

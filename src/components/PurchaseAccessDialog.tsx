@@ -43,13 +43,20 @@ export const PurchaseAccessDialog = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [rpcStatus, setRpcStatus] = useState<'checking' | 'connected' | 'error'>('connected');
   const [currentStep, setCurrentStep] = useState<string>('');
+  const [isWalletConnected, setIsWalletConnected] = useState(false);
+
+  // Track wallet connection state reactively
+  useEffect(() => {
+    console.log('[Purchase] Wallet state changed:', { connected, publicKey: publicKey?.toBase58() });
+    setIsWalletConnected(connected && !!publicKey);
+  }, [connected, publicKey]);
 
   // Check RPC connection when dialog opens
   useEffect(() => {
-    if (open && connected) {
+    if (open && isWalletConnected) {
       checkRpcConnection();
     }
-  }, [open, connected]);
+  }, [open, isWalletConnected]);
 
   const checkRpcConnection = async () => {
     setRpcStatus('checking');
@@ -71,9 +78,9 @@ export const PurchaseAccessDialog = ({
   };
 
   const handlePurchase = async () => {
-    console.log('[Purchase] Starting purchase:', { publicKey: publicKey?.toBase58(), connected, connecting });
+    console.log('[Purchase] Starting purchase:', { publicKey: publicKey?.toBase58(), connected, connecting, isWalletConnected });
     
-    if (!connected || !publicKey) {
+    if (!isWalletConnected || !publicKey) {
       toast({
         title: 'Wallet not connected',
         description: 'Please connect your wallet first from the header menu',
@@ -251,7 +258,7 @@ export const PurchaseAccessDialog = ({
           </div>
 
           {/* RPC Status Indicator */}
-          {connected && (
+          {isWalletConnected && (
             <div className="w-full flex items-center justify-center gap-2">
               {rpcStatus === 'checking' && (
                 <Badge variant="outline" className="gap-2">

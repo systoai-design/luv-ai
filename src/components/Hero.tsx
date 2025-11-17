@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Shield, Heart, Lock, Rocket } from "lucide-react";
+import { Shield, Heart, Lock, Rocket, Users } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -69,6 +69,15 @@ const Hero = ({ onOpenAuthModal }: HeroProps) => {
             {!user}
             <Button size="lg" variant="outline" onClick={() => smoothScrollTo("how-it-works")} className="border-primary/50 hover:bg-primary/10 text-lg px-8">
               Learn More
+            </Button>
+            <Button 
+              size="lg" 
+              variant="outline" 
+              onClick={() => window.open('https://x.com/i/communities/1990509614715257297', '_blank', 'noopener,noreferrer')}
+              className="border-secondary/50 hover:bg-secondary/10 text-lg px-8"
+            >
+              <Users className="mr-2 h-5 w-5" />
+              Join X Community
             </Button>
           </div>
 

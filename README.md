@@ -1,53 +1,55 @@
-# Welcome to your Lovable project
+# Luv AI
 
-Follow these steps:
+An AI-companion social app with Solana wallet payments. Users discover and match
+with companions, chat in real time, and unlock premium companions via on-chain
+payments.
+
+## Tech stack
+
+- **Frontend:** Vite, React 18, TypeScript, Tailwind CSS, shadcn-ui
+- **Backend:** Supabase (Postgres, Auth, Realtime, Edge Functions)
+- **Payments / Web3:** Solana wallet adapters (Phantom, Solflare, Backpack)
+- **Data:** TanStack Query
+
+## Local development
+
+Requires Node.js 18+.
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Install dependencies
+npm install
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start the dev server (http://localhost:8080)
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Other scripts:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```sh
+npm run build      # production build to ./dist
+npm run preview    # preview the production build locally
+npm run lint       # run ESLint
+```
 
-**Use GitHub Codespaces**
+## Environment variables
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Client config is read from `.env` (all `VITE_`-prefixed and public by design):
 
-## What technologies are used for this project?
+| Variable                        | Purpose                          |
+| ------------------------------- | -------------------------------- |
+| `VITE_SUPABASE_URL`             | Supabase project URL             |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Supabase anon/publishable key    |
+| `VITE_SUPABASE_PROJECT_ID`      | Supabase project ref             |
+| `VITE_SOLANA_RPC_URL`           | Solana RPC endpoint (Helius)     |
+| `VITE_VAPID_PUBLIC_KEY`         | Web-push VAPID public key        |
 
-This project is built with:
+Server-side secrets (service-role key, payment keys, AI provider key, etc.) are
+configured in the Supabase project, not in this repo.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Deployment
 
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/b56f9f7d-a62c-4b2e-81ff-fd407ccbdce7) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- **Frontend** is hosted on Vercel and deploys automatically on push to `main`.
+  Client-side routing relies on the SPA rewrite in `vercel.json`.
+- **Backend** (database migrations under `supabase/migrations` and the edge
+  functions under `supabase/functions`) is deployed to Supabase separately —
+  Vercel does not deploy these. Use the Supabase CLI or dashboard.

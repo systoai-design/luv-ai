@@ -73,7 +73,7 @@ const Hero = ({ onOpenAuthModal }: HeroProps) => {
             <Button 
               size="lg" 
               variant="outline" 
-              onClick={() => window.open('https://x.com/i/communities/1990509614715257297', '_blank', 'noopener,noreferrer')}
+              onClick={() => window.open('https://x.com/LuvaiLifeOnSol', '_blank', 'noopener,noreferrer')}
               className="border-secondary/50 hover:bg-secondary/10 text-lg px-8"
             >
               <Users className="mr-2 h-5 w-5" />

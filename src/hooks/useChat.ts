@@ -201,7 +201,7 @@ export const useChat = (chatId: string, companionId: string) => {
         body: JSON.stringify({ chatId, message: content, companionId, mediaUrl, mediaType }),
       });
 
-      if (resp.status === 429 || resp.status === 402) {
+      if (resp.status === 429 || resp.status === 402 || resp.status === 503) {
         const errorData = await resp.json();
         toast({
           title: "Error",
